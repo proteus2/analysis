@@ -1,0 +1,50 @@
+#!/bin/bash
+l_xm=1
+l_te=1
+l_epw=1
+l_a_xm=0
+l_a_te=0
+l_a_ep=0
+l_a_epw=0
+
+DATDIR=/data18/kyh/dat
+comm='sshpass -p kyh123 scp'
+
+if [ $l_xm -ne 0 ] ; then
+  $comm kyh@165.132.26.42:$DATDIR/AOL60CTL/xm.*.p[befhj].nc dat/AOL60CTL/
+  $comm kyh@165.132.26.42:$DATDIR/AOL60CGW/xm.*.p[befhj].nc dat/AOL60CGW/
+  $comm kyh@165.132.26.42:$DATDIR/AOL60CTL/mmxm.*.p?.nc dat/AOL60CTL/
+  $comm kyh@165.132.26.42:$DATDIR/AOL60CGW/mmxm.*.p?.nc dat/AOL60CGW/
+  $comm kyh@165.132.26.42:$DATDIR/AOL60CTL/*_53-06.nc dat/AOL60CTL/
+  $comm kyh@165.132.26.42:$DATDIR/AOL60CGW/*_53-06.nc dat/AOL60CGW/
+fi
+if [ $l_a_xm -ne 0 ] ; then
+  $comm kyh@165.132.26.42:$DATDIR/L60CTL/xm.*.p[befhj].nc dat/L60CTL/
+  $comm kyh@165.132.26.42:$DATDIR/L60CGW/xm.*.p[befhj].nc dat/L60CGW/
+  $comm kyh@165.132.26.42:$DATDIR/L60CTL/mmxm.*.p?.nc dat/L60CTL/
+  $comm kyh@165.132.26.42:$DATDIR/L60CGW/mmxm.*.p?.nc dat/L60CGW/
+fi
+if [ $l_te -ne 0 ] ; then
+  $comm kyh@165.132.26.39:$DATDIR/AOL60CTL/tem/*yzt.nc dat/AOL60CTL/tem/
+  $comm kyh@165.132.26.39:$DATDIR/AOL60CGW/tem/*yzt.nc dat/AOL60CGW/tem/
+  $comm kyh@165.132.26.39:$DATDIR/AOL60CTL/tem/*_53-06.nc dat/AOL60CTL/tem/
+  $comm kyh@165.132.26.39:$DATDIR/AOL60CGW/tem/*_53-06.nc dat/AOL60CGW/tem/
+fi
+if [ $l_a_te -ne 0 ] ; then
+  $comm kyh@165.132.26.39:$DATDIR/L60CTL/tem/*yzt.nc dat/L60CTL/tem/
+  $comm kyh@165.132.26.39:$DATDIR/L60CGW/tem/*yzt.nc dat/L60CGW/tem/
+fi
+if [ $l_epw -ne 0 ] ; then
+  $comm kyh@165.132.26.39:$DATDIR/AOL60CTL/epf-wc/*recon0.nc dat/AOL60CTL/epf-wc/
+  $comm kyh@165.132.26.39:$DATDIR/AOL60CGW/epf-wc/*recon0.nc dat/AOL60CGW/epf-wc/
+  $comm kyh@165.132.26.39:$DATDIR/AOL60CTL/epf-wc/*_53-06.nc dat/AOL60CTL/epf-wc/
+  $comm kyh@165.132.26.39:$DATDIR/AOL60CGW/epf-wc/*_53-06.nc dat/AOL60CGW/epf-wc/
+fi
+if [ $l_a_ep -ne 0 ] ; then
+  $comm kyh@165.132.26.39:$DATDIR/L60CTL/epf/*_recon0.nc dat/L60CTL/epf/
+  $comm kyh@165.132.26.39:$DATDIR/L60CGW/epf/*_recon0.nc dat/L60CGW/epf/
+fi
+if [ $l_a_epw -ne 0 ] ; then
+#  $comm kyh@165.132.26.39:$DATDIR/L60CTL/epf-wc/*_recon0.nc dat/L60CTL/epf-wc/
+  $comm kyh@165.132.26.39:$DATDIR/L60CGW/epf-wc/*_recon0.nc dat/L60CGW/epf-wc/
+fi

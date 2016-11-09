@@ -81,10 +81,10 @@ SUBROUTINE phase_dir(u_prt,v_prt,t_n,ph_dir)
     ph_dir = sign(90.-atan(abs(x/y))*rad2deg, x*y)
     if (x == 0.)  ph_dir = sign(90.,y)
   end if
-  ! -180 <= ph_dir <= 180 [deg]
+  ! -90 <= ph_dir <= 90 [deg]
 
   if (x < 0.)  ph_dir = ph_dir + 180.
-  ! -180 <= ph_dir < 360 [deg]
+  ! -90 <= ph_dir < 270 [deg]
 
   if (ph_dir < 0.)  ph_dir = ph_dir + 360.
   ! 0 <= ph_dir < 360 [deg]
@@ -121,7 +121,7 @@ SUBROUTINE stokes_param(u_prt,v_prt,i,d,p,q,i_m,d_m,p_m,q_m)
   call fft1d_f(u_prt,fc_u)
   call fft1d_f(v_prt,fc_v)
 
-  fc_u(n+1) = 0.  ;  fc_v(n+1) = 0.
+  fc_u(n+1) = (0.,0.)  ;  fc_v(n+1) = (0.,0.)
   ! 2*delta wavelength not considered
 
   im(:) = 2.*(real(fc_u(2:n+1)*conjg(fc_u(2:n+1)) +  &

@@ -1,8 +1,8 @@
 &IO_PARAM
- fi_dir  = '/data11/kyh/analy/z/out_sonde'  ,
+ fi_dir  = 'dat/out_sonde'            ,
  fi_head = 'prof_pert_'               ,
  fi_tail = ''                         ,
- fo_dir  = '/data11/kyh/analy/z/out_sonde'  ,
+ fo_dir  = 'dat/out_sonde'            ,
  fo_head = 'wave_char_'               ,
  fo_tail = '_1'                       ,
 /

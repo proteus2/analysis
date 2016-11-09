@@ -1,10 +1,10 @@
 &IO_PARAM
- fi_dir   = '/data11/kyh/analy/z/dat_sonde'  ,
+ fi_dir   = 'dat/dat_sonde'            ,
  fi_head  = ''                         ,
  fi_tail  = '_EDTdata.txt'             ,
  nline_h  = 2                          ,
  MIS_in   = -999.                      ,
- fo_dir   = '/data11/kyh/analy/z/out_sonde'  ,
+ fo_dir   = 'dat/out_sonde'            ,
 /
 &FILTERING_PARAM
  limit_in = 50.  ,                 ! [m]

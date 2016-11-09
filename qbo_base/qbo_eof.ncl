@@ -95,7 +95,7 @@ begin
    ud(:,0:i_runavg/2-1) = u0@_FillValue
    ud(:,dimsizes(t)-i_runavg/2:) = u0@_FillValue
  end if
-
+ 
  tsn = eofqbo(ud,eofopt,etsopt,True)
  v_eof = tsn@eof
 

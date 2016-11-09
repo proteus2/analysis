@@ -1,13 +1,13 @@
 #
 #FC = ifort
-FC = pgf90 -g
+FC = $(FC_DBG) -assum bscc
 D_NCINC ?= $(NETCDF)/include
 D_NCLIB ?= $(NETCDF)/lib
-FLG_NCLIB ?= -lnetcdf
+FLG_NCLIB ?= -lnetcdff -lnetcdf
 D_EZNCINC ?= $(EasyNC)/include
 D_EZNCLIB ?= $(EasyNC)/lib
 FLG_EZNC ?= -I$(D_EZNCINC) -L$(D_EZNCLIB) -L$(D_NCLIB) -leasync $(FLG_NCLIB)
-LIB_FFTPACK ?= $(UTIL)/num_analysis/FFT/fftpack5.1/pgi10.6/lib/libfftpack.a
+LIB_FFTPACK ?= $(UTIL)/num_analysis/FFT/fftpack5.1/intel16/lib/libfftpack.a
 
 D_ETC = $(D_CURR)/etc
 D_NR = $(D_CURR)/etc/NR
@@ -46,12 +46,12 @@ $(LIB_NR):		$(D_NR)
 		( cd $(D_NR) ; ar -rv $@ $(F_NR:.f90=.o) )
 		( cd $(D_NR) ; rm -f $(F_NR:.f90=.o) )
 
-$(LIB_ETC):		$(D_ETC) $(LIB_NR)
+$(LIB_ETC):		$(D_ETC)
 		( cd $(D_ETC) ; $(FC) -c $(F_ETC) -module $(D_LIB) )
 		( cd $(D_ETC) ; ar -rv $@ $(F_ETC:.f90=.o) )
 		( cd $(D_ETC) ; rm -f $(F_ETC:.f90=.o) )
 
-$(LIB_SUBS):	$(F_MOD_SUB) $(LIB_ETC) $(LIB_NR)
+$(LIB_SUBS):	$(F_MOD_SUB)
 		$(FC) -c $(F_MOD_SUB) -module $(D_LIB)
 		ar -rv $@ $(F_MOD_SUB:.f90=.o)
 		rm -f $(F_MOD_SUB:.f90=.o)

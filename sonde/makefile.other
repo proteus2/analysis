@@ -1,0 +1,64 @@
+#
+#FC = ifort
+FC = pgf90 -g
+D_NCINC ?= $(NETCDF)/include
+D_NCLIB ?= $(NETCDF)/lib
+FLG_NCLIB ?= -lnetcdf
+D_EZNCINC ?= $(EasyNC)/include
+D_EZNCLIB ?= $(EasyNC)/lib
+FLG_EZNC ?= -I$(D_EZNCINC) -L$(D_EZNCLIB) -L$(D_NCLIB) -leasync $(FLG_NCLIB)
+LIB_FFTPACK ?= $(UTIL)/num_analysis/FFT/fftpack5.1/pgi10.6/lib/libfftpack.a
+
+D_ETC = $(D_CURR)/etc
+D_NR = $(D_CURR)/etc/NR
+D_LIB = $(D_CURR)/lib
+
+N_MOD = igw_char_prof
+N_SUB = basis_func window_func
+N_ETC = m_etc fft cub_spl_intp0
+N_NR = nrtype nr nrutil spline splint lfit tridag_ser locate gaussj covsrt
+
+LIB_SUBS = $(D_LIB)/libsubs.a
+LIB_ETC = $(D_LIB)/libetc.a
+LIB_NR = $(D_LIB)/libnr.a
+FLGS = -L$(D_LIB) -lsubs -letc -lnr
+
+D_CURR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+N_MOD_SUB = $(N_MOD) $(N_SUB)
+F_MOD_SUB = $(addsuffix .f90,$(N_MOD_SUB))
+F_ETC = $(addsuffix .f90,$(N_ETC))
+F_NR  = $(addsuffix .f90,$(N_NR))
+
+# main programs --------------------------------------------------------
+
+getprof:	get_prof.f90 LIBS_COMP
+		$(FC) $< -o $@ $(FLGS) -I$(D_LIB) $(FLG_EZNC)
+
+analgw:		anal_gw.f90 LIBS_COMP $(LIB_FFTPACK)
+		$(FC) $< -o $@ $(FLGS) $(LIB_FFTPACK) -I$(D_LIB) $(FLG_EZNC)
+
+# modules and subroutines ----------------------------------------------
+
+LIBS_COMP:	$(LIB_NR) $(LIB_ETC) $(LIB_SUBS)
+
+$(LIB_NR):		$(D_NR)
+		( cd $(D_NR) ; $(FC) -c $(F_NR) -module $(D_LIB) )
+		( cd $(D_NR) ; ar -rv $@ $(F_NR:.f90=.o) )
+		( cd $(D_NR) ; rm -f $(F_NR:.f90=.o) )
+
+$(LIB_ETC):		$(D_ETC) $(LIB_NR)
+		( cd $(D_ETC) ; $(FC) -c $(F_ETC) -module $(D_LIB) )
+		( cd $(D_ETC) ; ar -rv $@ $(F_ETC:.f90=.o) )
+		( cd $(D_ETC) ; rm -f $(F_ETC:.f90=.o) )
+
+$(LIB_SUBS):	$(F_MOD_SUB) $(LIB_ETC) $(LIB_NR)
+		$(FC) -c $(F_MOD_SUB) -module $(D_LIB)
+		ar -rv $@ $(F_MOD_SUB:.f90=.o)
+		rm -f $(F_MOD_SUB:.f90=.o)
+
+# clean ----------------------------------------------------------------
+
+clean:	
+		( cd $(D_LIB) ; rm -f *.a *.mod )
+
+# ----------------------------------------------------------------------
