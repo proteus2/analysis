@@ -1,0 +1,60 @@
+#! /bin/bash
+# import : DIRTMP
+
+EXTCTL1=1        ### CONTROLLED FOR SPLITTING - 1
+EXTCTL2=1        ### CONTROLLED FOR SPLITTING - 2
+D1=$EXTCTL1
+D2=$EXTCTL2
+vars=( W  U  V )
+levs=( 200  300  500  600  850 )
+il=1
+fidir="$DATD/gwjet_wrf"
+fitail="__08_00_05__12_00_00.nc"
+fodir="$DATD/gwjet_wrf"
+
+#== Parameter 1 ==================================
+P101=( s VAR_NAME  prt_${vars[0]}_${levs[$il]}  mean_${vars[1]}_${levs[$il]}  mean_${vars[2]}_${levs[$il]} )
+P102=( n NNN  721  1152  1 ) # the first and last time indices and interval
+P103=( n JJ  1  650 )        # the first and last latitudinal indices
+#P103=( n JJ  54  703 )       # the first and last latitudinal indices
+P104=( n II  1  432 )        # the first and last longitudinal indices
+P105=( n NPHI   36 )           # number of phi, must be a multiple of 4
+P106=( n C_ITV  2.  100. )     # interval and maximum of c [m/s]
+#== Parameter 9 - I/O ============================
+P990=( s FILE_I  ''  ''  '' )
+P999=( s FILE_O  '' )
+#=================================================
+
+F_SOURCE='mean_mean'
+F_NAMELIST="$TMPDIR/namelist/namelist.$F_SOURCE-$$"
+F_LOG="log/log.$F_SOURCE-$$"
+
+#== Functions ====================================
+. $UTIL/shell/cr_namelist.sh
+
+#== Body =========================================
+D=$D1  ;  while [ $D -le $D2 ] ; do
+
+  P990[2]=$fidir/x$D/prt_d300km/prt_${vars[0]}_${levs[$il]}__x$D$fitail
+  P990[3]=$fidir/x$D/prt_d300km/prt_${vars[1]}_${levs[$il]}__x$D$fitail
+  P990[4]=$fidir/x$D/prt_d300km/prt_${vars[2]}_${levs[$il]}__x$D$fitail
+  ODIR=$fodir/x$D/prt_d300km/mfs_ideal
+  P999[2]=$ODIR/mean_mean_${levs[$il]}.nc
+  [ -d $ODIR ] || mkdir -p $ODIR
+
+  # create namelist --------------------
+  cr_file $F_NAMELIST
+  cr_nl $F_NAMELIST PARAM "${P101[*]}" "${P102[*]}" "${P103[*]}" "${P104[*]}" "${P105[*]}" "${P106[*]}"
+  cr_nl $F_NAMELIST FILEIO "${P990[*]}" "${P999[*]}"
+  cat $F_NAMELIST
+
+  # compile and run --------------------
+  comnrun $F_SOURCE $F_NAMELIST # &> $F_LOG
+  echo "pid : $$"
+
+D=$(( D + 1 ))
+done
+
+#== End ==========================================
+exit 0
+

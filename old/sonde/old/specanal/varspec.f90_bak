@@ -1,0 +1,245 @@
+!2345
+    module varspec
+
+    real, allocatable, dimension(:)   :: normt
+    real, allocatable, dimension(:)   :: zst
+    real, allocatable, dimension(:)   :: ztr
+
+    real, allocatable, dimension(:)   :: avgstet,avgstn
+    real, allocatable, dimension(:)   :: avgtret,avgtrn
+
+    real, allocatable, dimension(:)   :: ustprt1,vstprt1
+    real, allocatable, dimension(:)   :: tnstprt,tnsthil
+    real, allocatable, dimension(:)   :: ustbas1,vstbas1
+    real, allocatable, dimension(:)   :: utrprt1,vtrprt1
+    real, allocatable, dimension(:)   :: tntrprt,tntrhil 
+    real, allocatable, dimension(:)   :: utrbas1,vtrbas1
+    real, allocatable, dimension(:)   :: rstbas1
+    real, allocatable, dimension(:)   :: rtrbas1
+
+    real, allocatable, dimension(:)   :: ubst   ,ubdgst
+    real, allocatable, dimension(:)   :: ubtr   ,ubdgtr
+
+    real, allocatable, dimension(:,:) :: ustprt ,vstprt ,tstprt 
+    real, allocatable, dimension(:,:) :: ustbas ,vstbas ,tstbas
+    real, allocatable, dimension(:,:) :: utrprt ,vtrprt ,ttrprt 
+    real, allocatable, dimension(:,:) :: utrbas ,vtrbas ,ttrbas
+    real, allocatable, dimension(:,:) :: rstbas ,nstbas
+    real, allocatable, dimension(:,:) :: rtrbas ,ntrbas
+
+    real, allocatable, dimension(:)   :: wavmst
+    real, allocatable, dimension(:)   :: wavmtr
+    real, allocatable, dimension(:,:) :: rstpsd
+    real, allocatable, dimension(:,:) :: rtrpsd
+
+    real, allocatable, dimension(:)   :: rstpsd1
+    real, allocatable, dimension(:)   :: rtrpsd1
+
+    real, allocatable, dimension(:)   :: phist  ,degst  ,degnst
+    real, allocatable, dimension(:)   :: w_fst  ,dfst
+    real, allocatable, dimension(:)   :: mbst   ,kbst
+    real, allocatable, dimension(:)   :: mbast  ,kbast
+    real, allocatable, dimension(:)   :: czst   ,cist   ,cixst  ,ciyst
+    real, allocatable, dimension(:)   :: cgxst  ,cgyst  ,wgrst  ,cgrst
+    real, allocatable, dimension(:)   :: cxst   ,cyst   ,cpxst  ,cpyst
+
+    real, allocatable, dimension(:)   :: phitr  ,degtr  ,degntr
+    real, allocatable, dimension(:)   :: w_ftr  ,dftr
+    real, allocatable, dimension(:)   :: mbtr   ,kbtr
+    real, allocatable, dimension(:)   :: mbatr  ,kbatr
+    real, allocatable, dimension(:)   :: cztr   ,citr   ,cixtr  ,ciytr
+    real, allocatable, dimension(:)   :: cgxtr  ,cgytr  ,wgrtr  ,cgrtr
+    real, allocatable, dimension(:)   :: cxtr   ,cytr   ,cpxtr  ,cpytr
+
+    real, allocatable, dimension(:)   :: angs
+    real, allocatable, dimension(:)   :: angst   
+    real, allocatable, dimension(:)   :: angtr  
+
+    real, allocatable, dimension(:)   :: cclst  ,clst
+    real, allocatable, dimension(:)   :: ccltr  ,cltr
+
+    real, allocatable, dimension(:)   :: upfrst ,dnfrst
+    real, allocatable, dimension(:)   :: upfrtr ,dnfrtr
+
+    real  :: mstdir
+    real  :: mtrdir
+
+    real, allocatable, dimension(:)   :: ruwfst1,uwflst1
+    real, allocatable, dimension(:)   :: rvwfst1,vwflst1
+    real, allocatable, dimension(:)   :: ruwftr1,uwfltr1
+    real, allocatable, dimension(:)   :: rvwftr1,vwfltr1
+
+    real, allocatable, dimension(:,:) :: ruwfst ,uwflst
+    real, allocatable, dimension(:,:) :: rvwfst ,vwflst
+    real, allocatable, dimension(:,:) :: ruwftr ,uwfltr
+    real, allocatable, dimension(:,:) :: rvwftr ,vwfltr
+
+    real, allocatable, dimension(:)   :: mruwst ,muwfst
+    real, allocatable, dimension(:)   :: mrvwst ,mvwfst
+    real, allocatable, dimension(:)   :: mruwtr ,muwftr
+    real, allocatable, dimension(:)   :: mrvwtr ,mvwftr
+
+    real  :: mstruw, mstuwf
+    real  :: mstrvw, mstvwf
+    real  :: mtrruw, mtruwf
+    real  :: mtrrvw, mtrvwf
+
+    contains
+
+    subroutine initvarspec(ndat  ,nrst  ,nrtr  )
+
+    implicit none
+
+    integer, intent(in) :: ndat  ,nrst  ,nrtr
+
+    allocate(normt  (1:ndat))        ; normt  (1:ndat) = 0.0
+    allocate(zst    (1:nrst))        ; zst    (1:nrst) = 0.0
+    allocate(ztr    (1:nrtr))        ; ztr    (1:nrtr) = 0.0
+
+    allocate(avgstet(1:ndat))        ; avgstet(1:ndat) = 0.0
+    allocate(avgtret(1:ndat))        ; avgtret(1:ndat) = 0.0
+
+    allocate(avgstn (1:ndat))        ; avgstn (1:ndat) = 0.0
+    allocate(avgtrn (1:ndat))        ; avgtrn (1:ndat) = 0.0
+
+    allocate(ustprt1(1:nrst))        ; ustprt1(1:nrst) = 0.0
+    allocate(vstprt1(1:nrst))        ; vstprt1(1:nrst) = 0.0
+    allocate(tnstprt(1:nrst))        ; tnstprt(1:nrst) = 0.0
+    allocate(tnsthil(1:nrst))        ; tnsthil(1:nrst) = 0.0
+    allocate(ustbas1(1:nrst))        ; ustbas1(1:nrst) = 0.0
+    allocate(vstbas1(1:nrst))        ; vstbas1(1:nrst) = 0.0
+
+    allocate(utrprt1(1:nrtr))        ; utrprt1(1:nrtr) = 0.0
+    allocate(vtrprt1(1:nrtr))        ; vtrprt1(1:nrtr) = 0.0
+    allocate(tntrprt(1:nrtr))        ; tntrprt(1:nrtr) = 0.0
+    allocate(tntrhil(1:nrtr))        ; tntrhil(1:nrtr) = 0.0
+    allocate(utrbas1(1:nrtr))        ; utrbas1(1:nrtr) = 0.0
+    allocate(vtrbas1(1:nrtr))        ; vtrbas1(1:nrtr) = 0.0
+
+    allocate(ubst   (1:nrst))        ; ubst(1:nrst) = 0.0
+    allocate(ubdgst (1:nrst))        ; ubdgst(1:nrst) = 0.0
+    allocate(ubtr   (1:nrtr))        ; ubtr(1:nrtr) = 0.0
+    allocate(ubdgtr (1:nrtr))        ; ubdgtr(1:nrtr) = 0.0
+
+    allocate(ustprt (1:ndat,1:nrst)) ; ustprt (1:ndat,1:nrst) = 0.0
+    allocate(vstprt (1:ndat,1:nrst)) ; vstprt (1:ndat,1:nrst) = 0.0
+    allocate(tstprt (1:ndat,1:nrst)) ; tstprt (1:ndat,1:nrst) = 0.0
+    allocate(ustbas (1:ndat,1:nrst)) ; ustbas (1:ndat,1:nrst) = 0.0
+    allocate(vstbas (1:ndat,1:nrst)) ; vstbas (1:ndat,1:nrst) = 0.0
+    allocate(tstbas (1:ndat,1:nrst)) ; tstbas (1:ndat,1:nrst) = 0.0
+    allocate(nstbas (1:ndat,1:nrst)) ; nstbas (1:ndat,1:nrst) = 0.0
+
+    allocate(utrprt (1:ndat,1:nrtr)) ; utrprt (1:ndat,1:nrtr) = 0.0
+    allocate(vtrprt (1:ndat,1:nrtr)) ; vtrprt (1:ndat,1:nrtr) = 0.0
+    allocate(ttrprt (1:ndat,1:nrtr)) ; ttrprt (1:ndat,1:nrtr) = 0.0
+    allocate(utrbas (1:ndat,1:nrtr)) ; utrbas (1:ndat,1:nrtr) = 0.0
+    allocate(vtrbas (1:ndat,1:nrtr)) ; vtrbas (1:ndat,1:nrtr) = 0.0
+    allocate(ttrbas (1:ndat,1:nrtr)) ; ttrbas (1:ndat,1:nrtr) = 0.0
+    allocate(ntrbas (1:ndat,1:nrtr)) ; ntrbas (1:ndat,1:nrtr) = 0.0
+
+    allocate(wavmst (1:nrst))        ; wavmst (1:nrst) = 0.0
+    allocate(wavmtr (1:nrtr))        ; wavmtr (1:nrtr) = 0.0
+    allocate(rstpsd (1:nrst,1:ndat)) ; rstpsd (1:nrst,1:ndat) = 0.0
+    allocate(rtrpsd (1:nrtr,1:ndat)) ; rtrpsd (1:nrtr,1:ndat) = 0.0
+
+    allocate(rstpsd1(1:nrst))        ; rstpsd1(1:nrst) = 0.0
+    allocate(rtrpsd1(1:nrtr))        ; rtrpsd1(1:nrtr) = 0.0
+
+    allocate(phist  (1:ndat))        ; phist  (1:ndat) = 0.0
+    allocate(degst  (1:ndat))        ; degst  (1:ndat) = 0.0
+    allocate(degnst (1:ndat))        ; degnst (1:ndat) = 0.0
+    allocate(w_fst  (1:ndat))        ; w_fst  (1:ndat) = 0.0
+    allocate(dfst   (1:ndat))        ; dfst   (1:ndat) = 0.0
+    allocate(mbst   (1:ndat))        ; mbst   (1:ndat) = 0.0
+    allocate(kbst   (1:ndat))        ; kbst   (1:ndat) = 0.0
+    allocate(mbast  (1:ndat))        ; mbast  (1:ndat) = 0.0
+    allocate(kbast  (1:ndat))        ; kbast  (1:ndat) = 0.0
+    allocate(czst   (1:ndat))        ; czst   (1:ndat) = 0.0
+    allocate(cist   (1:ndat))        ; cist   (1:ndat) = 0.0
+    allocate(cixst  (1:ndat))        ; cixst  (1:ndat) = 0.0
+    allocate(ciyst  (1:ndat))        ; ciyst  (1:ndat) = 0.0
+    allocate(cgxst  (1:ndat))        ; cgxst  (1:ndat) = 0.0
+    allocate(cgyst  (1:ndat))        ; cgyst  (1:ndat) = 0.0
+    allocate(wgrst  (1:ndat))        ; wgrst  (1:ndat) = 0.0
+    allocate(cgrst  (1:ndat))        ; cgrst  (1:ndat) = 0.0
+    allocate(cxst   (1:ndat))        ; cxst   (1:ndat) = 0.0
+    allocate(cyst   (1:ndat))        ; cyst   (1:ndat) = 0.0
+    allocate(cpxst  (1:ndat))        ; cpxst  (1:ndat) = 0.0
+    allocate(cpyst  (1:ndat))        ; cpyst  (1:ndat) = 0.0
+  
+    allocate(phitr  (1:ndat))        ; phitr  (1:ndat) = 0.0
+    allocate(degtr  (1:ndat))        ; degtr  (1:ndat) = 0.0
+    allocate(degntr (1:ndat))        ; degntr (1:ndat) = 0.0
+    allocate(w_ftr  (1:ndat))        ; w_ftr  (1:ndat) = 0.0
+    allocate(dftr   (1:ndat))        ; dftr   (1:ndat) = 0.0
+    allocate(mbtr   (1:ndat))        ; mbtr   (1:ndat) = 0.0
+    allocate(kbtr   (1:ndat))        ; kbtr   (1:ndat) = 0.0
+    allocate(mbatr  (1:ndat))        ; mbatr  (1:ndat) = 0.0
+    allocate(kbatr  (1:ndat))        ; kbatr  (1:ndat) = 0.0
+    allocate(cztr   (1:ndat))        ; cztr   (1:ndat) = 0.0
+    allocate(citr   (1:ndat))        ; citr   (1:ndat) = 0.0
+    allocate(cixtr  (1:ndat))        ; cixtr  (1:ndat) = 0.0
+    allocate(ciytr  (1:ndat))        ; ciytr  (1:ndat) = 0.0
+    allocate(cgxtr  (1:ndat))        ; cgxtr  (1:ndat) = 0.0
+    allocate(cgytr  (1:ndat))        ; cgytr  (1:ndat) = 0.0
+    allocate(wgrtr  (1:ndat))        ; wgrtr  (1:ndat) = 0.0
+    allocate(cgrtr  (1:ndat))        ; cgrtr  (1:ndat) = 0.0
+    allocate(cxtr   (1:ndat))        ; cxtr   (1:ndat) = 0.0
+    allocate(cytr   (1:ndat))        ; cytr   (1:ndat) = 0.0
+    allocate(cpxtr  (1:ndat))        ; cpxtr  (1:ndat) = 0.0
+    allocate(cpytr  (1:ndat))        ; cpytr  (1:ndat) = 0.0    
+
+    allocate(angs   (1:12))          ; angs   (1:12)   = 0.0
+    allocate(angst  (1:12))          ; angst  (1:12)   = 0.0
+    allocate(angtr  (1:12))          ; angtr  (1:12)   = 0.0
+
+    allocate(cclst  (1:ndat))        ; cclst  (1:ndat) = 0.0
+    allocate( clst  (1:ndat))        ;  clst  (1:ndat) = 0.0
+
+    allocate(ccltr  (1:ndat))        ; ccltr  (1:ndat) = 0.0
+    allocate( cltr  (1:ndat))        ;  cltr  (1:ndat) = 0.0
+
+    allocate(upfrst (1:ndat))        ; upfrst (1:ndat) = 0.0
+    allocate(dnfrst (1:ndat))        ; dnfrst (1:ndat) = 0.0
+
+    allocate(upfrtr (1:ndat))        ; upfrtr (1:ndat) = 0.0
+    allocate(dnfrtr (1:ndat))        ; dnfrtr (1:ndat) = 0.0
+
+    allocate(ruwfst1(1:nrst))        ; ruwfst1(1:nrst) = 0.0
+    allocate(uwflst1(1:nrst))        ; uwflst1(1:nrst) = 0.0
+    allocate(rvwfst1(1:nrst))        ; rvwfst1(1:nrst) = 0.0
+    allocate(vwflst1(1:nrst))        ; vwflst1(1:nrst) = 0.0
+    allocate(ruwftr1(1:nrtr))        ; ruwftr1(1:nrtr) = 0.0
+    allocate(uwfltr1(1:nrtr))        ; uwfltr1(1:nrtr) = 0.0
+    allocate(rvwftr1(1:nrtr))        ; rvwftr1(1:nrtr) = 0.0
+    allocate(vwfltr1(1:nrtr))        ; vwfltr1(1:nrtr) = 0.0
+
+    allocate(ruwfst (1:ndat,1:nrst)) ; ruwfst (1:ndat,1:nrst) = 0.0
+    allocate(uwflst (1:ndat,1:nrst)) ; uwflst (1:ndat,1:nrst) = 0.0
+    allocate(rvwfst (1:ndat,1:nrst)) ; rvwfst (1:ndat,1:nrst) = 0.0
+    allocate(vwflst (1:ndat,1:nrst)) ; vwflst (1:ndat,1:nrst) = 0.0
+    allocate(ruwftr (1:ndat,1:nrtr)) ; ruwftr (1:ndat,1:nrtr) = 0.0
+    allocate(uwfltr (1:ndat,1:nrtr)) ; uwfltr (1:ndat,1:nrtr) = 0.0
+    allocate(rvwftr (1:ndat,1:nrtr)) ; rvwftr (1:ndat,1:nrtr) = 0.0
+    allocate(vwfltr (1:ndat,1:nrtr)) ; vwfltr (1:ndat,1:nrtr) = 0.0
+
+    allocate(mruwst (1:ndat))        ; mruwst (1:ndat) = 0.0
+    allocate(muwfst (1:ndat))        ; muwfst (1:ndat) = 0.0
+    allocate(mrvwst (1:ndat))        ; mrvwst (1:ndat) = 0.0
+    allocate(mvwfst (1:ndat))        ; mvwfst (1:ndat) = 0.0
+    allocate(mruwtr (1:ndat))        ; mruwtr (1:ndat) = 0.0
+    allocate(muwftr (1:ndat))        ; muwftr (1:ndat) = 0.0
+    allocate(mrvwtr (1:ndat))        ; mrvwtr (1:ndat) = 0.0
+    allocate(mvwftr (1:ndat))        ; mvwftr (1:ndat) = 0.0
+
+    allocate(rstbas (1:ndat,1:nrst)) ; rstbas (1:ndat,1:nrst) = 0.0
+    allocate(rtrbas (1:ndat,1:nrtr)) ; rtrbas (1:ndat,1:nrtr) = 0.0
+
+    allocate(rstbas1(1:nrst))        ; rstbas1(1:nrst) = 0.0
+    allocate(rtrbas1(1:nrtr))        ; rtrbas1(1:nrtr) = 0.0
+
+    return
+   
+    end subroutine initvarspec
+
+    end module varspec

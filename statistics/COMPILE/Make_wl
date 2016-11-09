@@ -1,0 +1,25 @@
+#
+#
+FC = /usr/bin/f90
+RM = /usr/bin/rm
+NCINC = /usr/local/netcdf/include
+NCLIB = /usr/local/netcdf/lib
+
+stat:		stat.o waveletpack.o wavelet.o chisqr.o regress.o random.o netcdfio.o
+		$(FC) -o stat stat.o waveletpack.o wavelet.o chisqr.o regress.o random.o netcdfio.o -L$(NCLIB) -lnetcdf
+chisqr.o:	chisqr.f
+		$(FC) -c chisqr.f
+regress.o:	regress.f90
+		$(FC) -c regress.f90
+random.o:   random.f90
+		$(FC) -c random.f90
+wavelet.o:	wavelet.f
+		$(FC) -c wavelet.f
+waveletpack.o:	waveletpack.f90 regress.o netcdfio.o
+		$(FC) -c waveletpack.f90 regress.o netcdfio.o
+netcdfio.o: netcdfio.f90
+		$(FC) -c -I$(NCINC) netcdfio.f90
+stat.o:	stat.f90 waveletpack.o netcdfio.o random.o
+		$(FC) -c -I$(NCINC) stat.f90 netcdfio.o waveletpack.o random.o
+clean:	*.o *.mod
+		$(RM) *.o *.mod

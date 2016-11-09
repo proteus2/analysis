@@ -1,0 +1,5 @@
+cp ssab.f90 COMPILE/stat.f90
+cd COMPILE
+make
+stat
+

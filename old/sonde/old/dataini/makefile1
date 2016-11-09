@@ -1,0 +1,23 @@
+#
+#
+FC = /usr/bin/f90
+RM = /usr/bin/rm
+NCINC = /usr/local/netcdf/include
+NCLIB = /usr/local/netcdf/lib
+
+band1:    	band1.o fft.o  cubicspline.o netcdfio.o cfftpack.o regress.o
+		$(FC) -o band1 band1.o fft.o cubicspline.o cfftpack.o regress.o  netcdfio.o -L$(NCLIB) -lnetcdf
+netcdfio.o:	netcdfio.f90
+		$(FC) -c -I$(NCINC) netcdfio.f90
+fft.o:		fft.f90
+		$(FC) -c fft.f90 fft.o
+cfftpack.o:	cfftpack.f90
+		$(FC) -c cfftpack.f90 cfftpack.o
+regress.o:	regress.f90
+		$(FC) -c regress.f90 
+cubicspline.o:	cubicspline.f90
+		$(FC) -c cubicspline.f90 cubicspline.o cfftpack.o
+band1.o:	  	band1.f90 fft.o netcdfio.o cubicspline.o cfftpack.o regress.o
+		$(FC) -c -I$(NCINC) band1.f90 fft.o netcdfio.o cubicspline.o cfftpack.o regress.o
+clean:		*.o *.mod
+		$(RM) *.o *.mod

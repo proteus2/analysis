@@ -1,0 +1,24 @@
+#! /bin/bash
+
+##------------------------- Options
+year1=1979
+year2=2013
+yearf=1979
+filetype=''
+
+## year1    : the first year for the index to be plotted
+## year2    : the last year for the index to be plotted
+## yearf    : the year for 850-hPa wind anomaly to be plotted
+## filetype : output figure file extension - eps/jpg/png
+##              The default is 'eps' if it is blank.
+
+
+##------------------------- Do not modify below unless a problem arises.
+#NCARG_ROOT=
+
+## NCARG_ROOT : Insert this only when an error occurs due to the failure
+##                of searching the NCL root directory automatically.
+
+
+##------------------------- Do not modify below.
+cd process ; . ./main.sh

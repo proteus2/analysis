@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sed -e 's/Box: 36 126 576 666/Box: 76 416 536 666/' -i nbe_climatology_???_revision_370.eps
+

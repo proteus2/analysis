@@ -1,0 +1,93 @@
+#! /bin/bash
+
+# Variable information
+input0=( u_m   v_m   t_m   h_m   )
+categ0=( assm  assm  assm  assm  )
+lvl0=(   pl    pl    pl    pl    )
+vname0=( u     v     t     h     )
+sname0=( MAIMNPANA MAIMNPANA MAIMNPANA MAIMNPANA )
+
+# Input arguments
+vv_f="$1"
+yyyy_f="$2"
+m_f="$3"
+dd_f="$4"
+lev_f="$5"
+
+if [ $# -eq 6 ] ; then
+  lays="${lev_f}%2C$6"
+  lev_f="${lev_f}_$6"
+else
+  lays="$lev_f"
+fi
+
+# Variable selection
+cnt_f=0
+for input in ${input0[@]} ; do
+  if [ "$vv_f" == "$input" ] ; then
+    categ="${categ0[$cnt_f]}"
+    lvl="${lvl0[$cnt_f]}"
+    vname="${vname0[$cnt_f]}"
+    sname="${sname0[$cnt_f]}"
+  fi
+  cnt_f=$(( $cnt_f + 1 ))
+done
+
+# Standard name
+fmid=""
+if [ "$sname" == "MAI3CPASM" ] ; then fmid="inst3_3d_asm_Cp" ; fi
+if [ "$sname" == "MAIMCPASM" ] ; then fmid="instM_3d_asm_Cp" ; fi
+if [ "$sname" == "MAIMNPANA" ] ; then fmid="instM_3d_ana_Np" ; fi
+if [ "$fmid" == "" ] ; then
+  echo "append the standard name of the product in $0" ; exit
+fi
+
+# Assimilation stream
+if [ $yyyy_f -ge 1979 -a $yyyy_f -le 1992 ] ; then MXXX=100 ; fi
+if [ $yyyy_f -ge 1993 -a $yyyy_f -le 2000 ] ; then MXXX=200 ; fi
+if [ $yyyy_f -ge 2001                     ] ; then MXXX=300 ; fi
+if [ $yyyy_f -eq 2010 ] ; then
+  if [ "$m_f" == "06" -o "$m_f" == "07" -o "$m_f" == "08" ] || \
+     [ "$sname" == "MAIMCPASM" -a "$m_f" == "05" ]          || \
+     [ "$sname" == "MAIMNPANA" -a "$m_f" == "05" ] ; then MXXX=301 ; fi
+fi
+
+# Make URL for wget
+FORMAT='TmV0Q0RGL2d6aXAv'
+BBOX='0%2C80%2C60%2C170'
+FLAGS=''
+SERVICE='SUBSET_LATS4D'
+LAYERS="LAYER_$lays"
+VERSION='1.02'
+
+SHORTNAME="${sname}.5.2.0"
+VARIABLES="$vname"
+
+LABELHEAD="MERRA$MXXX.prod.assim.$fmid"
+
+if [ "$fmid" == "instM_3d_asm_Cp" ] || [ "$fmid" == "instM_3d_ana_Np" ] ; then
+  LABEL="merra.$vv_f.$categ.$lvl$lev_f.$yyyy_f$m_f.nc.gz"
+  FILENAME="%2Fdata%2Fs4pa%2FMERRA_MONTHLY%2F${SHORTNAME}%2F${yyyy_f}%2F${LABELHEAD}.${yyyy_f}${m_f}.hdf"
+else
+  LABEL="merra.$vv_f.$categ.$lvl$lev_f.$yyyy_f$m_f$dd_f.nc.gz"
+  FILENAME="%2Fdata%2Fs4pa%2FMERRA%2F${SHORTNAME}%2F${yyyy_f}%2F${m_f}%2F${LABELHEAD}.${yyyy_f}${m_f}${dd_f}.hdf"
+fi
+
+if [ "$lvl" == "sfc" ] ; then
+  url='http://goldsmr2.sci.gsfc.nasa.gov/daac-bin/OTF/HTTP_services.cgi'
+else
+  url='http://goldsmr3.sci.gsfc.nasa.gov/daac-bin/OTF/HTTP_services.cgi'
+fi
+
+url="${url}?FILENAME=$FILENAME"
+url="${url}&FORMAT=$FORMAT"
+url="${url}&BBOX=$BBOX"
+url="${url}&LABEL=$LABEL"
+url="${url}&FLAGS=$FLAGS"
+url="${url}&SHORTNAME=$sname" #$SHORTNAME"
+url="${url}&SERVICE=$SERVICE"
+url="${url}&LAYERS=$LAYERS"
+url="${url}&VERSION=$VERSION"
+url="${url}&VARIABLES=$VARIABLES"
+#echo "${url}"
+

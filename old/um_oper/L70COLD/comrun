@@ -1,0 +1,109 @@
+#! /bin/tcsh
+
+
+set exec_s = 'header000'
+set exec_p = 'header000'
+
+@ par = 0
+
+@ irun = 0
+
+echo '========================================='
+echo ' Compile starts'
+
+foreach src ( $argv )
+
+  if ($src == 'p') then
+
+    @ par = 1
+
+  else
+
+    @ irun++
+
+    # compile
+    @ nbody = `expr length $src` - 3
+    set tail = `expr substr $src $nbody 4`
+    if ( "$tail" == ".f90" ) then
+      cp $src COMPILE/anal.f90
+    else
+      cp $src.f90 COMPILE/anal.f90
+    endif
+    cd COMPILE
+    if (-e ./runn) then
+      rm -f ./runn
+    endif
+    make
+    sleep 1.2
+    if ($status != 0) then
+      echo "COMPILE ERROR : $src.f90"
+      echo "== STOP ================================="
+      exit 1
+    endif
+
+    # set executives
+    if ($par == 0) then
+      set exec_s = ( $exec_s run_$irun.$src )
+    else
+      set exec_p = ( $exec_p run_$irun.$src )
+    endif
+
+    if (-e ../run_$irun.$src) then
+      rm -f ../run_$irun.$src
+    endif
+    cp runn ../run_$irun.$src ; cd ..
+
+  endif
+
+end
+
+echo '-----------------------------------------'
+echo ' Compile ends'
+echo '========================================='
+
+@ irun = 0
+
+if ($#exec_s > 1) then
+  foreach ex ( $exec_s )
+    if ($ex == 'header000') then
+      echo ' Serial runs'
+    else
+      @ irun++
+      echo '-----------------------------------------'
+      echo "> $ex"
+      ./$ex #>&! log/log.$ex
+      if ($status != 0) then
+        echo "EXECUTIVE ERROR : $ex"
+        echo "== STOP ================================="
+        exit 1
+      endif
+      rm -f ./$ex
+    endif
+  end
+  echo
+endif
+
+if ($#exec_p > 1) then
+  foreach ex ( $exec_p )
+    if ($ex == 'header000') then
+      echo ' Parallel runs from now'
+      if (-e ./vip) then
+        rm -f vip
+      endif
+      touch ./vip ; chmod 755 ./vip
+    else
+      @ irun++
+      echo '-----------------------------------------'
+      echo "> $ex"
+#      (./$ex >&! log/log.$ex) &
+      echo "vi log/log.$ex" >> ./vip
+      echo ; echo "Check log/log.$ex"
+      endif
+    endif
+  end
+  echo
+endif
+
+
+exit 0
+

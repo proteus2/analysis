@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cd dat2b
+
+files=( ../dat2a/test1.cam2.h0.*.nc )
+files=( ${files[@]} /data18/kyh/model/CESM/scratch/test1/test1/run/test1.cam2.h0.*.nc )
+
+for ff in ${files[@]} ; do
+  ln -s $ff
+done
+

@@ -1,0 +1,5 @@
+cp sa1a.f90 COMPILE/stat.f90
+cd COMPILE
+make
+stat
+

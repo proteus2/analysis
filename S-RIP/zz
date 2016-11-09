@@ -1,0 +1,16 @@
+#/bin/bash
+
+ncl param0_p=10 var_ko-log-an.ncl
+ncl param0_p=20 var_ko-log-an.ncl
+ncl param0_p=30 var_ko-log-an.ncl
+ncl param0_p=50 var_ko-log-an.ncl
+ncl param0_p=70 var_ko-log-an.ncl
+ncl param0_p=100 var_ko-log-an.ncl
+
+ncl param0_p=10 var_ko-log-an2.ncl
+ncl param0_p=20 var_ko-log-an2.ncl
+ncl param0_p=30 var_ko-log-an2.ncl
+ncl param0_p=50 var_ko-log-an2.ncl
+ncl param0_p=70 var_ko-log-an2.ncl
+ncl param0_p=100 var_ko-log-an2.ncl
+

@@ -1,0 +1,25 @@
+
+[ Visualization of the Northeast Asian Summer Monsoon Index and 
+  regressed precipitation pattern using CMAP data ]
+
+Version : 1.0
+Date    : 2013. 11. 20.
+
+Written by Young-Ha Kim and Hye-Yeong Chun (Yonsei University)
+
+------------------------------------------------------------------------
+This program downloads the CPC (Climate Prediction Center) Merged 
+Analysis of Precipitation (CMAP) data, and calculates the Northeast 
+Asian Summer Monsoon Index (NEASMI) defined by Lee et al. (2005, JCL).
+As a result, time-series of the NEASMI is plotted during the specified 
+period as well as the climatology and the regressed pattern of the 
+precipitation.
+To do this, type 'run_neasmi' after specifying parameters for the 
+plotting period by editting 'run_neasmi'.
+Users can refer to the files in the directory 'sample' for preview of 
+the output of this program.
+------------------------------------------------------------------------
+
+Required program : NCAR Command Language (NCL)
+                   wget (only if users want to get the most recent data)
+

@@ -1,0 +1,13 @@
+
+odeint :
+
+  The last argument of the subroutine odeint in the calling program can
+  be one of rkqs, bsstep, stiff, and stifbs (see NR chap.16).
+  Note that there are two files which contain "bsstep".
+
+bsstep.f90 vs bsstep_2nd.f90 :
+
+  The subroutine bsstep is contained in the both, and the latter file
+  can be used instead of bsstep.f90 when the problem is 2nd-order 
+  differential equation set.
+

@@ -1,0 +1,943 @@
+!2345
+    program psdanal 
+
+!----------------------------------------------------------------------------------
+!
+!   Purpose:
+!
+!   To calculate vertical wavenumber spectra of normalized temperature,
+!   zonal wind, and meridional wind in the stratosphere.
+!
+!   Author:
+!
+!   In-Sun Song
+!   Laboratory for Mesoscale Dynamics
+!   Department of Atmospheric Sciences, Yonsei University, Seoul, Korea
+!
+!   Version history:
+!
+!   23 September, 2000
+!   Revised from earlier version
+!
+!   2 May, 2002
+!   Rewrite program using Fortran 90 structure
+!   Added fully descriptive comment for future reference   
+!
+!   5 December, 2002
+!   Combined tropospheric analysis and stratospheric analysis
+!   Changed IO routine to read input data
+!   Changed IO routine to dump results as a NetCDF data file
+!
+!   Required library:
+!
+!   NetCDF (higher version than 3.4)
+!   NCAR GRAPHICS (higher version that 4.0)
+!   NONFIT module based on MINPACK-1 libarary 
+!   CFFTPACK
+!
+!   Variables:
+!
+!   nrst    : The number of levels in the stratospheric data analysis
+!   nrtr    : The number of levels in the tropospheric data analysis
+!
+!   grav    : The gravitational constant
+!   pp      : 5/3
+!   pi      : 3.141592
+!
+!   month   : Month
+!
+!----------------------------------------------------------------------------------
+
+    use varpsd
+    use varnfit
+    use pwrspd
+    use nonfit
+    use graphicpsd
+    use netcdfio
+
+    implicit none
+
+!----------------------------------------------------------------------------------
+!
+!   Constants
+!
+!----------------------------------------------------------------------------------
+
+    real,    parameter :: grav = 9.806, pp = 5./3. ,eps = 1.e-30
+    real               :: pi
+
+!----------------------------------------------------------------------------------
+!
+!   Input parameters
+!
+!----------------------------------------------------------------------------------
+
+    character(len=100)                :: rdir   
+    integer                           :: year   ,month   ,year2
+    real                              :: tau 
+    character(len=1)                  :: leap
+    character(len=8), dimension(1000) :: addmsg
+ 
+!----------------------------------------------------------------------------------
+!
+!   Variables
+!
+!   wmean    : Mean rising velocity of rawinsonde (m/s)
+!   restime  : Response time of the temperature sensor in sonde to the fluctuation
+!              of the temperature field. (s)
+!
+!----------------------------------------------------------------------------------
+
+    integer                           :: ndat   ,nrst   ,nrtr   ,neffst ,nefftr ,err
+    integer, dimension(12)            :: daymon
+    character(len=8  )                :: date
+    character(len=100)                :: grimfst,grimftr
+    character(len=100)                :: rfnst1 ,rfnst2 ,rfnst3 ,rfnst4 ,rfnst5 ,rfnst6
+    character(len=100)                :: rfntr1 ,rfntr2 ,rfntr3 ,rfntr4 ,rfntr5 ,rfntr6
+    character(len=100)                :: wfnst00,wfntr00
+    character(len=100)                :: wfnst01,wfnst02,wfnst03,wfnst04,wfnst05,wfnst06
+    character(len=100)                :: wfnst07,wfnst08,wfnst09,wfnst10,wfnst11,wfnst12
+    character(len=100)                :: wfnst13,wfnst14,wfnst15,wfnst16,wfnst17,wfnst18
+    character(len=100)                :: wfntr01,wfntr02,wfntr03,wfntr04,wfntr05,wfntr06
+    character(len=100)                :: wfntr07,wfntr08,wfntr09,wfntr10,wfntr11,wfntr12
+    character(len=100)                :: wfntr13,wfntr14,wfntr15,wfntr16,wfntr17,wfntr18
+    character(len=100)                :: tmpnam1,tmpnam2
+    integer                           :: ncidst1,ncidst2,ncidst3,ncidst4,ncidst5,ncidst6
+    integer                           :: ncidtr1,ncidtr2,ncidtr3,ncidtr4,ncidtr5,ncidtr6
+    logical                           :: stanal ,tranal
+    logical                           :: iex1   ,iex2   ,loop
+    real                              :: dz     ,wmean  ,restime,msgv   
+    integer                           :: naddmsg,yrmsg  ,monmsg ,daymsg ,hrmsg  ,iter
+
+    double precision                  :: sum
+
+!----------------------------------------------------------------------------------
+!
+!   Loop indices
+!
+!----------------------------------------------------------------------------------
+
+    integer                           :: id     ,ih     ,it     ,k     ,l
+
+    namelist /psdparm/   rdir   ,year  ,month ,leap  ,tau   ,addmsg
+
+    external fcn
+
+!----------------------------------------------------------------------------------
+!
+!   Begin program  
+!
+!----------------------------------------------------------------------------------
+
+    do k=1,1000
+      addmsg(k) = 'xxxxxxxx'
+    end do
+
+!----------------------------------------------------------------------------------
+!   Read input parameters
+!----------------------------------------------------------------------------------
+ 
+    read(5,psdparm)
+   
+!----------------------------------------------------------------------------------
+!   Constants 
+!----------------------------------------------------------------------------------
+ 
+    pi = 4.*atan(1.)
+    restime = 8.0
+
+    year2 = year
+    if ( year >= 2000 ) then
+      year = year - 2000
+    else if ( year >= 1900 ) then
+      year = year - 1900
+    end if
+
+    daymon = (/31,28,31,30,31,30,31,31,30,31,30,31/)
+    if ( leap == 'T' ) then
+      daymon(2) = 29
+    end if
+
+    do k=1,1000
+      if ( addmsg(k) == 'xxxxxxxx' ) then
+        naddmsg = k-1
+        go to 10
+      end if
+    end do
+10  continue
+
+!----------------------------------------------------------------------------------
+!
+!   Initialize NCAR graphics
+!
+!----------------------------------------------------------------------------------
+
+    call GOPKS(30,0)
+
+    write(grimfst,100) trim(rdir)//'/st/',year2,month,'/stpsds_',year,month,'.ps'
+    write(grimftr,100) trim(rdir)//'/tr/',year2,month,'/trpsds_',year,month,'.ps'
+
+    call NGSETC('ME.',trim(grimfst))
+    call GOPWK(1,0,20)
+
+    call GSCR(1,0,1.000,1.000,1.000)
+    call GSCR(1,1,0.000,0.000,0.000)
+    call GSCR(1,2,0.700,0.000,0.000)
+    call GSCR(1,3,0.000,0.000,0.700)
+    call GSCR(1,4,0.000,0.700,0.000)
+
+    call NGSETC('ME',trim(grimftr))
+    call GOPWK(2,0,20)
+
+    call GSCR(2,0,1.000,1.000,1.000)
+    call GSCR(2,1,0.000,0.000,0.000)
+    call GSCR(2,2,0.700,0.000,0.000)
+    call GSCR(2,3,0.000,0.000,0.700)
+    call GSCR(2,4,0.000,0.700,0.000)
+
+!----------------------------------------------------------------------------------
+!
+!   Reading data
+!
+!----------------------------------------------------------------------------------
+
+    write(rfnst1,100) trim(rdir)//'/add_data/st/', 'bvstprt',year,month, '.nc'
+    write(rfnst2,100) trim(rdir)//'/add_data/st/', 'ustprt',year,month, '.nc'
+    write(rfnst3,100) trim(rdir)//'/add_data/st/', 'vstprt',year,month, '.nc'
+    write(rfnst4,100) trim(rdir)//'/add_data/st/', 'tstprt',year,month, '.nc'
+    write(rfnst5,100) trim(rdir)//'/add_data/st/', 'tstbas',year,month, '.nc'
+    write(rfntr1,100) trim(rdir)//'/add_data/tr/', 'bvtrprt',year,month, '.nc'
+    write(rfntr2,100) trim(rdir)//'/add_data/tr/', 'utrprt',year,month, '.nc'
+    write(rfntr3,100) trim(rdir)//'/add_data/tr/', 'vtrprt',year,month, '.nc'
+    write(rfntr4,100) trim(rdir)//'/add_data/tr/', 'ttrprt',year,month, '.nc'
+    write(rfntr5,100) trim(rdir)//'/add_data/tr/', 'ttrbas',year,month, '.nc'
+
+100 format(a,i4.4,i2.2,a,i2.2,i2.2,a)
+
+    call opennc(trim(rfnst1),ncidst1)
+    call opennc(trim(rfnst2),ncidst2)
+    call opennc(trim(rfnst3),ncidst3)
+    call opennc(trim(rfnst4),ncidst4)
+    call opennc(trim(rfnst5),ncidst5)
+    call opennc(trim(rfntr1),ncidtr1)
+    call opennc(trim(rfntr2),ncidtr2)
+    call opennc(trim(rfntr3),ncidtr3)
+    call opennc(trim(rfntr4),ncidtr4)
+    call opennc(trim(rfntr5),ncidtr5)
+
+    call getdimlen(ncidst1,'TIME',ndat)
+    call getdimlen(ncidst2,'Z'   ,nrst)
+    call getdimlen(ncidtr2,'Z'   ,nrtr)
+
+    call initvarpsd(ndat  ,nrst  ,nrtr  )
+
+    call get1d(ncidst1,'TIME'  ,ndat     ,normt )
+    call get1d(ncidst2,'Z'     ,nrst     ,zst   )
+    call get1d(ncidtr2,'Z'     ,nrtr     ,ztr   )
+
+    dz = zst(2)-zst(1)
+    msgv = 1.e+32
+
+    call get2d(ncidst1,'BVBAS' ,ndat,nrst,nstbas)
+    call get2d(ncidst2,'UPRT'  ,ndat,nrst,ustprt)
+    call get2d(ncidst3,'VPRT'  ,ndat,nrst,vstprt)
+    call get2d(ncidst4,'TPRT'  ,ndat,nrst,tstprt)
+    call get2d(ncidst5,'TBAS'  ,ndat,nrst,tstbas)
+    call get2d(ncidtr1,'BVBAS' ,ndat,nrtr,ntrbas)
+    call get2d(ncidtr2,'UPRT'  ,ndat,nrtr,utrprt)
+    call get2d(ncidtr3,'VPRT'  ,ndat,nrtr,vtrprt)
+    call get2d(ncidtr4,'TPRT'  ,ndat,nrtr,ttrprt)
+    call get2d(ncidtr5,'TBAS'  ,ndat,nrtr,ttrbas)
+
+    do it=1,ndat
+      do k=1,nrst
+        avgstn(it) = avgstn(it) + nstbas(it,k)/float(nrst)
+      end do
+      do k=1,nrtr
+        avgtrn(it) = avgtrn(it) + ntrbas(it,k)/float(nrtr)
+      end do
+    end do
+
+    call closenc(ncidst1)
+    call closenc(ncidst2)
+    call closenc(ncidst3)
+    call closenc(ncidst4)
+    call closenc(ncidst5)
+    call closenc(ncidtr1)
+    call closenc(ncidtr2)
+    call closenc(ncidtr3)
+    call closenc(ncidtr4)
+    call closenc(ncidtr5)
+
+!----------------------------------------------------------------------------------
+!
+!   Define parameters in VARNFIT
+!
+!----------------------------------------------------------------------------------
+
+    nma  = 3
+    nregst = nrst/2
+    nregtr = nrtr/2
+
+    lwa  = max(nregst,nregtr)*nma+2*max(nregst,nregtr)+6*nma+10
+!   tol  = dsqrt(dpmpar(1))
+    tol  = 1.d-10
+
+    call initvarnfit(ndat  ,nrst  ,nrtr  )
+
+!----------------------------------------------------------------------------------
+!
+!   Making output file name 
+!
+!----------------------------------------------------------------------------------
+
+    write(wfnst00,100) trim(rdir)//'/st/',year2,month,'/stwavl_' ,year,month,'.nc'
+    write(wfnst01,100) trim(rdir)//'/st/',year2,month,'/sttpsd_' ,year,month,'.nc'
+    write(wfnst02,100) trim(rdir)//'/st/',year2,month,'/sttsat_' ,year,month,'.nc'
+    write(wfnst03,100) trim(rdir)//'/st/',year2,month,'/stupsd_' ,year,month,'.nc'
+    write(wfnst04,100) trim(rdir)//'/st/',year2,month,'/stusat_' ,year,month,'.nc'
+    write(wfnst05,100) trim(rdir)//'/st/',year2,month,'/stvpsd_' ,year,month,'.nc'
+!    write(wfnst06,100) trim(rdir)//'/st/',year2,month,'/sterat_' ,year,month,'.nc'
+    write(wfnst07,100) trim(rdir)//'/st/',year2,month,'/sttpsdm_',year,month,'.nc'
+    write(wfnst08,100) trim(rdir)//'/st/',year2,month,'/stupsdm_',year,month,'.nc'
+    write(wfnst09,100) trim(rdir)//'/st/',year2,month,'/stvpsdm_',year,month,'.nc'
+    write(wfnst10,100) trim(rdir)//'/st/',year2,month,'/sttsatm_',year,month,'.nc'
+    write(wfnst11,100) trim(rdir)//'/st/',year2,month,'/stusatm_',year,month,'.nc'
+!    write(wfnst12,100) trim(rdir)//'/st/',year2,month,'/steratm_',year,month,'.nc'
+    write(wfnst13,100) trim(rdir)//'/st/',year2,month,'/stnfit_' ,year,month,'.nc'
+    write(wfnst14,100) trim(rdir)//'/st/',year2,month,'/stnfitm_',year,month,'.nc'
+    write(wfnst15,100) trim(rdir)//'/st/',year2,month,'/stnfpm_' ,year,month,'.nc'
+    write(wfnst16,100) trim(rdir)//'/st/',year2,month,'/stnfpmm_',year,month,'.nc'
+
+    write(wfntr00,100) trim(rdir)//'/tr/',year2,month,'/trwavl_' ,year,month,'.nc'
+    write(wfntr01,100) trim(rdir)//'/tr/',year2,month,'/trtpsd_' ,year,month,'.nc'
+    write(wfntr02,100) trim(rdir)//'/tr/',year2,month,'/trtsat_' ,year,month,'.nc'
+    write(wfntr03,100) trim(rdir)//'/tr/',year2,month,'/trupsd_' ,year,month,'.nc'
+    write(wfntr04,100) trim(rdir)//'/tr/',year2,month,'/trusat_' ,year,month,'.nc'
+    write(wfntr05,100) trim(rdir)//'/tr/',year2,month,'/trvpsd_' ,year,month,'.nc'
+    write(wfntr06,100) trim(rdir)//'/tr/',year2,month,'/trerat_' ,year,month,'.nc'
+    write(wfntr07,100) trim(rdir)//'/tr/',year2,month,'/trtpsdm_',year,month,'.nc'
+    write(wfntr08,100) trim(rdir)//'/tr/',year2,month,'/trupsdm_',year,month,'.nc'
+    write(wfntr09,100) trim(rdir)//'/tr/',year2,month,'/trvpsdm_',year,month,'.nc'
+    write(wfntr10,100) trim(rdir)//'/tr/',year2,month,'/trtsatm_',year,month,'.nc'
+    write(wfntr11,100) trim(rdir)//'/tr/',year2,month,'/trusatm_',year,month,'.nc'
+!    write(wfntr12,100) trim(rdir)//'/tr/',year2,month,'/treratm_',year,month,'.nc'
+    write(wfntr13,100) trim(rdir)//'/tr/',year2,month,'/trnfit_' ,year,month,'.nc'
+    write(wfntr14,100) trim(rdir)//'/tr/',year2,month,'/trnfitm' ,year,month,'.nc'
+    write(wfntr15,100) trim(rdir)//'/tr/',year2,month,'/trnfpm_' ,year,month,'.nc'
+    write(wfntr16,100) trim(rdir)//'/tr/',year2,month,'/trnfpmm_',year,month,'.nc'
+
+!----------------------------------------------------------------------------------
+!
+!   Loop 
+!
+!----------------------------------------------------------------------------------
+
+    neffst = 0
+    nefftr = 0
+
+
+    do it=1,ndat
+
+        stanal = .true.
+        tranal = .true.
+
+        if ( avgstn(it) == msgv ) stanal = .false.
+        if ( avgtrn(it) == msgv ) tranal = .false.
+
+        if ( stanal ) then
+
+          write(6,'(a)') 'POWER SPECTRUM IN THE STRATOSPHERE'
+
+          do k=1,nrst
+            tnstprt(k) = tstprt(it,k)/tstbas(it,k)
+          end do
+
+          call psd(nrst ,2   ,2   ,zst  ,dz    ,tnstprt(1:nrst)  ,wavnst ,tstpsd1)
+          call psd(nrst ,2   ,2   ,zst  ,dz    ,ustprt(it,1:nrst),wavnst ,ustpsd1)
+          call psd(nrst ,2   ,2   ,zst  ,dz    ,vstprt(it,1:nrst),wavnst ,vstpsd1)
+
+!----------------------------------------------------------------------------------
+!         Correct the response time error in the stratosphere.
+!         This correction scheme is suggested in Allen and Vincent(1995).
+!         They did not apply this correction to the normalized temperature 
+!         perturation spectra in the troposphere because the response time of 
+!         sensor is very small in the troposphere.
+!----------------------------------------------------------------------------------
+!
+!          wmean = 0.0
+!          do k=1,nrst
+!            wmean = wmean + wstbas(it,k)
+!          end do
+!          wmean = wmean/float(nrst)
+! 
+!          write(6,'(a,f12.5,a)') 'MEAN SONDE RISING SPEED : ',wmean,' (m/s)'
+!  
+!          do k=1,nrst/2+1
+!            tstpsdc1(k) = tstpsd1(k)*(1.+(2.*pi*wavnst(k)*wmean*restime)**2 )
+!          end do
+!
+!          do k=1,nrst/2+1
+!            sterat1(k) = (ustpsd1(k)+vstpsd1(k))/(((grav/avgstn(it))**2)*tstpsdc1(k))
+!          end do
+!
+!----------------------------------------------------------------------------------
+!         Smooth power spectral density function for use in nonlinear linear
+!         regression.        
+!----------------------------------------------------------------------------------
+
+          call smooth(nrst/2,wavnst(2:nrst/2+1),tstpsd1 (2:nrst/2+1),tstpsdm1 (2:nrst/2+1))
+!          call smooth(nrst/2,wavnst(2:nrst/2+1),tstpsdc1(2:nrst/2+1),tstpsdcm1(2:nrst/2+1))
+          call smooth(nrst/2,wavnst(2:nrst/2+1),ustpsd1 (2:nrst/2+1),ustpsdm1 (2:nrst/2+1))
+          call smooth(nrst/2,wavnst(2:nrst/2+1),vstpsd1 (2:nrst/2+1),vstpsdm1 (2:nrst/2+1))
+
+          tstpsdm1 (1) = tstpsd1 (1)
+!          tstpsdcm1(1) = tstpsdc1(1)
+          ustpsdm1 (1) = ustpsd1 (1)
+          vstpsdm1 (1) = vstpsd1 (1)
+
+!----------------------------------------------------------------------------------
+!   Nonlinear regression of PSD of normalized temperature perturbation in ST
+!----------------------------------------------------------------------------------
+
+          write(6,'(a)') 'NONLINEAR REGRESSION IN THE ST'
+
+          iter = 0
+
+          loop = .true.
+
+          do while ( loop )
+
+            iter = iter + 1
+
+            dfitst(1:nregst) = 0.d0
+
+            uxst(1:nregst) = dble(wavnst(2:nregst+1))
+!            uyst(1:nregst) = dble(tstpsdcm1(2:nregst+1))
+
+            sum = 0.d0
+            do l=1,nregst
+              sum = sum + uyst(l)
+            end do
+            na(1) = sum*(uxst(2)-uxst(1))/uxst(1)
+            na(2) = uxst(1) + ((uxst(2)-uxst(1))/1000.)*(iter-1)
+            na(3) = 3.d+00 
+
+            call lmdifdrv(fcn,nregst,uxst,uyst,nma,na,dfitst,tol,info,iwa,wa,lwa)  
+
+            loop = (iter <= 1000) .and. ( (na(1) < 0.d0) .or. (na(2) < 0.d0) .or.  &
+                   (na(3) < 0.d0) .or. (info < 0) .or. (na(3) > 4.d0) .or. (na(3) < 2.d0) )
+
+          end do
+
+          write(6,'(a,i2)')           'LMDIFDRV EXIT CODE : ',info
+          write(6,'(a,3(f12.5,1x)))') 'F0, m*, t          : ',na(1),na(2),na(3)
+
+          do l=1,nrst/2+1
+            fitst(l,it) = real(na(1)*(wavnst(l)/na(2))/(1.+(wavnst(l)/na(2))**(na(3)+1)))
+            if ( fitst(l,it) < 1.e-30 ) fitst(l,it) = 1.e-30
+          end do 
+
+          f0st(it)     = real(na(1))
+          mstarst(it)  = real(na(2))
+          tslopest(it) = real(na(3))
+
+!----------------------------------------------------------------------------------
+!         Construct the gravity wave saturation limit in the stratosphere.
+!
+!         Reference:
+!         Allen, S. J. and R. A. Vincent, 1995: Gravity wave activity in the
+!         lower atmosphere: Seasonal and latitudianl variations. J. Geophys.
+!         Res., 100, 1327-1350
+!         Smith, S. A., D. C. Fritts, and T. E. VanZandt, 1987: Evidence for
+!         a saturated spectrum of atmospheric gravity waves. J. Atmos. Sci.,
+!         44, 1404-1410.
+!----------------------------------------------------------------------------------
+
+          write(6,'(a)') 'GRAVITY WAVE SATURATION LIMIT IN THE STRATOSPHERE'
+
+          do k=2,nrst/2+1
+            tstsat1(k)=(avgstn(it)**4)/(6*grav**2)*(1/pp)*(1/(4*pi**2))*(1/wavnst(k))**3
+          end do
+          tstsat1(1)=tstsat1(2)
+
+          do k=2,nrst/2+1
+            ustsat1(k)=(avgstn(it)**2)/(6)*(1/(4*pi**2))*(1/wavnst(k))**3
+          end do
+          ustsat1(1)=ustsat1(2)
+
+          do k=1,nrst/2+1
+            if ( k == 1 ) then
+              wavlst(k)      = msgv
+            else
+              wavlst(k)      = 0.001/wavnst(k)
+            end if
+            tstpsd  (k,it) = tstpsd1  (k)
+!            tstpsdc (k,it) = tstpsdc1 (k)
+            ustpsd  (k,it) = ustpsd1  (k)
+            vstpsd  (k,it) = vstpsd1  (k)
+            tstpsdm (k,it) = tstpsdm1 (k)
+!            tstpsdcm(k,it) = tstpsdcm1(k)
+            ustpsdm (k,it) = ustpsdm1 (k)
+            vstpsdm (k,it) = vstpsdm1 (k)
+            tstsat  (k,it) = tstsat1  (k)
+            ustsat  (k,it) = ustsat1  (k)
+!            sterat  (k,it) = sterat1  (k)
+          end do
+
+          neffst = neffst + 1
+
+          do k=1,nrst/2+1
+             tstpsd_mean(k) =  tstpsd_mean(k) +  tstpsd1 (k)
+!            tstpsdc_mean(k) = tstpsdc_mean(k) +  tstpsdc1(k)
+!            tstpsdm_mean(k) = tstpsdm_mean(k) +  tstpsdcm1(k)
+             ustpsd_mean(k) =  ustpsd_mean(k) +  ustpsd1 (k)
+            ustpsdm_mean(k) = ustpsdm_mean(k) +  ustpsdm1(k)
+             vstpsd_mean(k) =  vstpsd_mean(k) +  vstpsd1 (k)
+            vstpsdm_mean(k) = vstpsdm_mean(k) +  vstpsdm1(k)
+             tstsat_mean(k) =  tstsat_mean(k) +  tstsat1 (k)
+             ustsat_mean(k) =  ustsat_mean(k) +  ustsat1 (k)
+!             sterat_mean(k) =  sterat_mean(k) +  sterat1 (k)
+          end do
+       
+        end if
+
+        if ( tranal ) then
+
+          write(6,'(a)') 'POWER SPECTRUM IN THE TROPOSPHERE'
+
+          do k=1,nrtr
+            tntrprt(k) = ttrprt(it,k)/ttrbas(it,k)
+          end do
+
+          call psd(nrtr ,2   ,2   ,ztr  ,dz    ,tntrprt(1:nrtr)  ,wavntr ,ttrpsd1)
+          call psd(nrtr ,2   ,2   ,ztr  ,dz    ,utrprt(it,1:nrtr),wavntr ,utrpsd1)
+          call psd(nrtr ,2   ,2   ,ztr  ,dz    ,vtrprt(it,1:nrtr),wavntr ,vtrpsd1)
+
+          do k=1,nrtr/2+1
+            trerat1(k) = (utrpsd1(k)+vtrpsd1(k))/(((grav/avgtrn(it))**2)*ttrpsd1(k))
+          end do
+
+!----------------------------------------------------------------------------------
+!         Smooth power spectral density function for use in nonlinear linear
+!         regression.        
+!----------------------------------------------------------------------------------
+
+          call smooth(nrtr/2,wavntr(2:nrtr/2+1),ttrpsd1 (2:nrtr/2+1),ttrpsdm1 (2:nrtr/2+1))
+          call smooth(nrtr/2,wavntr(2:nrtr/2+1),utrpsd1 (2:nrtr/2+1),utrpsdm1 (2:nrtr/2+1))
+          call smooth(nrtr/2,wavntr(2:nrtr/2+1),vtrpsd1 (2:nrtr/2+1),vtrpsdm1 (2:nrtr/2+1))
+
+          ttrpsdm1 (1) = ttrpsd1 (1)
+          utrpsdm1 (1) = utrpsd1 (1)
+          vtrpsdm1 (1) = vtrpsd1 (1)
+
+          
+!----------------------------------------------------------------------------------
+!   Nonlinear regression of PSD of normalized temperature perturbation in TR
+!----------------------------------------------------------------------------------
+
+          write(6,'(a)') 'NONLINEAR REGRESSION IN THE TR'
+
+          iter = 0
+
+          loop = .true.
+
+          do while (loop)
+
+            iter = iter + 1
+
+            dfittr(1:nregtr) = 0.d0
+
+            uxtr(1:nregtr) = dble(wavntr(2:nregtr+1))
+            uytr(1:nregtr) = dble(ttrpsdm1(2:nregtr+1))
+  
+            sum = 0.d0   
+            do l=1,nregtr
+              sum = sum + uytr(l)
+            end do
+            na(1) = sum*(uxtr(2)-uxtr(1))/uxtr(1) 
+            na(2) = uxtr(1) + ((uxtr(2)-uxtr(1))/1000.)*(iter-1)
+            na(3) = 3.d+00
+
+            call lmdifdrv(fcn,nregtr,uxtr,uytr,nma,na,dfittr,tol,info,iwa,wa,lwa)  
+
+            loop = (iter <= 1000) .and. ( (na(1) < 0.d0) .or. (na(2) < 0.d0) .or.  &
+                   (na(3) < 0.d0) .or. (info < 0) .or. (na(3) > 4.d0) .or. (na(3) < 2.d0) )
+ 
+          end do
+            
+          write(6,'(a,i2)')           'LMDIFDRV EXIT CODE : ',info
+          write(6,'(a,3(f12.5,1x)))') 'F0, m*, t          : ',na(1),na(2),na(3)
+
+          do l=1,nrtr/2+1
+            fittr(l,it) = real(na(1)*(wavntr(l)/na(2))/(1.+(wavntr(l)/na(2))**(na(3)+1)))
+            if ( fittr(l,it) < 1.e-30 ) fittr(l,it) = 1.e-30
+          end do
+
+          f0tr(it)     = real(na(1))
+          mstartr(it)  = real(na(2))
+          tslopetr(it) = real(na(3))
+ 
+!----------------------------------------------------------------------------------
+!         Construct the gravity wave saturation limit in the troposphere.
+!
+!         Reference:
+!         Allen, S. J. and R. A. Vincent, 1995: Gravity wave activity in the
+!         lower atmosphere: Seasonal and latitudianl variations. J. Geophys.
+!         Res., 100, 1327-1350
+!         Smith, S. A., D. C. Fritts, and T. E. VanZandt, 1987: Evidence for
+!         a saturated spectrum of atmospheric gravity waves. J. Atmos. Sci.,
+!         44, 1404-1410.
+!----------------------------------------------------------------------------------
+
+          write(6,'(a)') 'GRAVITY WAVE SATURATION LIMIT IN THE TROPOSPHERE'
+
+          do k=2,nrtr/2+1
+            ttrsat1(k)=(avgtrn(it)**4)/(6*grav**2)*(1/pp)*(1/(4*pi**2))*(1/wavntr(k))**3
+          end do
+          ttrsat1(1)=ttrsat1(2)
+
+          do k=2,nrtr/2+1
+            utrsat1(k)=(avgtrn(it)**2)/(6)*(1/(4*pi**2))*(1/wavntr(k))**3
+          end do
+          utrsat1(1)=utrsat1(2)
+
+          do k=1,nrtr/2+1
+            if ( k == 1 ) then
+              wavltr(k)    = msgv
+            else
+              wavltr(k)    = 0.001/wavntr(k)
+            end if
+            ttrpsd  (k,it) = ttrpsd1  (k)
+            utrpsd  (k,it) = utrpsd1  (k)
+            vtrpsd  (k,it) = vtrpsd1  (k)
+            ttrpsdm (k,it) = ttrpsdm1 (k)
+            utrpsdm (k,it) = utrpsdm1 (k)
+            vtrpsdm (k,it) = vtrpsdm1 (k)
+            ttrsat  (k,it) = ttrsat1  (k)
+            utrsat  (k,it) = utrsat1  (k)
+            trerat  (k,it) = trerat1  (k)
+          end do
+       
+          nefftr = nefftr + 1
+
+          do k=1,nrtr/2+1
+             ttrpsd_mean(k) =  ttrpsd_mean(k) +  ttrpsd1 (k)
+            ttrpsdm_mean(k) = ttrpsdm_mean(k) +  ttrpsdm1(k)
+             utrpsd_mean(k) =  utrpsd_mean(k) +  utrpsd1 (k)
+            utrpsdm_mean(k) = utrpsdm_mean(k) +  utrpsdm1(k)
+             vtrpsd_mean(k) =  vtrpsd_mean(k) +  vtrpsd1 (k)
+            vtrpsdm_mean(k) = vtrpsdm_mean(k) +  vtrpsdm1(k)
+             ttrsat_mean(k) =  ttrsat_mean(k) +  ttrsat1 (k)
+             utrsat_mean(k) =  utrsat_mean(k) +  utrsat1 (k)
+             trerat_mean(k) =  trerat_mean(k) +  trerat1 (k)
+          end do
+
+        end if
+
+        if ( stanal .or. tranal ) then
+          write(6,'(a)') 'PLOTTING START'
+          call pltpsd(it    ,date  ,nrst  ,nrtr  ,stanal,tranal)
+          write(6,'(a)') 'PLOTTING END'
+        end if
+
+      end do
+    end do    
+
+     tstpsd_mean =  tstpsd_mean/float(neffst)
+!    tstpsdc_mean = tstpsdc_mean/float(neffst)
+!    tstpsdm_mean = tstpsdm_mean/float(neffst)
+     ustpsd_mean =  ustpsd_mean/float(neffst)
+    ustpsdm_mean = ustpsdm_mean/float(neffst)
+     vstpsd_mean =  vstpsd_mean/float(neffst)
+    vstpsdm_mean = vstpsdm_mean/float(neffst)
+     tstsat_mean =  tstsat_mean/float(neffst)
+     ustsat_mean =  ustsat_mean/float(neffst)
+!     sterat_mean =  sterat_mean/float(neffst)
+
+     ttrpsd_mean =  ttrpsd_mean/float(nefftr)
+    ttrpsdm_mean = ttrpsdm_mean/float(nefftr)
+     utrpsd_mean =  utrpsd_mean/float(nefftr)
+    utrpsdm_mean = utrpsdm_mean/float(nefftr)
+     vtrpsd_mean =  vtrpsd_mean/float(nefftr)
+    vtrpsdm_mean = vtrpsdm_mean/float(nefftr)
+     ttrsat_mean =  ttrsat_mean/float(nefftr)
+     utrsat_mean =  utrsat_mean/float(nefftr)
+     trerat_mean =  trerat_mean/float(nefftr)
+
+    do it=1,ndat
+      if ( maxval(tstpsd (1:nrst/2+1,it)) == 0.0 ) tstpsd (1:nrst/2+1,it) = msgv
+      if ( maxval(tstpsdm(1:nrst/2+1,it)) == 0.0 ) tstpsdm(1:nrst/2+1,it) = msgv
+!      if ( maxval(tstpsdc(1:nrst/2+1,it)) == 0.0 ) tstpsdc(1:nrst/2+1,it) = msgv
+      if ( maxval(tstsat (1:nrst/2+1,it)) == 0.0 ) tstsat (1:nrst/2+1,it) = msgv
+      if ( maxval(ustpsd (1:nrst/2+1,it)) == 0.0 ) ustpsd (1:nrst/2+1,it) = msgv
+      if ( maxval(ustpsdm(1:nrst/2+1,it)) == 0.0 ) ustpsdm(1:nrst/2+1,it) = msgv
+      if ( maxval(ustsat (1:nrst/2+1,it)) == 0.0 ) ustsat (1:nrst/2+1,it) = msgv
+      if ( maxval(vstpsd (1:nrst/2+1,it)) == 0.0 ) vstpsd (1:nrst/2+1,it) = msgv
+      if ( maxval(vstpsdm(1:nrst/2+1,it)) == 0.0 ) vstpsdm(1:nrst/2+1,it) = msgv
+      if ( maxval(sterat (1:nrst/2+1,it)) == 0.0 ) sterat (1:nrst/2+1,it) = msgv
+      if ( maxval(ttrpsd (1:nrtr/2+1,it)) == 0.0 ) ttrpsd (1:nrtr/2+1,it) = msgv
+      if ( maxval(ttrpsdm(1:nrtr/2+1,it)) == 0.0 ) ttrpsdm(1:nrtr/2+1,it) = msgv
+      if ( maxval(ttrsat (1:nrtr/2+1,it)) == 0.0 ) ttrsat (1:nrtr/2+1,it) = msgv
+      if ( maxval(utrpsd (1:nrtr/2+1,it)) == 0.0 ) utrpsd (1:nrtr/2+1,it) = msgv
+      if ( maxval(utrpsdm(1:nrtr/2+1,it)) == 0.0 ) utrpsdm(1:nrtr/2+1,it) = msgv
+      if ( maxval(utrsat (1:nrtr/2+1,it)) == 0.0 ) utrsat (1:nrtr/2+1,it) = msgv
+      if ( maxval(vtrpsd (1:nrtr/2+1,it)) == 0.0 ) vtrpsd (1:nrtr/2+1,it) = msgv
+      if ( maxval(vtrpsdm(1:nrtr/2+1,it)) == 0.0 ) vtrpsdm(1:nrtr/2+1,it) = msgv
+      if ( maxval(trerat (1:nrtr/2+1,it)) == 0.0 ) trerat (1:nrtr/2+1,it) = msgv
+    end do
+
+!----------------------------------------------------------------------------------
+!   Nonlinear regression in the stratosphere
+!----------------------------------------------------------------------------------
+  
+    write(6,'(a)') 'NONLINEAR REGRESSION OF MEAN SPECTRUM IN THE STRATOSPHERE'
+
+    iter = 0
+
+    loop = .true.
+
+    do while (loop)
+
+      iter = iter + 1
+
+      dfitst(1:nregst) = 0.d0
+
+      uxst(1:nregst) = dble(wavnst(2:nregst+1))
+!      uyst(1:nregst) = dble(tstpsdc_mean(2:nregst+1))
+
+      sum = 0.d0
+      do l=1,nregst
+        sum = sum + uyst(l)
+      end do
+      na(1) = sum*(uxst(2)-uxst(1))/uxst(1) 
+      na(2) = uxst(1) + ((uxst(2)-uxst(1))/1000.)*(iter-1)  
+      na(3) = 3.d+00 
+    
+      call lmdifdrv(fcn,nregst,uxst,uyst,nma,na,dfitst,tol,info,iwa,wa,lwa)  
+
+      loop = (iter <= 1000) .and. ( (na(1) < 0.d0) .or. (na(2) < 0.d0) .or. &
+             (na(3) < 0.d0) .or. (info < 0) .or. (na(3) > 4.d0) .or. (na(3) < 2.d0) )
+
+    end do
+ 
+    write(6,'(a,i2)')           'LMDIFDRV EXIT CODE : ',info
+    write(6,'(a,3(f12.5,1x)))') 'F0, m*, t          : ',na(1),na(2),na(3)
+
+    do l=2,nrst/2+1
+      mfitst(l) = real(na(1)*(wavnst(l)/na(2))/(1.+(wavnst(l)/na(2))**(na(3)+1))) 
+    end do
+    mfitst(1) = msgv
+
+    f0stm(1)     = real(na(1))
+    mstarstm(1)  = real(na(2))
+    tslopestm(1) = real(na(3))
+
+!----------------------------------------------------------------------------------
+!   Nonlinear regression in the troposphere
+!----------------------------------------------------------------------------------
+
+    write(6,'(a)') 'NONLINEAR REGRESSION OF MEAN SPECTRUM IN THE TROPOSPHERE'
+
+    iter = 0
+
+    loop = .true.
+
+    do while (loop)
+
+      iter = iter + 1
+
+      dfittr(1:nregtr) = 0.d0
+
+      uxtr(1:nregtr) = dble(wavntr(2:nregtr+1))
+      uytr(1:nregtr) = dble(ttrpsd_mean(2:nregtr+1))
+
+      sum = 0.d0
+      do l=1,nregtr
+        sum = sum + uytr(l)
+      end do
+      na(1) = sum*(uxtr(2)-uxtr(1))/uxtr(1) 
+      na(2) = uxtr(1) + ((uxtr(2)-uxtr(1))/100.)*(iter-1)  
+      na(3) = 3.d+00
+  
+      call lmdifdrv(fcn,nregtr,uxtr,uytr,nma,na,dfittr,tol,info,iwa,wa,lwa)  
+
+      loop = (iter <= 1000) .and. ( (na(1) < 0.d0) .or. (na(2) < 0.d0) .or. &
+             (na(3) < 0.d0) .or. (info < 0) .or. (na(3) > 4.d0) .or. (na(3) < 2.d0) )
+
+    end do
+
+    write(6,'(a,i2)')           'LMDIFDRV EXIT CODE : ',info
+    write(6,'(a,3(f12.5,1x)))') 'F0, m*, t          : ',na(1),na(2),na(3)
+
+    do l=2,nrtr/2+1
+      mfittr(l) = real(na(1)*(wavntr(l)/na(2))/(1.+(wavntr(l)/na(2))**(na(3)+1)))
+    end do
+    mfittr(1) = msgv
+
+    f0trm(1)     = real(na(1))
+    mstartrm(1)  = real(na(2))
+    tslopetrm(1) = real(na(3))
+
+    do it=1,ndat
+      if ( maxval(fitst  (1:nrst/2+1,it)) == 0.0 ) fitst  (1:nrst/2+1,it) = msgv
+      if ( f0st(it)     == 0.0 ) f0st(it)     = msgv
+      if ( mstarst(it)  == 0.0 ) mstarst(it)  = msgv
+      if ( tslopest(it) == 0.0 ) tslopest(it) = msgv
+      if ( maxval(fittr  (1:nrtr/2+1,it)) == 0.0 ) fittr  (1:nrtr/2+1,it) = msgv
+      if ( f0tr(it)     == 0.0 ) f0tr(it)     = msgv
+      if ( mstartr(it)  == 0.0 ) mstartr(it)  = msgv
+      if ( tslopetr(it) == 0.0 ) tslopetr(it) = msgv
+    end do
+
+!----------------------------------------------------------------------------------
+!
+!   DUMP OUTPUT
+!
+!----------------------------------------------------------------------------------
+
+    write(6,'(a)') 'DUMP OUTPUT'
+
+    call out1d (trim(wfnst00),'WAVLST',wavlst ,'WAVNST',nrst/2+1,wavnst,'WAVELENGTH IN ST')
+    call out1d (trim(wfntr00),'WAVLTR',wavltr ,'WAVNTR',nrtr/2+1,wavntr,'WAVELENGTH IN TR')
+
+    do it=1,ndat
+      if ( maxval(fitst  (1:nrst/2+1,it)) == 0.0 ) fitst  (1:nrst/2+1,it) = msgv
+      if ( f0st(it)     == 0.0 ) f0st(it)     = msgv
+      if ( mstarst(it)  == 0.0 ) mstarst(it)  = msgv
+      if ( tslopest(it) == 0.0 ) tslopest(it) = msgv
+      if ( maxval(fittr  (1:nrtr/2+1,it)) == 0.0 ) fittr  (1:nrtr/2+1,it) = msgv
+      if ( f0tr(it)     == 0.0 ) f0tr(it)     = msgv
+      if ( mstartr(it)  == 0.0 ) mstartr(it)  = msgv
+      if ( tslopetr(it) == 0.0 ) tslopetr(it) = msgv
+    end do
+
+    write(6,'(a)') 'DUMP EACH PSD IN THE ST'
+
+    call out2d2(trim(wfnst01),'TSTPSD','TSTPSDM', tstpsd ,tstpsdm,  &
+                'WAVNST',nrst/2+1,wavnst,'TIME',ndat,normt,'TSTPSD')
+    call out2d (trim(wfnst02),'TSTSAT',tstsat ,  &
+                'WAVNST',nrst/2+1,wavnst,'TIME',ndat,normt,'TSTSAT')
+    call out2d2(trim(wfnst03),'USTPSD','USTPSDM',ustpsd,ustpsdm,  &
+                'WAVNST',nrst/2+1,wavnst,'TIME',ndat,normt,'USTPSD')
+    call out2d (trim(wfnst04),'USTSAT',ustsat ,  &
+                'WAVNST',nrst/2+1,wavnst,'TIME',ndat,normt,'USTSAT')
+    call out2d2(trim(wfnst05),'VSTPSD','VSTPSDM',vstpsd,vstpsdm,  &
+                'WAVNST',nrst/2+1,wavnst,'TIME',ndat,normt,'VSTPSD')
+!    call out2d (trim(wfnst06),'STERAT',sterat ,  &
+!                'WAVNST',nrst/2+1,wavnst,'TIME',ndat,normt,'STERAT')
+
+    write(6,'(a)') 'DUMP MEAN PSD IN THE ST'
+
+    call out1d1(trim(wfnst07),'TSTPSD',tstpsd_mean, &
+                'WAVNST',nrst/2+1,wavnst,'MONTHLY MEAN TSTPSD') 
+    call out1d2(trim(wfnst08),'USTPSD','USTPSDM',ustpsd_mean,ustpsdm_mean, &
+                'WAVNST',nrst/2+1,wavnst,'MONTHLY MEAN USTPSD') 
+    call out1d2(trim(wfnst09),'VSTPSD','VSTPSDM',vstpsd_mean,vstpsdm_mean, &
+                'WAVNST',nrst/2+1,wavnst,'MONTHLY MEAN VSTPSD') 
+    call out1d (trim(wfnst10),'TSTSAT',tstsat_mean, &
+                'WAVNST',nrst/2+1,wavnst,'MONTHLY MEAN TSTSAT') 
+    call out1d (trim(wfnst11),'USTSAT',ustsat_mean, &
+                'WAVNST',nrst/2+1,wavnst,'MONTHLY MEAN USTSAT') 
+!    call out1d (trim(wfnst12),'STERAT',sterat_mean, &
+!                'WAVNST',nrst/2+1,wavnst,'MONTHLY MEAN STERAT') 
+
+    write(6,'(a)') 'DUMP FITTING PARAMETERS IN THE ST'
+
+    call out2d (trim(wfnst13),'STNFIT',fitst , &
+                'WAVNST',nrst/2+1,wavnst,'TIME',ndat,normt,'STNFIT')
+    call out1d (trim(wfnst14),'STNFIT',mfitst, &
+                'WAVNST',nrst/2+1,wavnst,'MONTHLY MEAN STNFIT')
+    call out1d3(trim(wfnst15),'F0'    ,'MSTAR' ,'TSLOPE',f0st  ,mstarst ,tslopest , &
+                'TIME'  ,ndat    ,normt ,'STNFIT PARAMETERS')
+    call out1d3(trim(wfnst16),'F0'    ,'MSTAR' ,'TSLOPE',f0stm ,mstarstm,tslopestm, &
+                'TIME'  ,1       ,normt(1),'MONTHLY MEAN STNFIT PARAMETERS')
+
+    write(6,'(a)') 'DUMP EACH PSD IN THE TR'
+
+    call out2d2(trim(wfntr01),'TTRPSD','TTRPSDM',ttrpsd ,ttrpsdm ,  &
+                'WAVNTR',nrtr/2+1,wavntr,'TIME',ndat,normt,'TTRPSD')
+    call out2d (trim(wfntr02),'TTRSAT',ttrsat ,  &
+                'WAVNTR',nrtr/2+1,wavntr,'TIME',ndat,normt,'TTRSAT')
+    call out2d2(trim(wfntr03),'UTRPSD','UTRPSDM',utrpsd,utrpsdm,  &
+                'WAVNTR',nrtr/2+1,wavntr,'TIME',ndat,normt,'UTRPSD')
+    call out2d (trim(wfntr04),'UTRSAT',utrsat ,  &
+                'WAVNTR',nrtr/2+1,wavntr,'TIME',ndat,normt,'UTRSAT')
+    call out2d2(trim(wfntr05),'VTRPSD','VTRPSDM',vtrpsd,vtrpsdm,  &
+                'WAVNTR',nrtr/2+1,wavntr,'TIME',ndat,normt,'VTRPSD')
+    call out2d (trim(wfntr06),'TRERAT',trerat ,  &
+                'WAVNTR',nrtr/2+1,wavntr,'TIME',ndat,normt,'TRERAT')
+
+    write(6,'(a)') 'DUMP MEAN PSD IN THE TR'
+
+    call out1d2(trim(wfntr07),'TTRPSD','TTRPSDM',ttrpsd_mean,ttrpsdm_mean, &
+                'WAVNTR',nrtr/2+1,wavntr,'MONTHLY MEAN TTRPSD')
+    call out1d2(trim(wfntr08),'UTRPSD','UTRPSDM',utrpsd_mean,utrpsdm_mean, &
+                'WAVNTR',nrtr/2+1,wavntr,'MONTHLY MEAN UTRPSD')
+    call out1d2(trim(wfntr09),'VTRPSD','VTRPSDM',vtrpsd_mean,vtrpsdm_mean, &
+                'WAVNTR',nrtr/2+1,wavntr,'MONTHLY MEAN VTRPSD')
+    call out1d (trim(wfntr10),'TTRSAT',ttrsat_mean, &
+                'WAVNTR',nrtr/2+1,wavntr,'MONTHLY MEAN TTRSAT')
+    call out1d (trim(wfntr11),'UTRSAT',utrsat_mean, &
+                'WAVNTR',nrtr/2+1,wavntr,'MONTHLY MEAN UTRSAT')
+    call out1d (trim(wfntr12),'TRERAT',trerat_mean, &
+                'WAVNTR',nrst/2+1,wavnst,'MONTHLY MEAN TRERAT')      
+
+    write(6,'(a)') 'DUMP FITTING PARAMETERS IN THE TR'
+
+    call out2d (trim(wfntr13),'STNFIT',fittr , &
+                'WAVNST',nrtr/2+1,wavntr,'TIME',ndat,normt,'STNFIT')
+    call out1d (trim(wfntr14),'STNFIT',mfittr, &
+                'WAVNST',nrtr/2+1,wavntr,'MONTHLY MEAN TRNFIT')
+    call out1d3(trim(wfntr15),'F0'    ,'MSTAR' ,'TSLOPE',f0tr  ,mstartr ,tslopetr , &
+                'TIME'  ,ndat    ,normt ,'TRNFIT PARAMETERS' )
+    call out1d3(trim(wfntr16),'F0'    ,'MSTAR' ,'TSLOPE',f0trm ,mstartrm,tslopetrm, &
+                'TIME'  ,1       ,normt(1),'MONTHLY MEAN TRNFIT PARAMETERS')
+
+    call GCLWK(1)
+    call GCLWK(2)
+    call GCLKS
+
+    write(tmpnam1,'(a,i4.4,i2.2,a)') trim(rdir)//'/st/',year2,month,'/.psdanal'
+    write(tmpnam2,'(a,i4.4,i2.2,a)') trim(rdir)//'/tr/',year2,month,'/.psdanal'
+
+    call system('touch '//trim(tmpnam1))
+    call system('touch '//trim(tmpnam2))
+
+    stop
+    end program psdanal
+
+!------------------------------------------------------------------------------------
+!
+!   SUBROUTINE FCN
+!
+!------------------------------------------------------------------------------------
+
+    subroutine fcn(m,ux,uy,n,x,fvec,iflag)
+
+    integer :: m,n,ldfjac,iflag
+    double precision, dimension(n) :: x
+    double precision, dimension(m) :: ux,uy,fvec,desaubi
+    double precision               :: ratio1,ratio2,denorm0,denorm
+    double precision               :: eps   ,sum
+
+    integer :: i
+
+    eps = 1.d+50
+
+    if ( x(1) < 0.d0 .or. x(2) < 0.d0 .or. x(3) < 0.d0 ) then
+      iflag = -1
+      return
+    end if
+
+    do i=1,m
+      ratio1=(ux(i)/x(2))**(x(3)+1.d0)
+      ratio2=(ux(i)/x(2))
+      denorm=(1+ratio1)**2
+      denorm0=1+ratio1
+      desaubi(i) = x(1)*ratio2/denorm0
+      fvec(i)   = uy(i) - desaubi(i)
+    end do
+
+    return
+    end subroutine fcn

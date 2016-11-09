@@ -1,0 +1,1342 @@
+#undef  CONTROL1
+#undef  CONTROL2
+#undef  SGWDCLM1
+#undef  SGWDCLM2
+#define LSGWDCLM
+#define gridcheck
+#define bccheck
+#define intpolcheck
+#define bgvalcheck
+#define fldsmth
+
+    program residualsph
+
+!==================================================================================
+!
+!   program residualsph
+!
+!   PURPOSE:
+!
+!   To calculate numerically residual mean meridional circulation.
+!
+!   In-Sun Song
+!   Laboratory for Mesoscale Dynamics
+!   Department of Atmospheric Sciences, Yonsei University, Seoul, Korea.
+!
+!   Jun 24, 2003
+!   First written
+!
+!   Dec 21, 2004
+!   Reviewed
+!
+!   Jan 15, 2005
+!   Mud2crf90 is used as to utilize more general quasi-geostrophic
+!   set of equations. This set of equations is equivalent to that used in
+!   Holton (1975), Boyd (1976), and Garcia and Solomon (1983). 
+!   Bottom boundary condition (formerly, w* = 0 at 1000 hPa) is set to w* 
+!   at 100 hPa calculated using the steady-state formulation in Haynes
+!   in Haynes et al. [1991, see their (2.7)].
+!
+!   APR  4, 2005
+!   Bottom boundary can also be set to 1000 hPa. In this case, extrapolated
+!   wave drag below maximum height of orography at a certain latitude is
+!   set to zero.
+!
+!==================================================================================
+!
+    use interpolation
+    use mud2crf90
+!
+    implicit none
+!
+    include 'netcdf.inc'
+!
+    integer, parameter :: ny = 64, nz = 66, nt = 12
+    integer, parameter :: iixp = 3, jjyq = 2          ! for MUD2CR
+    integer, parameter :: iiex = 5, jjey = 6          ! for MUD2CR
+    integer, parameter :: nny = iixp*(2**(iiex-1))+1  ! for MUD2CR
+    integer, parameter :: nnz = jjyq*(2**(jjey-1))+1  ! for MUD2CR
+    integer, parameter :: ixxp = 2, jyyq = 2          ! for MUD2CR (Palmer et al. 1986)
+    integer, parameter :: ixex = 6, jyey = 6          ! for MUD2CR (Palmer et al. 1986)
+    integer, parameter :: mmy = ixxp*(2**(ixex-1))+1  ! for MUD2CR (Palmer et al. 1986)
+    integer, parameter :: mmz = jyyq*(2**(jyey-1))+1  ! for MUD2CR (Palmer et al. 1986)
+
+!------------------------------------------------------------------------------------
+!   Some physical constants
+!------------------------------------------------------------------------------------
+
+    real, parameter :: rd = 287.0
+    real, parameter :: cp = 1004.0
+    real, parameter :: grav = 9.806
+    real, parameter :: kappa = rd/cp
+    real, parameter :: p0 = 100000.0
+    real, parameter :: hscal = 7000.0
+    real, parameter :: hscalp = 7500.0
+    real, parameter :: arad = 6370000.0
+    real, parameter :: pi = 3.141592
+    real, parameter :: omega = 2.*pi/86400.
+
+!------------------------------------------------------------------------------------
+!   Grids and data needed for calculation
+!------------------------------------------------------------------------------------
+
+    real, dimension(ny)       :: lat   ,y     ,maxh
+    real, dimension(nz)       :: z
+    real, dimension(nt)       :: mon
+    real, dimension(ny,nz,nt) :: zu    ,zt 
+    real, dimension(ny,nt)    :: bnep  ,bng   ,bno   ,bnsg
+    real, dimension(ny,nz,nt) :: epd   ,gwd   ,gwo   ,gwc
+  
+    real, dimension(nny)        :: latm  ,ym
+    real, dimension(nnz)        :: zm    
+    real, dimension(nnz,nt)     :: t0
+    real, dimension(nnz,nt)     :: n0sq
+    real, dimension(nny,nnz,nt) :: t1
+    real, dimension(nny,nnz,nt) :: s
+    real, dimension(nny,nnz,nt) :: zum
+    real, dimension(nny,nnz,nt) :: ztm
+    real, dimension(nny,nnz,nt) :: dudym
+    real, dimension(nny,nnz,nt) :: dudzm
+    real, dimension(nny,nnz,nt) :: dtdym
+    real, dimension(nny,nt)     :: bnepm ,bngm  ,bnom  ,bnsgm
+    real, dimension(nny,nnz,nt) :: epdm  ,gwdm  ,gwom  ,gwcm
+    real, dimension(nny,nnz,nt) :: chiep ,chigw ,chigo ,chigwc
+    real, dimension(nny,nnz,nt) :: vsepd ,vsgwd ,vsgwo ,vsgwc
+    real, dimension(nny,nnz,nt) :: wsepd ,wsgwd ,wsgwo ,wsgwc
+    real, dimension(nny,nnz,nt) :: dtvepd,dtvgwd,dtvgwo,dtvgwc
+    real, dimension(nny,nnz,nt) :: dtwepd,dtwgwd,dtwgwo,dtwgwc
+
+    real, dimension(mmy)     :: latp  ,yp    ,bnp
+    real, dimension(mmz)     :: zp    ,n0sqp ,rhop
+    real, dimension(mmy,mmz) :: gwop
+    real, dimension(mmy,mmz) :: chip  ,dudtp ,dtdtp
+
+    integer :: n
+
+    call readdata
+    call setgrid
+    call setpalmer
+    call dnwardctrl
+    call dataintpol
+    call refatm
+    call elliptic_palmer(mmy,mmz,n0sqp,gwop,chip,dudtp,dtdtp)
+    do n=1,nt
+    call elliptic(nny,nnz,n0sq(:,n),s(:,:,n),dtdym(:,:,n),zum(:,:,n), &
+                  dudzm(:,:,n),dudym(:,:,n),                          &
+                  bnepm(:,n),epdm(:,:,n),chiep(:,:,n),vsepd(:,:,n),   &
+                  wsepd(:,:,n),dtvepd(:,:,n),dtwepd(:,:,n))
+    call elliptic(nny,nnz,n0sq(:,n),s(:,:,n),dtdym(:,:,n),zum(:,:,n), &
+                  dudzm(:,:,n),dudym(:,:,n),  &
+                  bngm(:,n) ,gwdm(:,:,n),chigw(:,:,n),vsgwd(:,:,n),   &
+                  wsgwd(:,:,n),dtvgwd(:,:,n),dtwgwd(:,:,n))
+    call elliptic(nny,nnz,n0sq(:,n),s(:,:,n),dtdym(:,:,n),zum(:,:,n), &
+                  dudzm(:,:,n),dudym(:,:,n),  &
+                  bngm(:,n) ,gwom(:,:,n),chigo(:,:,n),vsgwo(:,:,n),   &
+                  wsgwo(:,:,n),dtvgwo(:,:,n),dtwgwo(:,:,n))
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+    call elliptic(nny,nnz,n0sq(:,n),s(:,:,n),dtdym(:,:,n),zum(:,:,n), &
+                  dudzm(:,:,n),dudym(:,:,n),  &
+                  bnsgm(:,n),gwcm(:,:,n),chigwc(:,:,n),vsgwc(:,:,n),  &
+                  wsgwc(:,:,n),dtvgwc(:,:,n),dtwgwc(:,:,n))
+#endif
+    end do
+    call dump
+
+    contains
+
+!------------------------------------------------------------------------------
+
+    subroutine readdata 
+  
+    character(len=100) :: rfn0  ,rfn1  ,rfn2  ,rfn3  ,rfn4  ,rfn5
+
+    integer :: j     ,k     ,n
+    integer :: istat ,ncid0 ,ncid1 ,ncid2 ,ncid3 ,ncid4 ,ncid5
+    integer :: oroid ,latid ,levid ,monid ,zid   ,zuid  ,ztid  
+    integer :: epdid ,gwdid ,gwoid ,gwcid
+
+    write(rfn0,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/max_oroh.nc'
+#if ( defined CONTROL1 )
+    write(rfn1,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/zuzt_clim/control1.nc'
+    write(rfn2,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/ep_clim/control1.nc'
+    write(rfn3,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/gwd_clim/control1.nc'
+    write(rfn4,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/gwo_clim/control1.nc'
+#elif ( defined CONTROL2 )
+    write(rfn1,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/zuzt_clim/control2.nc'
+    write(rfn2,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/ep_clim/control2.nc'
+    write(rfn3,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/gwd_clim/control2.nc'
+    write(rfn4,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/gwo_clim/control2.nc'
+#elif ( defined SGWDCLM1 )
+    write(rfn1,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/zuzt_clim/sgwdclm1.nc'
+    write(rfn2,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/ep_clim/sgwdclm1.nc'
+    write(rfn3,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/gwd_clim/sgwdclm1.nc'
+    write(rfn4,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/gwo_clim/sgwdclm1.nc'
+    write(rfn5,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/sgwdc_clim/sgwdclm1.nc'
+#elif ( defined SGWDCLM2 )
+    write(rfn1,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/zuzt_clim/sgwdclm2.nc'
+    write(rfn2,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/ep_clim/sgwdclm2.nc'
+    write(rfn3,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/gwd_clim/sgwdclm2.nc'
+    write(rfn4,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/gwo_clim/sgwdclm2.nc'
+    write(rfn5,'(A)') '/data13/BACK/sis/ex18/sis_waccm1b_anal/sgwdc_clim/sgwdclm2.nc'
+#elif ( defined LSGWDCLM )
+    write(rfn1,'(A)') '/data13/BACK/sis/ex6/lsgwdc_anal/result/clim10_lm/zuzt_clim/lsgwdclm.nc'
+    write(rfn2,'(A)') '/data13/BACK/sis/ex6/lsgwdc_anal/result/clim10_lm/ep_clim/lsgwdclm.nc'
+    write(rfn3,'(A)') '/data13/BACK/sis/ex6/lsgwdc_anal/result/clim10_lm/gwd_clim/lsgwdclm.nc'
+    write(rfn4,'(A)') '/data13/BACK/sis/ex6/lsgwdc_anal/result/clim10_lm/gwo_clim/lsgwdclm.nc'
+    write(rfn5,'(A)') '/data13/BACK/sis/ex6/lsgwdc_anal/result/clim10_lm/lsgwdc_clim/lsgwdclm.nc'
+#endif
+
+    istat = nf_open(trim(rfn0),nf_nowrite,ncid0)
+    istat = nf_open(trim(rfn1),nf_nowrite,ncid1)
+    istat = nf_open(trim(rfn2),nf_nowrite,ncid2)
+    istat = nf_open(trim(rfn3),nf_nowrite,ncid3)
+    istat = nf_open(trim(rfn4),nf_nowrite,ncid4)
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+    istat = nf_open(trim(rfn5),nf_nowrite,ncid5)
+#endif
+
+    istat = nf_inq_varid(ncid0,'lat'   ,latid)
+    istat = nf_inq_varid(ncid0,'oro'   ,oroid)
+    istat = nf_inq_varid(ncid1,'lev'   ,levid)
+    istat = nf_inq_varid(ncid1,'z'     ,zid  )
+    istat = nf_inq_varid(ncid1,'month' ,monid)
+    istat = nf_inq_varid(ncid1,'ZUCLIM',zuid )
+    istat = nf_inq_varid(ncid1,'ZTCLIM',ztid )
+    istat = nf_inq_varid(ncid2,'epd'   ,epdid)
+    istat = nf_inq_varid(ncid3,'gwd'   ,gwdid)
+    istat = nf_inq_varid(ncid4,'gwo'   ,gwoid)
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+    istat = nf_inq_varid(ncid5,'gwd'   ,gwcid)
+#endif
+
+    istat = nf_get_var_real (ncid0,latid,lat )
+    istat = nf_get_var_real (ncid0,oroid,maxh)
+    istat = nf_get_vara_real(ncid1,zid  ,(/1/)    ,(/nz/)     ,z   )
+    istat = nf_get_vara_real(ncid1,monid,(/1/)    ,(/nt/)     ,mon )
+    istat = nf_get_vara_real(ncid1,zuid ,(/1,1,1/),(/ny,nz,nt/),zu )
+    istat = nf_get_vara_real(ncid1,ztid ,(/1,1,1/),(/ny,nz,nt/),zt )
+    istat = nf_get_vara_real(ncid2,epdid,(/1,1,1/),(/ny,nz,nt/),epd)
+    istat = nf_get_vara_real(ncid3,gwdid,(/1,1,1/),(/ny,nz,nt/),gwd)
+    istat = nf_get_vara_real(ncid4,gwoid,(/1,1,1/),(/ny,nz,nt/),gwo)
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+    istat = nf_get_vara_real(ncid5,gwcid,(/1,1,1/),(/ny,nz,nt/),gwc)
+#endif
+
+    istat = nf_close(ncid0)
+    istat = nf_close(ncid1)
+    istat = nf_close(ncid2)
+    istat = nf_close(ncid3)
+    istat = nf_close(ncid4)
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+    istat = nf_close(ncid5)
+#endif
+
+    do n=1,nt
+    do k=1,nz
+    do j=1,ny
+      if ( epd(j,k,n) > 0.9e+20 ) then
+        epd(j,k,n) = 0.0
+      end if
+    end do
+    end do
+    end do
+
+    do n=1,nt
+    do k=1,nz
+      do j=1,ny
+        if ( z(k)*1000. <= maxh(j) ) then 
+          epd (j,k,n) = 0.0
+          gwd (j,k,n) = 0.0
+          gwo (j,k,n) = 0.0
+          gwc (j,k,n) = 0.0
+        else
+          epd (j,k,n) = epd (j,k,n)/86400.
+          gwd (j,k,n) = gwd (j,k,n)/86400.
+          gwo (j,k,n) = gwo (j,k,n)/86400.
+          gwc (j,k,n) = gwc (j,k,n)/86400.
+        end if
+      end do
+    end do
+    end do
+
+    return
+    end subroutine readdata
+
+!-----------------------------------------------------------------------
+
+    subroutine setgrid
+
+    integer :: j     ,k
+
+    do j=1,ny
+      y(j) = arad*lat(j)*pi/180.
+    end do
+    do k=1,nz
+      z(k) = z(k)*1000.
+    end do
+
+    do j=1,nny
+      latm(j) = -90.0 + float(j-1)*180.00/float(nny-1)
+      ym(j) = arad*latm(j)*pi/180.
+    end do
+    do k=1,nnz
+      zm(k) = 0.0 + float(k-1)*120000.0/float(nnz-1)
+    end do
+
+#if ( defined gridcheck )
+    print *,'original grid'
+    print *,lat
+    print *,z
+    print *,'grid for mudpack'
+    print *,latm
+    print *,zm
+#endif
+
+    return
+    end subroutine setgrid
+
+!-----------------------------------------------------------------------
+
+    subroutine setpalmer
+
+    integer :: j     ,k
+ 
+    do j=1,mmy  
+      latp(j) = -90.0 + float(j-1)*180.0/float(mmy-1)
+      yp(j) = arad*latp(j)*pi/180.
+    end do
+    do k=1,mmz
+      zp(k) = 0.0 + float(k-1)*25000.0/float(mmz-1)
+    end do
+
+    do k=1,mmz
+      rhop(k) = p0/(grav*hscalp)*exp(-zp(k)/hscalp)
+    end do
+
+    do k=1,mmz
+      do j=1,mmy
+        if ( latp(j) > 30.0 .and. zp(k) >= 10000.0 .and. zp(k) <= 25000.0 ) then
+          gwop(j,k) = -16*(5.e-5)*(1.-sin(latp(j)*pi/180.))*  &
+                                  (sin(latp(j)*pi/180.)-0.5)
+        else
+          gwop(j,k) = 0.0
+        end if
+      end do
+    end do
+
+     do k=1,mmz
+      if ( zp(k) >= 10000. ) then
+        n0sqp(k) = 4.0e-4
+      else
+        n0sqp(k) = 1.5e-4
+      end if
+    end do
+
+    do k=1,mmz
+      do j=1,mmy
+        chip(j,k) = 0.0
+        dudtp(j,k) = 0.0
+      end do
+    end do
+
+    return
+    end subroutine setpalmer
+
+!-----------------------------------------------------------------------
+
+    subroutine dnwardctrl
+
+    integer :: j     ,k     ,n
+
+    real, dimension(ny) :: phi
+    real, dimension(nz) :: rho
+    real :: fac,dz
+    real :: fac1,fac2
+
+    do j=1,ny
+      phi(j) = lat(j)*pi/180.
+    end do
+    do k=1,nz
+      rho(k) = p0/(grav*hscal)*exp(-z(k)/hscal)
+    end do
+!
+!   The formulation used here is based on Haynes et al's steady-state
+!   quasi-geostrophic formulation. Therefore near the equator,
+!   this formulation may not be valid.
+!    
+    do n=1,nt
+
+    do k=1,nz-1    ! k = 66 (nz) is 1000 hPa.
+      do j=1,ny
+        dz = z(k)-z(k+1)
+        fac = (rho(k)+rho(k+1))*0.5*cos(phi(j))/(2.*omega*sin(phi(j)))
+        bnep(j,n) = bnep(j,n) + fac*(epd(j,k,n)+epd(j,k,n))*0.5*dz
+        bng (j,n) = bng (j,n) + fac*(gwd(j,k,n)+gwd(j,k,n))*0.5*dz
+        bno (j,n) = bno (j,n) + fac*(gwo(j,k,n)+gwo(j,k,n))*0.5*dz
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+        bnsg(j,n) = bnsg(j,n) + fac*(gwc(j,k,n)+gwc(j,k,n))*0.5*dz
+#endif
+      end do
+    end do
+
+    do j=1,ny
+      bnep(j,n) = (-1./rho(nz))*bnep(j,n)
+      bng (j,n) = (-1./rho(nz))*bng (j,n)
+      bno (j,n) = (-1./rho(nz))*bno (j,n)
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+      bnsg(j,n) = (-1./rho(nz))*bnsg(j,n)
+#endif
+    end do
+
+    do j=1,ny
+      if ( abs(lat(j)) < 15.0 ) then
+        fac1 = abs(lat(38)-lat(j))/(lat(38)-lat(27))
+        fac2 = abs(lat(j)-lat(27))/(lat(38)-lat(27))
+        bnep(j,n) = fac1*bnep(27,n)+fac2*bnep(38,n)
+        bng (j,n) = fac1*bng (27,n)+fac2*bng (38,n)
+        bno (j,n) = fac1*bno (27,n)+fac2*bno (38,n)
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+        bnsg(j,n) = fac1*bnsg(27,n)+fac2*bnsg(38,n)
+#endif
+      end if
+    end do
+
+    end do
+
+#if ( defined bccheck )
+    print *,'the mass meridional stream function defined in '//  &
+            'Garcia and Solomon (1983)'
+    do j=1,ny
+#if ( defined CONTROL1 || defined CONTROL2 )
+      print *,lat(j),rho(56)*bnep(j,1)/cos(lat(j)*pi/180.),  &
+                     rho(56)*bng (j,1)/cos(lat(j)*pi/180.),  &
+                     rho(56)*bno (j,1)/cos(lat(j)*pi/180.)
+#elif ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+      print *,lat(j),rho(56)*bnep(j,1)/cos(lat(j)*pi/180.),  &
+                     rho(56)*bng (j,1)/cos(lat(j)*pi/180.),  &
+                     rho(56)*bno (j,1)/cos(lat(j)*pi/180.),  &
+                     rho(56)*bnsg(j,1)/cos(lat(j)*pi/180.)
+#endif
+    end do
+#endif
+
+    return
+    end subroutine dnwardctrl
+
+!-----------------------------------------------------------------------
+
+    subroutine dataintpol
+
+    integer :: j     ,k     ,n
+
+    real, dimension(nz)       :: ztmp
+    real, dimension(ny,nz,nt) :: zua   ,zta
+    real, dimension(ny,nz,nt) :: epda  ,gwda  ,gwoa  ,gwca
+!
+!   to check interpolation
+!
+#if ( defined intpolcheck )
+    integer :: istat,ncid
+    integer :: latdid,levdid,latid,levid
+    integer :: zuid,ztid,epdid,gwdid,gwoid,gwcid
+#endif
+#if ( defined fldsmth )
+    real    :: psmth ,qsmth
+#endif
+
+    do k=1,nz
+      ztmp(k) = z(nz-k+1)
+    end do
+
+    do n=1,nt
+    do k=1,nz
+      do j=1,ny
+        zua  (j,k,n) = zu  (j,nz-k+1,n)
+        zta  (j,k,n) = zt  (j,nz-k+1,n)
+        epda (j,k,n) = epd (j,nz-k+1,n)
+        gwda (j,k,n) = gwd (j,nz-k+1,n)
+        gwoa (j,k,n) = gwo (j,nz-k+1,n)
+        gwca (j,k,n) = gwc (j,nz-k+1,n)
+      end do
+    end do
+    end do
+!
+!   When ixp = 2 and iex = 6 (or ixp = 3 and iex = 5), latitudinal extrapolation
+!   is done only at poles because the largest value of the original latitude
+!   is 87.86 and the second largest value of the new grid is 87.18 (86.25)
+!
+    do n=1,nt
+    call int1d(ny,y,bnep(:,n),nny,ym,bnepm(:,n),1,0.0)
+    call int1d(ny,y,bng (:,n),nny,ym,bngm (:,n),1,0.0)
+    call int1d(ny,y,bno (:,n),nny,ym,bnom (:,n),1,0.0)
+    call int2d(ny,nz,y,ztmp,zua (:,:,n),nny,nnz,ym,zm,zum (:,:,n),1,1,1.e+20)
+    call int2d(ny,nz,y,ztmp,zta (:,:,n),nny,nnz,ym,zm,ztm (:,:,n),1,1,1.e+20)
+    call int2d(ny,nz,y,ztmp,epda(:,:,n),nny,nnz,ym,zm,epdm(:,:,n),1,1,0.0)
+    call int2d(ny,nz,y,ztmp,gwda(:,:,n),nny,nnz,ym,zm,gwdm(:,:,n),1,1,0.0)
+    call int2d(ny,nz,y,ztmp,gwoa(:,:,n),nny,nnz,ym,zm,gwom(:,:,n),1,1,0.0)
+    end do
+!
+!   In author's experience, cyy (actually, czz in problem of our interest)
+!   becomes frequently negative due to term du/dy. In this case, the
+!   differential equation is not elliptic any more.
+!   To prevent this difficulty, zu at poles is simply set to that at the
+!   closest meridional grid. In case of the meridional temperature gradient,
+!   that is not included in coefficients of the equation, and thus special
+!   treatments are not necessary, but zt at poles is determined in the same
+!   way as in zu.
+! 
+    do n=1,nt
+    do k=1,nnz
+      zum(1,  k,n) = 0.0
+      zum(nny,k,n) = 0.0
+      ztm(1,  k,n) = ztm(2    ,k,n)
+      ztm(nny,k,n) = ztm(nny-1,k,n)
+    end do
+    end do
+
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+    do n=1,nt
+    call int1d(ny,y,bnsg(:,n),nny,ym,bnsgm(:,n),1,0.0)
+    call int2d(ny,nz,y,ztmp,gwca(:,:,n),nny,nnz,ym,zm,gwcm(:,:,n),1,1,0.0)
+    end do
+#endif
+!
+!   to smooth wind and temperature
+!   boundary values are not smoothed.
+!
+#if ( defined fldsmth )
+!   do n=1,nt   
+!   call smth9(nny   ,nnz   ,0.5   ,0.25 ,zum(:,:,n))
+!   call smth9(nny   ,nnz   ,0.5   ,0.25 ,ztm(:,:,n))
+!   end do
+#endif
+!
+!   to check interpolation
+!
+#if ( defined intpolcheck )
+    istat = nf_create('res/intpol_check.nc',  &
+                      nf_clobber,ncid)
+    istat = nf_def_dim(ncid,'lat',nny,latdid)
+    istat = nf_def_dim(ncid,'z'  ,nnz,levdid)
+    istat = nf_def_var(ncid,'lat',nf_real,1,latdid,latid)
+    istat = nf_def_var(ncid,'z'  ,nf_real,1,levdid,levid)
+    istat = nf_def_var(ncid,'zu' ,nf_real,2,(/latdid,levdid/),zuid)
+    istat = nf_def_var(ncid,'zt' ,nf_real,2,(/latdid,levdid/),ztid)
+    istat = nf_def_var(ncid,'epd',nf_real,2,(/latdid,levdid/),epdid)
+    istat = nf_def_var(ncid,'gwd',nf_real,2,(/latdid,levdid/),gwdid)
+    istat = nf_def_var(ncid,'gwo',nf_real,2,(/latdid,levdid/),gwoid)
+    istat = nf_enddef(ncid)
+    istat = nf_put_var_real(ncid,latid,latm)
+    istat = nf_put_var_real(ncid,levid,zm/1000.)
+    istat = nf_put_var_real(ncid,zuid,zum(:,:,1))
+    istat = nf_put_var_real(ncid,ztid,ztm(:,:,1))
+    istat = nf_put_var_real(ncid,epdid,epdm(:,:,1))
+    istat = nf_put_var_real(ncid,gwdid,gwdm(:,:,1))
+    istat = nf_put_var_real(ncid,gwoid,gwom(:,:,1))
+    istat = nf_close(ncid)
+#endif
+
+    return
+    end subroutine 
+
+!-----------------------------------------------------------------------
+ 
+    subroutine refatm
+
+    integer :: j     ,k     ,n
+
+    real, dimension(nnz,nt)     :: tmpz
+    real, dimension(nny,nnz,nt) :: tmpz1,dtdz
+    real, dimension(nny,nnz,nt) :: tmpy
+!
+!   to check several background variables
+!
+#if ( defined bgvalcheck )
+    integer :: istat,ncid
+    integer :: latdid,levdid
+    integer :: latid,levid,nsqid,dtdzid,sid,dudyid,dudzid
+#endif
+!
+!   Reference temperature profile
+!
+    do n=1,nt
+    do k=1,nnz
+      t0(k,n) = 0.0
+      do j=1,nny
+        t0(k,n) = t0(k,n) + ztm(j,k,n)
+      end do
+      t0(k,n) = t0(k,n)/float(nny)
+    end do
+    end do
+!
+!   Define deviation of temperature from its reference profile.
+!
+    do n=1,nt
+    do k=1,nnz
+      do j=1,nny
+        t1(j,k,n) = ztm(j,k,n) - t0(k,n)
+      end do
+    end do
+    end do
+!
+!   Brunt-Vaisala frequency of the reference temperature
+! 
+    do n=1,nt
+    tmpz(1:nnz,n) = 0.0
+    do k=1,nnz-1
+      tmpz(k,n) = (rd/hscal)*( (t0(k+1,n)-t0(k,n))/(zm(k+1)-zm(k)) +  &
+                  kappa*(t0(k+1,n)+t0(k,n))*0.5/hscal )
+    end do
+    do k=2,nnz-1
+      n0sq(k,n) = (tmpz(k,n)+tmpz(k-1,n))*0.5
+    end do
+    n0sq(1,n)   = n0sq(2,n)
+    n0sq(nnz,n) = n0sq(nnz-1,n)
+    end do
+!
+!   Vertical gradient of the temperature deviation from its reference
+!
+    do n=1,nt
+    tmpz1(1:nny,1:nnz,n) = 0.0
+    do k=1,nnz-1
+      do j=1,nny
+        tmpz1(j,k,n) = (t1(j,k+1,n)-t1(j,k,n))/(zm(k+1)-zm(k))
+      end do
+    end do
+    do k=2,nnz-1
+      do j=1,nny
+        dtdz(j,k,n) = (tmpz1(j,k,n)+tmpz1(j,k-1,n))*0.5
+      end do
+    end do
+    do j=1,nny
+      dtdz(j,1,n)   = dtdz(j,2,n)
+      dtdz(j,nnz,n) = dtdz(j,nnz-1,n)
+    end do
+    end do
+!
+!   Stability term in zonal-mean temperature equation
+!
+    do n=1,nt
+    do k=1,nnz
+      do j=1,nny
+        s(j,k,n) = (hscal/rd)*n0sq(k,n)+dtdz(j,k,n)
+      end do
+    end do
+    end do
+!
+!   Meridional temperature gradient
+!
+    do n=1,nt
+    tmpy(1:nny,1:nnz,n) = 0.0
+    do k=1,nnz
+      do j=1,nny-1
+        tmpy(j,k,n) = (ztm(j+1,k,n)-ztm(j,k,n))/(ym(j+1)-ym(j))
+      end do
+    end do
+    do k=1,nnz
+      do j=2,nny-1
+        dtdym(j,k,n) = (tmpy(j-1,k,n)+tmpy(j,k,n))*0.5
+      end do
+      dtdym(  1,k,n) = 0.0
+      dtdym(nny,k,n) = 0.0
+    end do
+    end do
+!
+!   Meridional gradient of zonal-mean zonal wind
+!
+    do n=1,nt
+    tmpy(1:nny,1:nnz,n) = 0.0
+    do k=1,nnz
+      do j=1,nny-1
+        tmpy(j,k,n) = (zum(j+1,k,n)-zum(j,k,n))/(ym(j+1)-ym(j))
+      end do
+    end do
+    do k=1,nnz
+      do j=2,nny-1
+        dudym(j,k,n) = (tmpy(j-1,k,n)+tmpy(j,k,n))*0.5
+      end do
+      dudym(  1,k,n) = 0.0
+      dudym(nny,k,n) = 0.0
+    end do
+    end do
+!
+!   Vertical gradient of zonal-mean zonal wind
+! 
+    do n=1,nt
+    tmpz1(1:nny,1:nnz,n) = 0.0
+    do k=1,nnz-1
+      do j=1,nny
+        tmpz1(j,k,n) = (zum(j,k+1,n)-zum(j,k,n))/(zm(k+1)-zm(k))
+      end do
+    end do
+    do k=2,nnz-1
+      do j=1,nny
+        dudzm(j,k,n) = (tmpz1(j,k,n)+tmpz1(j,k-1,n))*0.5
+      end do
+    end do
+    do j=1,nny
+      dudzm(j,1,n)   = 0.0
+      dudzm(j,nnz,n) = 0.0
+    end do
+    end do
+!
+!   to check background variables
+!
+#if ( defined bgvalcheck )
+    istat = nf_create('res/bgval_check.nc',  &
+                      nf_clobber,ncid)
+    istat = nf_def_dim(ncid,'lat',nny,latdid)
+    istat = nf_def_dim(ncid,'z'  ,nnz,levdid)
+    istat = nf_def_var(ncid,'lat',nf_real,1,latdid,latid)
+    istat = nf_def_var(ncid,'z'  ,nf_real,1,levdid,levid)
+    istat = nf_def_var(ncid,'nsq',nf_real,1,levdid,nsqid)
+    istat = nf_def_var(ncid,'dtdz',nf_real,2,(/latdid,levdid/),dtdzid)
+    istat = nf_def_var(ncid,'stbl',nf_real,2,(/latdid,levdid/),sid)
+    istat = nf_def_var(ncid,'dudy',nf_real,2,(/latdid,levdid/),dudyid)
+    istat = nf_def_var(ncid,'dudz',nf_real,2,(/latdid,levdid/),dudzid)
+    istat = nf_enddef(ncid)
+    istat = nf_put_var_real(ncid,latid,latm)
+    istat = nf_put_var_real(ncid,levid,zm/1000.)
+    istat = nf_put_var_real(ncid,nsqid,n0sq(:,7))
+    istat = nf_put_var_real(ncid,dtdzid,dtdz(:,:,7))
+    istat = nf_put_var_real(ncid,sid,s(:,:,7))
+    istat = nf_put_var_real(ncid,dudyid,dudym(:,:,7))
+    istat = nf_put_var_real(ncid,dudzid,dudzm(:,:,7))
+    istat = nf_close(ncid)
+#endif
+!
+    return
+    end subroutine refatm
+!
+!-----------------------------------------------------------------------
+! 
+    subroutine elliptic(nny1,nnz1,n0sqin,stblin,dtdyin,zuin,dudzin,dudyin,  &
+                        bndyin,frcin,chiout,vsout,wsout,dtvout,dtwout)
+!
+    integer,                    intent(in) :: nny1  ,nnz1
+    real, dimension(nnz1),      intent(in) :: n0sqin
+    real, dimension(nny1,nnz1), intent(in) :: stblin,dtdyin
+    real, dimension(nny1,nnz1), intent(in) :: zuin,dudzin,dudyin
+    real, dimension(nny1),      intent(in) :: bndyin
+    real, dimension(nny1,nnz1), intent(in) :: frcin
+    real, dimension(nny1,nnz1), intent(out) :: chiout,vsout ,wsout
+    real, dimension(nny1,nnz1), intent(out) :: dtvout,dtwout
+!   
+!-----------------------------------------------------------------------
+!   Coefficients of elliptic partial differential equation (cxxusr, cxyusr,
+!   cyyusr, cxusr, cyusr, ceusr) are declared in module mud2crf90.
+!-----------------------------------------------------------------------
+!
+    real, dimension(nny1,nnz1) :: forcing
+    real, dimension(nny1,nnz1) :: tmp   ,tmp1
+!
+    real(r8) :: fcor,dfdy,tanova,cosf,fsign,dx,dy,eps
+    real(r8), dimension(nny1)  :: ymr8
+    real(r8), dimension(nnz1)  :: zmr8
+    real(r8), dimension(nny1,nnz1) :: frcr8,chir8
+!
+    integer :: j     ,k
+    integer :: j1    ,j2    ,k1    ,k2
+    integer :: jj    ,kk    ,l
+    integer :: npos
+!
+    integer  :: ixp,iex,jyq,jey
+    integer  :: nxa,nxb,nyc,nyd
+    integer  :: iguess,maxcy,method
+    integer, dimension(4) :: mgopt
+!
+!   xusr, yusr, cxxusr, cxyusr, cyyusr, cxusr, cyusr, ceusr are declared in
+!   mud2crf90, and they should be allocated here.
+!
+    allocate(xusr  (1:nny1))
+    allocate(yusr  (1:nnz1))
+    allocate(cxxusr(1:nny1,1:nnz1))
+    allocate(cxyusr(1:nny1,1:nnz1))
+    allocate(cyyusr(1:nny1,1:nnz1))
+    allocate(cxusr (1:nny1,1:nnz1))
+    allocate(cyusr (1:nny1,1:nnz1))
+    allocate(ceusr (1:nny1,1:nnz1))
+!      
+    do j=1,nny1
+      xusr(j) = ym(j)
+    end do
+    do k=1,nnz1
+      yusr(k) = zm(k)
+    end do 
+!
+    do k=1,nnz1
+      do j=1,nny1
+        fcor   = 2._r8*omega*dsin(latm(j)*pi/180._r8)
+        if ( fcor == 0.0 ) fcor = 5.e-6
+        dfdy   = (2._r8*omega/arad)*dcos(latm(j)*pi/180._r8)
+        tanova = dtan(latm(j)*pi/180._r8)/arad
+        cxxusr(j,k) = (rd/hscal)*stblin(j,k)
+        cxyusr(j,k) = 2._r8*fcor*dudzin(j,k)
+        cyyusr(j,k) = fcor*(fcor+zuin(j,k)*tanova-dudyin(j,k))
+        cxusr (j,k) = (rd/hscal)*stblin(j,k)*tanova - (fcor/hscal)*dudzin(j,k)
+        cyusr (j,k) = -(fcor/hscal)*(fcor+zuin(j,k)*tanova-dudyin(j,k)) + &
+                       dudzin(j,k)*(2._r8*fcor*tanova+dfdy)
+        ceusr (j,k) = 0._r8
+      end do
+    end do
+!
+!   Ellipticity check
+!
+    eps = 1.e-20
+    dx = xusr(2)-xusr(1)
+    dy = yusr(2)-yusr(1)
+    do k=1,nnz1
+      do j=1,nny1
+!
+!   In author's experience, in most cases cxxusr is positive because negative
+!   temperature calculated from time-averaged temperature is not frequent in.
+!   large-scale models. Therefore, cxx should be made positive in advance.
+!
+        fcor   = 2._r8*omega*dsin(latm(j)*pi/180._r8)
+        if ( fcor == 0.0 ) fcor = 5.e-6
+        tanova = dtan(latm(j)*pi/180._r8)/arad
+        if ( cxxusr(j,k) <= 0.0 .or. cyyusr(j,k) <= 0.0 .or. & 
+                    4.*cxxusr(j,k)*cyyusr(j,k) <= cxyusr(j,k)**2      ) then
+          write(6,'(2(A,1X,F7.2))') 'Ellipticity check failed at lat = ',latm(j),' and z = ',zm(k)/1000.
+          if ( cxxusr(j,k) <= 0.0 ) write(6,*) 'Stability should be checked'
+          if ( cyyusr(j,k) <= 0.0 ) write(6,*) 'du/dy should be checked'
+          cxxusr(j,k) = n0sqin(k)
+          cyyusr(j,k) = fcor*fcor
+          cxyusr(j,k) = eps
+          cxusr (j,k) = n0sqin(k)*tanova
+          cyusr (j,k) = -fcor*fcor/hscal
+          ceusr (j,k) = 0.0 
+        end if
+!       This warning is related to MUD2CR error code -4.
+!       MUD2CR change cxx into max(cxx,0.5*|cx|*dx) to work around.'
+!       However, in most problems of our interest, cxx is more important than
+!       cx. Therefore in this program, cx will be modified.
+!       cxusr(j,k) = sign(1.0,cxusr(j,k))*2.*abs(cxxusr(j,k))/dx*eps
+        if ( abs(cxusr(j,k))*dx > 2.*abs(cxxusr(j,k)) ) then
+          cxusr(j,k) = stblin(j,k)*tanova
+        end if
+        if ( abs(cyusr(j,k))*dy > 2.*abs(cyyusr(j,k)) ) then
+          cyusr(j,k) = -fcor*fcor/hscal
+        end if
+      end do
+    end do
+
+!-----------------------------------------------------------------------
+!   Determine forcing of the Elliptic equation
+!   Initialize mass stream function
+!-----------------------------------------------------------------------
+
+    tmp(1:nny1,1:nnz1) = 0.0
+
+    do k=1,nnz1-1
+      do j=1,nny1
+        tmp(j,k) = (2.0*omega*sin(latm(j)*pi/180.))*  &
+                    (frcin(j,k+1)-frcin(j,k))/(zm(k+1)-zm(k))*  &
+                     cos(latm(j)*pi/180.)
+      end do
+    end do
+
+    do k=2,nnz1-1
+      do j=1,nny1
+        forcing(j,k) = (tmp(j,k)+tmp(j,k-1))*0.5
+      end do
+    end do
+
+    do j=1,nny1
+      forcing(j,1) = forcing(j,2)
+      forcing(j,nnz1) = forcing(j,nnz1-1)
+    end do
+
+    do k=1,nnz1
+      do j=1,nny1
+        forcing(j,k) = forcing(j,k)
+      end do
+    end do
+
+    do k=2,nnz1
+      do j=1,nny1
+        chiout(j,k) = 0.0
+      end do 
+    end do
+    do j=1,nny1
+      chiout(j,1) = bndyin(j)
+    end do
+
+    do k=1,nnz1
+      zmr8(k) = zm(k)*1._r8
+    end do
+    do j=1,nny1
+      ymr8(j) = ym(j)*1._r8
+    end do
+    do k=1,nnz1
+      do j=1,nny1
+        frcr8(j,k) = forcing(j,k)*1._r8
+        chir8(j,k) = chiout(j,k)*1._r8
+      end do
+    end do
+
+!-----------------------------------------------------------------------
+!   Solve Elliptic equation using MULTIGRID PACKAGE
+!-----------------------------------------------------------------------
+
+    ixp = 3; jyq = 2; iex = 5; jey = 6
+    nxa = 1; nxb = 1; nyc = 1; nyd = 2
+    iguess = 0; maxcy = 1; method = 0
+    mgopt = (/2,2,1,3/)
+
+    call sol2cr(ixp,jyq,iex,jey,nny1,nnz1,  &
+                nxa,nxb,nyc,nyd,iguess,maxcy,method,  &
+                mgopt,ymr8,zmr8,frcr8,chir8,20)
+
+    do k=1,nnz1
+      do j=1,nny1
+        if ( abs(chir8(j,k)) < 1.e-20 ) then
+          chir8(j,k) = 0.0
+        end if 
+        chiout(j,k) = chir8(j,k)
+      end do
+    end do
+
+    deallocate(xusr)
+    deallocate(yusr)
+    deallocate(cxxusr)
+    deallocate(cxyusr)
+    deallocate(cyyusr)
+    deallocate(cxusr)
+    deallocate(cyusr)
+    deallocate(ceusr)
+      
+!-----------------------------------------------------------------------
+!   meridional flow
+!-----------------------------------------------------------------------
+
+    tmp (1:nny1,1:nnz1) = 0.0
+    tmp1(1:nny1,1:nnz1) = 0.0
+    vsout(1:nny1,1:nnz1) = 0.0
+    dtvout(1:nny1,1:nnz1) = 0.0
+
+    do k=1,nnz1-1 
+    do j=1,nny1
+      tmp(j,k) = (chiout(j,k+1)-chiout(j,k))/(zm(k+1)-zm(k)) 
+    end do
+    end do
+    
+    do k=2,nnz1-1
+    do j=1,nny1
+      tmp1(j,k) = (tmp(j,k)+tmp(j,k-1))*0.5 
+    end do
+    end do
+
+    do k=2,nnz1-1
+    do j=1,nny1
+      vsout (j,k) = (-1./cos(latm(j)*pi/180.))*(tmp1(j,k)-chiout(j,k)/hscal)
+      dtvout(j,k) = -vsout(j,k)*dtdyin(j,k)
+    end do
+    end do
+
+    do j=1,nny1
+      vsout(j,1) = 1.e+20
+      vsout(j,nnz1) = 1.e+20
+      dtvout(j,1) = 1.e+20
+      dtvout(j,nnz1) = 1.e+20
+    end do
+
+    tmp (1:nny1,1:nnz1) = 0.0
+    tmp1(1:nny1,1:nnz1) = 0.0
+    wsout(1:nny1,1:nnz1) = 0.0
+    dtwout(1:nny1,1:nnz1) = 0.0
+
+    do k=1,nnz1
+    do j=1,nny1-1
+      tmp(j,k) = (chiout(j+1,k)-chiout(j,k))/(ym(j+1)-ym(j))
+    end do
+    end do
+
+    do k=1,nnz1
+    do j=2,nny1-1
+      tmp1(j,k) = (tmp(j,k)+tmp(j-1,k))*0.5
+    end do
+    end do
+
+    do k=1,nnz1
+    do j=2,nny1-1
+      wsout(j,k) = (1./cos(latm(j)*pi/180.))*tmp1(j,k)
+      dtwout(j,k) = -wsout(j,k)*stblin(j,k)
+    end do
+    end do
+
+    do k=1,nnz1
+      wsout(1,k) = 1.e+20
+      wsout(nny1,k) = 1.e+20
+      dtwout(1,k) = 1.e+20
+      dtwout(nny1,k) = 1.e+20
+    end do
+
+    return
+    end subroutine elliptic
+
+!-----------------------------------------------------------------------
+
+    subroutine elliptic_palmer(nny1,nnz1,n0sqin,frcin,chiout,duout,dtout)
+!
+    integer,                    intent(in) :: nny1  ,nnz1
+    real, dimension(nnz1),      intent(in) :: n0sqin
+    real, dimension(nny1,nnz1), intent(in) :: frcin
+    real, dimension(nny1,nnz1), intent(out) :: chiout,duout,dtout
+!   
+!-----------------------------------------------------------------------
+!   Coefficients of elliptic partial differential equation (cxxusr, cxyusr,
+!   cyyusr, cxusr, cyusr, ceusr) are declared in module mud2crf90.
+!-----------------------------------------------------------------------
+!
+    real, dimension(nny1,nnz1) :: forcing
+    real, dimension(nny1,nnz1) :: vs    ,ws
+    real, dimension(nny1,nnz1) :: tmp   ,tmp1
+!
+    real(r8) :: fcor,tanova,cosf,fsign,dx,dy,eps
+    real(r8), dimension(nny1)  :: ymr8
+    real(r8), dimension(nnz1)  :: zmr8
+    real(r8), dimension(nny1,nnz1) :: frcr8,chir8
+!
+    integer :: j     ,k
+    integer :: j1    ,j2    ,k1    ,k2
+    integer :: jj    ,kk    ,l
+    integer :: npos
+!
+    integer  :: ixp,iex,jyq,jey
+    integer  :: nxa,nxb,nyc,nyd
+    integer  :: iguess,maxcy,method
+    integer, dimension(4) :: mgopt
+!   
+!   xusr, yusr, cxxusr, cxyusr, cyyusr, cxusr, cyusr, ceusr are declared in
+!   mud2crf90, and they should be allocated here.
+!
+    allocate(xusr  (1:nny1))
+    allocate(yusr  (1:nnz1))
+    allocate(cxxusr(1:nny1,1:nnz1))
+    allocate(cxyusr(1:nny1,1:nnz1))
+    allocate(cyyusr(1:nny1,1:nnz1))
+    allocate(cxusr (1:nny1,1:nnz1))
+    allocate(cyusr (1:nny1,1:nnz1))
+    allocate(ceusr (1:nny1,1:nnz1))
+
+    do j=1,nny1
+      xusr(j) = yp(j)
+    end do
+    do k=1,nnz1
+      yusr(k) = zp(k)
+    end do
+
+    eps = 1.e-20
+    do k=1,nnz1
+      do j=1,nny1
+        fcor   = 2._r8*omega*dsin(latp(j)*pi/180._r8)
+        tanova = dtan(latp(j)*pi/180._r8)/arad
+        cxxusr(j,k) = n0sqin(k)
+        cxyusr(j,k) = eps
+        cyyusr(j,k) = fcor*fcor
+        cxusr (j,k) = n0sqin(k)*tanova
+        cyusr (j,k) = -fcor*fcor/hscalp
+        ceusr (j,k) = 0._r8
+      end do
+    end do
+
+!-----------------------------------------------------------------------
+!   Determine forcing of the Elliptic equation
+!   Initialize mass stream function
+!-----------------------------------------------------------------------
+
+    tmp(1:nny1,1:nnz1) = 0.0
+
+    do k=1,nnz1-1
+      do j=1,nny1
+        tmp(j,k) = (2.0*omega*sin(latp(j)*pi/180.))*  &
+                    (frcin(j,k+1)-frcin(j,k))/(zp(k+1)-zp(k))*  &
+                     cos(latp(j)*pi/180.)
+      end do
+    end do
+
+    do k=2,nnz1-1
+      do j=1,nny1
+        forcing(j,k) = (tmp(j,k)+tmp(j,k-1))*0.5
+      end do
+    end do
+
+    do j=1,nny1
+      forcing(j,1) = forcing(j,2)
+      forcing(j,nnz1) = forcing(j,nnz1-1)
+    end do
+
+    do k=1,nnz1
+      do j=1,nny1
+        forcing(j,k) = forcing(j,k)
+      end do
+    end do
+
+    do k=1,nnz1
+      do j=1,nny1
+        chiout(j,k) = 0.0
+      end do
+    end do
+
+    do k=1,nnz1 
+      zmr8(k) = zp(k)*1._r8
+    end do
+    do j=1,nny1 
+      ymr8(j) = yp(j)*1._r8
+    end do
+    do k=1,nnz1
+      do j=1,nny1
+        frcr8(j,k) = forcing(j,k)*1._r8
+        chir8(j,k) = chiout(j,k)*1._r8
+      end do
+    end do
+
+!-----------------------------------------------------------------------
+!   Solve Elliptic equation using MULTIGRID PACKAGE
+!-----------------------------------------------------------------------
+
+    ixp = 2; jyq = 2; iex = 6; jey = 6
+    nxa = 1; nxb = 1; nyc = 1; nyd = 1
+    iguess = 0; maxcy = 1; method = 0
+    mgopt = (/2,2,1,3/)
+
+    call sol2cr(ixp,jyq,iex,jey,nny1,nnz1,  &
+                nxa,nxb,nyc,nyd,iguess,maxcy,method,  &
+                mgopt,ymr8,zmr8,frcr8,chir8,20)
+
+    do k=1,nnz1
+      do j=1,nny1
+        if ( abs(chir8(j,k)) < 1.e-20 ) then
+          chir8(j,k) = 0.0
+        end if
+        chiout(j,k) = chir8(j,k)
+      end do
+    end do
+
+    deallocate(xusr)
+    deallocate(yusr)
+    deallocate(cxxusr)
+    deallocate(cxyusr)
+    deallocate(cyyusr)
+    deallocate(cxusr)
+    deallocate(cyusr)
+    deallocate(ceusr)
+
+!-----------------------------------------------------------------------
+!   meridional flow
+!-----------------------------------------------------------------------
+
+    tmp (1:nny1,1:nnz1) = 0.0
+    tmp1(1:nny1,1:nnz1) = 0.0
+    vs  (1:nny1,1:nnz1) = 0.0
+
+    do k=1,nnz1-1
+    do j=1,nny1
+      tmp(j,k) = (chiout(j,k+1)-chiout(j,k))/(zp(k+1)-zp(k))
+    end do
+    end do
+
+    do k=2,nnz1-1
+    do j=1,nny1
+      tmp1(j,k) = (tmp(j,k)+tmp(j,k-1))*0.5
+    end do
+    end do
+
+    do k=2,nnz1-1
+    do j=1,nny1
+      vs (j,k) = (-1./cos(latp(j)*pi/180.))*(tmp1(j,k)-chiout(j,k)/hscalp)
+    end do
+    end do
+
+    do k=2,nnz1-1
+    do j=1,nny1
+      duout(j,k) = ((2.0*omega*sin(latp(j)*pi/180.))*vs(j,k)+frcin(j,k))*86400.
+    end do
+    end do
+
+    do j=1,nny1
+      duout(j,1)    = 1.e+20
+      duout(j,nnz1) = 1.e+20
+    end do
+
+    tmp (1:nny1,1:nnz1) = 0.0
+    tmp1(1:nny1,1:nnz1) = 0.0
+    ws  (1:nny1,1:nnz1) = 0.0
+    dtout(1:nny1,1:nnz1) = 0.0
+
+    do k=1,nnz1
+    do j=1,nny1-1
+      tmp(j,k) = (chiout(j+1,k)-chiout(j,k))/(yp(j+1)-yp(j))
+    end do
+    end do
+
+    do k=1,nnz1
+    do j=2,nny1-1
+      tmp1(j,k) = (tmp(j,k)+tmp(j-1,k))*0.5
+    end do
+    end do
+
+    do k=1,nnz1
+    do j=2,nny1-1
+      ws(j,k) = (1./cos(latp(j)*pi/180.))*tmp1(j,k)
+      dtout(j,k) = -ws(j,k)*n0sqin(k)*hscalp/rd*86400.
+    end do
+    end do
+
+    do k=1,nnz1
+      dtout(1,k) = 1.e+20
+      dtout(nny1,k) = 1.e+20
+    end do
+
+    do k=1,nnz1
+      do j=1,nny1
+        chiout(j,k) = chiout(j,k)*rhop(k)
+      end do
+    end do
+
+    return
+    end subroutine elliptic_palmer
+
+!-----------------------------------------------------------------------
+
+    subroutine dump
+
+    character(len=100) :: wfn1
+  
+    integer :: istat ,ncid
+    integer :: latdid,zdid  ,mondid
+    integer :: latid ,zid   ,monid
+    integer :: frcid ,chiid ,dudtid,dtdtid   ! for PALMER case
+    integer :: epdid1,gwdid1,gwoid1,gwcid1
+    integer :: chiid1,chiid2,chiid3,chiid4
+    integer :: vsid1 ,vsid2 ,vsid3 ,vsid4
+    integer :: wsid1 ,wsid2 ,wsid3 ,wsid4
+    integer :: dtvid1,dtvid2,dtvid3,dtvid4
+    integer :: dtwid1,dtwid2,dtwid3,dtwid4
+
+    write(wfn1,'(A)') 'res/palmer.nc'
+
+    istat = nf_create(trim(wfn1),nf_clobber,ncid)
+    istat = nf_def_dim(ncid,'lat',mmy,latdid)
+    istat = nf_def_dim(ncid,'z'  ,mmz,zdid  )
+    istat = nf_def_var(ncid,'lat'    ,nf_real,1,latdid,latid)
+    istat = nf_def_var(ncid,'z'      ,nf_real,1,zdid  ,zid  )
+    istat = nf_def_var(ncid,'frc'    ,nf_real,2,(/latdid,zdid/),frcid )
+    istat = nf_def_var(ncid,'chi'    ,nf_real,2,(/latdid,zdid/),chiid )
+    istat = nf_def_var(ncid,'dudt'   ,nf_real,2,(/latdid,zdid/),dudtid)
+    istat = nf_def_var(ncid,'dtdt'   ,nf_real,2,(/latdid,zdid/),dtdtid)
+    istat = nf_put_att_real(ncid,frcid ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,chiid ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dudtid,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtdtid,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_enddef(ncid)
+    istat = nf_put_var_real(ncid,latid ,latp)
+    istat = nf_put_var_real(ncid,zid   ,zp)
+    istat = nf_put_var_real(ncid,frcid ,gwop)
+    istat = nf_put_var_real(ncid,chiid ,chip)
+    istat = nf_put_var_real(ncid,dudtid,dudtp)
+    istat = nf_put_var_real(ncid,dtdtid,dtdtp)
+    istat = nf_close(ncid)
+
+#if ( defined CONTROL1 )
+    write(wfn1,'(A)') 'res/control1.nc'
+#elif ( defined CONTROL2 )
+    write(wfn1,'(A)') 'res/control2.nc'
+#elif ( defined SGWDCLM1 )
+    write(wfn1,'(A)') 'res/sgwdclm1.nc'
+#elif ( defined SGWDCLM2 )
+    write(wfn1,'(A)') 'res/sgwdclm2.nc'
+#elif ( defined LSGWDCLM )
+    write(wfn1,'(A)') 'res/lsgwdclm.nc'
+#endif
+
+    istat = nf_create(trim(wfn1),nf_clobber,ncid)
+    istat = nf_def_dim(ncid,'lat',nny,latdid)
+    istat = nf_def_dim(ncid,'z'  ,nnz,zdid  )
+    istat = nf_def_dim(ncid,'mon',nt ,mondid)
+    istat = nf_def_var(ncid,'lat'    ,nf_real,1,latdid,latid)
+    istat = nf_def_var(ncid,'z'      ,nf_real,1,zdid  ,zid  )
+    istat = nf_def_var(ncid,'mon'    ,nf_real,1,mondid,monid)
+    istat = nf_def_var(ncid,'epd'    ,nf_real,3,(/latdid,zdid,mondid/),epdid1)
+    istat = nf_def_var(ncid,'gwd'    ,nf_real,3,(/latdid,zdid,mondid/),gwdid1)
+    istat = nf_def_var(ncid,'gwo'    ,nf_real,3,(/latdid,zdid,mondid/),gwoid1)
+    istat = nf_def_var(ncid,'chiepd' ,nf_real,3,(/latdid,zdid,mondid/),chiid1)
+    istat = nf_def_var(ncid,'chigwd' ,nf_real,3,(/latdid,zdid,mondid/),chiid2)
+    istat = nf_def_var(ncid,'chigwo' ,nf_real,3,(/latdid,zdid,mondid/),chiid3)
+    istat = nf_def_var(ncid,'vsepd'  ,nf_real,3,(/latdid,zdid,mondid/),vsid1)
+    istat = nf_def_var(ncid,'vsgwd'  ,nf_real,3,(/latdid,zdid,mondid/),vsid2)
+    istat = nf_def_var(ncid,'vsgwo'  ,nf_real,3,(/latdid,zdid,mondid/),vsid3)
+    istat = nf_def_var(ncid,'wsepd'  ,nf_real,3,(/latdid,zdid,mondid/),wsid1)
+    istat = nf_def_var(ncid,'wsgwd'  ,nf_real,3,(/latdid,zdid,mondid/),wsid2)
+    istat = nf_def_var(ncid,'wsgwo'  ,nf_real,3,(/latdid,zdid,mondid/),wsid3)
+    istat = nf_def_var(ncid,'dtvepd' ,nf_real,3,(/latdid,zdid,mondid/),dtvid1)
+    istat = nf_def_var(ncid,'dtvgwd' ,nf_real,3,(/latdid,zdid,mondid/),dtvid2)
+    istat = nf_def_var(ncid,'dtvgwo' ,nf_real,3,(/latdid,zdid,mondid/),dtvid3)
+    istat = nf_def_var(ncid,'dtwepd' ,nf_real,3,(/latdid,zdid,mondid/),dtwid1)
+    istat = nf_def_var(ncid,'dtwgwd' ,nf_real,3,(/latdid,zdid,mondid/),dtwid2)
+    istat = nf_def_var(ncid,'dtwgwo' ,nf_real,3,(/latdid,zdid,mondid/),dtwid3)
+    istat = nf_put_att_real(ncid,epdid1,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,gwdid1,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,gwoid1,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,vsid1 ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,vsid2 ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,vsid3 ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,wsid1 ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,wsid2 ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,wsid3 ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtvid1,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtvid2,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtvid3,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtwid1,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtwid2,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtwid3,'_FillValue',nf_real,1,1.e+20)
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+    istat = nf_def_var(ncid,'gwc'   ,nf_real,3,(/latdid,zdid,mondid/),gwcid1)
+    istat = nf_def_var(ncid,'chigwc' ,nf_real,3,(/latdid,zdid,mondid/),chiid4)
+    istat = nf_def_var(ncid,'vsgwc'  ,nf_real,3,(/latdid,zdid,mondid/),vsid4)
+    istat = nf_def_var(ncid,'wsgwc'  ,nf_real,3,(/latdid,zdid,mondid/),wsid4)
+    istat = nf_def_var(ncid,'dtvgwc' ,nf_real,3,(/latdid,zdid,mondid/),dtvid4)
+    istat = nf_def_var(ncid,'dtwgwc' ,nf_real,3,(/latdid,zdid,mondid/),dtwid4)
+    istat = nf_put_att_real(ncid,gwcid1,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,vsid4  ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,wsid4  ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtvid4 ,'_FillValue',nf_real,1,1.e+20)
+    istat = nf_put_att_real(ncid,dtwid4 ,'_FillValue',nf_real,1,1.e+20)
+#endif
+    istat = nf_enddef(ncid)
+    istat = nf_put_var_real(ncid,latid ,latm )
+    istat = nf_put_var_real(ncid,zid   ,zm/1000.)
+    istat = nf_put_var_real(ncid,monid ,mon)
+    istat = nf_put_var_real(ncid,epdid1,epdm)
+    istat = nf_put_var_real(ncid,gwdid1,gwdm)
+    istat = nf_put_var_real(ncid,gwoid1,gwom)
+    istat = nf_put_var_real(ncid,chiid1,chiep)
+    istat = nf_put_var_real(ncid,chiid2,chigw)
+    istat = nf_put_var_real(ncid,chiid3,chigo)
+    istat = nf_put_var_real(ncid,vsid1,vsepd)
+    istat = nf_put_var_real(ncid,vsid2,vsgwd)
+    istat = nf_put_var_real(ncid,vsid3,vsgwo)
+    istat = nf_put_var_real(ncid,wsid1,wsepd)
+    istat = nf_put_var_real(ncid,wsid2,wsgwd)
+    istat = nf_put_var_real(ncid,wsid3,wsgwo)
+    istat = nf_put_var_real(ncid,dtvid1,dtvepd)
+    istat = nf_put_var_real(ncid,dtvid2,dtvgwd)
+    istat = nf_put_var_real(ncid,dtvid3,dtvgwo)
+    istat = nf_put_var_real(ncid,dtwid1,dtwepd)
+    istat = nf_put_var_real(ncid,dtwid2,dtwgwd)
+    istat = nf_put_var_real(ncid,dtwid3,dtwgwo)
+#if ( defined SGWDCLM1 || defined SGWDCLM2 || defined LSGWDCLM )
+    istat = nf_put_var_real(ncid,gwcid1,gwcm)
+    istat = nf_put_var_real(ncid,chiid4,chigwc)
+    istat = nf_put_var_real(ncid,vsid4 ,vsgwc)
+    istat = nf_put_var_real(ncid,wsid4 ,wsgwc)
+    istat = nf_put_var_real(ncid,dtvid4,dtvgwc)
+    istat = nf_put_var_real(ncid,dtwid4,dtwgwc)
+#endif
+    istat = nf_close(ncid)
+
+    return
+    end subroutine dump
+
+    end program residualsph

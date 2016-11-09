@@ -1,0 +1,31 @@
+#
+#
+FC = /usr/bin/f90
+RM = /usr/bin/rm
+NCINC = /usr/local/netcdf/include
+NCLIB = /usr/local/netcdf/lib
+
+stat:		stat.o  netcdfio.o specanal.o imsl_subr.o random.o regress.o pwrspd.o fft.o cubicspline.o
+		$(FC) -o stat stat.o netcdfio.o -L$(NCLIB) -lnetcdf specanal.o imsl_subr.o random.o regress.o pwrspd.o fft.o cubicspline.o
+netcdfio.o:	netcdfio.f90
+		$(FC) -c -I$(NCINC) netcdfio.f90
+specanal.o:	specanal.f imsl_subr.o
+		$(FC) -c specanal.f imsl_subr.o
+imsl_subr.o:	imsl_subr.f
+		$(FC) -c imsl_subr.f
+random.o:	random.f90
+		$(FC) -c random.f90
+regress.o:  regress.f90
+		$(FC) -c regress.f90
+pwrspd.o:	pwrspd.f90 fft.o regress.o
+		$(FC) -c pwrspd.f90 fft.o regress.o
+fft.o:	fft.f90
+		$(FC) -c fft.f90
+cubicspline.o:	cubicspline.f90
+		$(FC) -c cubicspline.f90
+
+stat.o:	stat.f90 netcdfio.o specanal.o random.o regress.o pwrspd.o fft.o cubicspline.o
+		$(FC) -c -I$(NCINC) stat.f90  netcdfio.o specanal.o random.o regress.o pwrspd.o fft.o cubicspline.o
+clean:	*.o *.mod
+		$(RM) *.o *.mod
+

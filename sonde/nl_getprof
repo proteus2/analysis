@@ -1,0 +1,55 @@
+&IO_PARAM
+ fi_dir   = '/data11/kyh/analy/z/dat_sonde'  ,
+ fi_head  = ''                         ,
+ fi_tail  = '_EDTdata.txt'             ,
+ nline_h  = 2                          ,
+ MIS_in   = -999.                      ,
+ fo_dir   = '/data11/kyh/analy/z/out_sonde'  ,
+/
+&FILTERING_PARAM
+ limit_in = 50.  ,                 ! [m]
+ itv      = 10   ,
+/
+&INTERPOLATION_PARAM
+ dz       = 50.  ,                 ! [m]
+/
+&BASE_PERT
+ zab      = 17.e3   ,              ! [m]
+ zat      = 30.e3   ,
+ order_p  = 3       ,
+ zbuf     = 50.     ,
+ p0_hydro = .true.  ,
+! p0_hydro = .false.  ,
+/
+
+!-----------------------------------------------------------------------
+! fi_dir   : base directory in which the input file exists
+! fi_head  : head of the input file
+! fi_tail  : tail of the input file
+! nline_h  : number of header lines
+! MIS_in   : missing value assigned in the input data
+! fo_dir   : base directory in which the output file will be saved
+!-----------------------------------------------------------------------
+! limit_in : length used to filter the original data in data-reading process
+!            when the height interval is too short (i.e., shorter than limit_in)
+!            The filtered data is made so that it has intervals (at least)
+!            longer than limit_in.
+! itv      : itv*limin_in is used to cut-out the data in data-reading process.
+!            It is needed when the data is bad (i.e., One of the intervals is 
+!            longer than itv*limin_in) so that the interpolation may produce 
+!            large error).
+!            Too small itv may cause a short vertical profile.
+!            Too large itv may cause large errors in the interpolation process.
+!-----------------------------------------------------------------------
+! dz       : interval for interpolating
+!-----------------------------------------------------------------------
+! zab      : bottom height for analysis. It should be a multiple of dz
+! zat      : top height for analysis. It should be a multiple of dz
+! order_p  : order of polynomials used to obtain basic states
+! zbuf     : buffer height for polynomial fitting to obtain basic states.
+!            It should be a multiple of dz
+! p0_hydro : option for the basic-state pressure to be hydrostatically balanced.
+!            If .false., it is defined by the polynomial regression of the
+!            pressure profile, like the other variables.
+!-----------------------------------------------------------------------
+

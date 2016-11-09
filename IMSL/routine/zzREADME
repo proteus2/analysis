@@ -1,0 +1,35 @@
+
+< IMSL library >
+
+
+
+  -- IMSL is a collection of mathematical and statistical functions that
+
+  programmers can embed into their applications. The objective of IMSL
+
+  is to provide high-performance computing and expertise needed to develop
+
+  and execute sophisticated numerical applications.
+
+
+
+  -- There is a document file "imsl.doc". Read it before use.
+
+  And be careful "^Z" at the end of each files.
+
+
+
+  -- There maybe exist the expression which is inadequate
+
+  for some machines. for example, in "zpolr.for"
+
+  //
+             DATA               SINF/Z7FFFFFFF/
+             DATA               SDEPS/Z34100000/
+             DATA               TWOD3/.6666667/
+             DATA               RNLGRX/2.772589/
+             DATA               FINITY/Z7FFFFFFF
+  //
+ 
+  DEC cannot read these.
+      

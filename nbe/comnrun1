@@ -1,0 +1,53 @@
+#! /bin/bash
+
+TMPDIR=${TMPDIR:-"~/tmp"}
+if [ ! -d $TMPDIR/exec ] ; then mkdir -p $TMPDIR/exec ; fi
+
+if [ $# -eq 0 ] ; then
+  echo -e "\n Usage:  $0 [source file] (argument)\n"
+  echo -e " --> 1) Compile [source file]"
+  echo -e " --> 2) exec/run_[source file].$$ (argument)\n"
+  exit 1
+fi
+
+src=$1
+arg=$2
+exe=run_$src.$$
+
+echo '========================================='
+echo ' Compile starts'
+
+# compile
+cd COMPILE
+while [ -e COMPILING_NOW ] ; do
+  echo ' Other program has been compiled. Sleep 5 sec.' ; sleep 5
+done
+touch COMPILING_NOW
+make $src
+if [ $? -ne 0 ] ; then
+  echo "COMPILE ERROR : $src"
+  echo "== STOP ================================="
+  rm -f COMPILING_NOW
+  exit 1
+fi
+
+if [ -e $TMPDIR/exec/$exe ] ; then rm -f $TMPDIR/exec/$exe ; fi
+cp $src $TMPDIR/exec/$exe ; rm -f COMPILING_NOW ; cd $TMPDIR/exec
+echo '-----------------------------------------'
+echo ' Compile ends'
+echo '========================================='
+
+echo ' Run'
+echo '-----------------------------------------'
+echo "> $exe $arg"
+./$exe $arg
+if [ $? -ne 0 ] ; then
+  echo "EXECUTIVE ERROR : $exe"
+  echo "== STOP ================================="
+  exit 1
+fi
+rm -f ./$exe
+echo
+
+exit 0
+

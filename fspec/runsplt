@@ -1,0 +1,40 @@
+#! /bin/bash
+
+export TMPDIR=${TMPDIR:-"~/tmp"}
+if [ ! -d $TMPDIR/exec ] ; then mkdir -p $TMPDIR/exec ; fi
+
+if [ $# -ne 2 ] ; then echo 'Two arg.s required.'  ; exit ; fi
+if [ ! -r $1  ] ; then echo "No readable file $1." ; exit ; fi
+
+str1=( `grep 'EXTCTL1=' $1` )  ;  str2=( `grep 'EXTCTL2=' $1` )
+
+if [ "${str1:7:1}" != "=" -o "${str2:7:1}" != "=" ] ; then
+    echo 'Check control variables for splitting.' ; exit ; fi
+
+CTL1=${str1[0]:8}  ;  CTL2=${str2[0]:8}
+nproc=$2
+echo "$nproc processes for $CTL1 - $CTL2"
+
+itvl=$(( ($CTL2-$CTL1+1)/$nproc ))
+nrem=$(( ($CTL2-$CTL1+1)%$nproc ))
+
+iproc=1  ;  istart=$CTL1
+while [ $iproc -le $nproc ] ; do
+
+  iend=$(( $istart + $itvl - 1 ))
+  if [ $iproc -le $nrem ] ; then iend=$(( $iend + 1 )) ; fi
+
+  ff=$TMPDIR/exec/$1.$$.$iproc
+  cp $1 $ff
+  sed -e "s|EXTCTL1=|EXTCTL1=$istart  # |" -i $ff
+  sed -e "s|EXTCTL2=|EXTCTL2=$iend  # |"   -i $ff
+
+  ( nohup $ff &> log.$1.$$.$iproc ) &
+  sleep 1
+
+  iproc=$(( $iproc + 1 ))  ;  istart=$(( $iend + 1 ))
+
+done
+
+exit 0
+

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+f0=/data18/kyh/dat/clim/MERRA/merra.u_ypt.1979-2012.nc
+
+for n in {1..12} ; do
+  n0=$(( n - 1 ))
+  nn=$n  ;  [ $n -lt 10 ] && nn=0$n
+  ncks -d time,$n0,,12 $f0 tmp/merra.u_ypt.$nn.1979-2012.nc
+done
+
+ncra -h tmp/merra.u_ypt.01.1979-2012.nc \
+        tmp/merra.u_ypt.02.1979-2012.nc \
+        tmp/merra.u_ypt.12.1979-2012.nc \
+     -O dat/merra.u_ypt.djf.1979-2012.nc
+
+ncra -h tmp/merra.u_ypt.03.1979-2012.nc \
+        tmp/merra.u_ypt.04.1979-2012.nc \
+        tmp/merra.u_ypt.05.1979-2012.nc \
+     -O dat/merra.u_ypt.mam.1979-2012.nc
+
+ncra -h tmp/merra.u_ypt.06.1979-2012.nc \
+        tmp/merra.u_ypt.07.1979-2012.nc \
+        tmp/merra.u_ypt.08.1979-2012.nc \
+     -O dat/merra.u_ypt.jja.1979-2012.nc
+
+ncra -h tmp/merra.u_ypt.09.1979-2012.nc \
+        tmp/merra.u_ypt.10.1979-2012.nc \
+        tmp/merra.u_ypt.11.1979-2012.nc \
+     -O dat/merra.u_ypt.son.1979-2012.nc
+

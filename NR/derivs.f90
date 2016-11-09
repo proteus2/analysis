@@ -1,0 +1,8 @@
+SUBROUTINE derivs(x,y,dydx)
+USE nrtype
+IMPLICIT NONE
+REAL(SP), INTENT(IN) :: x
+REAL(SP), DIMENSION(:), INTENT(IN) :: y
+REAL(SP), DIMENSION(:), INTENT(OUT) :: dfdx
+END SUBROUTINE derivs
+

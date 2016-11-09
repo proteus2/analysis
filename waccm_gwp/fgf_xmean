@@ -1,0 +1,47 @@
+#!/bin/bash
+
+expname="0"
+histno=0
+varnames="FRONTGF,FRONTGFA"
+levind="48,"
+y1=0001
+y2=0005
+#mon_opt=0
+  # 0,1,2,3,4 - Annual, DJF, MAM, JJA, SON
+#--------------------------------------------
+for mon_opt in {0..4} ; do
+#--------------------------------------------
+ftail=( ann djf mam jja son )
+outfname="fgf_yz.${ftail[$mon_opt]}.$y1-$y2.exp$expname"
+
+mon=( 01 02 03 04 05 06 07 08 09 10 11 12 )
+[ $mon_opt -eq 1 ] && mon=( 01 02 12 )
+[ $mon_opt -eq 2 ] && mon=( 03 04 05 )
+[ $mon_opt -eq 3 ] && mon=( 06 07 08 )
+[ $mon_opt -eq 4 ] && mon=( 09 10 11 )
+
+dir="dat$expname"
+files=( )
+
+y=$(( y1 ))
+while [ $y -le $(( y2 )) ] ; do
+  yyyy="$y"
+  [ $y -lt 1000 ] && yyyy="0$yyyy"
+  [ $y -lt 100  ] && yyyy="0$yyyy"
+  [ $y -lt 10   ] && yyyy="0$yyyy"
+  for mm in ${mon[@]} ; do
+    files=( "${files[@]}" $dir/*.cam2.h$histno.$yyyy-$mm.nc )
+  done
+  y=$(( y + 1 ))
+done
+echo ${files[@]}
+
+rm -f tmp-$$.nc
+ncra -h -v $varnames -d lev,$levind ${files[@]} -o tmp-$$.nc
+ncwa -h -a lon tmp-$$.nc -o $outfname.nc
+rm -f tmp-$$.nc
+
+#--------------------------------------------
+done  #mon_opt
+#--------------------------------------------
+

@@ -1,0 +1,54 @@
+#! /bin/bash
+
+#year1=1979
+#year2=2013
+#yearf=$year2
+mm=( 06 07 08 )
+vvs=( "u_m" "v_m" )
+levs=( 850 )
+# var0 :  u, v, t, h, omega, slp, dudtgwd, dudtana, dtdtmst, dtdtgwd, dtdtana, prec_cu, cldprs
+
+MERRA_ARCH="../dat"
+
+#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+cd $MERRA_ARCH
+tag=0
+yyyy=$year1
+while [ $yyyy -le $year2 ] ; do
+  [ $yyyy -eq $yearf ] && tag=1
+  for m in ${mm[@]} ; do
+    echo $yyyy $m
+    for vv in ${vvs[@]} ; do
+      . ../process/fform-merra $vv $yyyy $m 16 ${levs[0]}
+      ff="`basename $LABEL .gz`"
+      if [ ! -e $yyyy/$ff ] ; then
+        wget --content-disposition "$url"
+        if [ ! -d $yyyy/$m ] ; then mkdir -p $yyyy ; fi
+        mv $LABEL $yyyy/
+        if [ $? -eq 0 ] ; then ( gunzip $yyyy/$LABEL & ) ; fi
+      fi
+    done
+  done
+  yyyy=$(( $yyyy + 1 ))
+done
+
+if [ $tag -eq 0 ] ; then
+  yyyy=$yearf
+  for m in ${mm[@]} ; do
+    echo $yyyy $m
+    for vv in ${vvs[@]} ; do
+      . ../process/fform-merra $vv $yyyy $m 16 ${levs[0]}
+      ff="`basename $LABEL .gz`"
+      if [ ! -e $yyyy/$ff ] ; then
+        wget --content-disposition "$url"
+        if [ ! -d $yyyy/$m ] ; then mkdir -p $yyyy ; fi
+        mv $LABEL $yyyy/
+        if [ $? -eq 0 ] ; then ( gunzip $yyyy/$LABEL & ) ; fi
+      fi
+    done
+  done
+fi
+
+exit
+

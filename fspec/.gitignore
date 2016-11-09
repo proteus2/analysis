@@ -1,0 +1,6 @@
+COMPILE/fft_x_ra
+COMPILE/fft_t2_ra
+COMPILE/wavedcp_var
+COMPILE/reconstr_varsa
+COMPILE/test1
+z[0-9]*

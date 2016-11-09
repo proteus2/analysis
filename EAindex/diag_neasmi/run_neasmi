@@ -1,0 +1,30 @@
+#! /bin/bash
+
+##------------------------- Options
+opt_update='no'
+year1=1979
+year2=2011
+yearf=1980
+filetype=''
+
+## opt_update : option for replacing data by recent one from CMAP - yes/
+##                no
+## year1      : the first year for the index to be plotted
+## year2      : the last year for the index to be plotted
+## yearf      : the year for the regressed anomaly of precipitation to 
+##                be plotted
+## filetype   : output figure file extension - eps/jpg/png
+##                The default is 'eps' if it is blank.
+
+
+##------------------------- Do not modify below unless a problem arises.
+CMAP_datURL='ftp://ftp.cdc.noaa.gov/Datasets/cmap/std/precip.mon.mean.nc'
+#NCARG_ROOT=
+
+## CMAP_datURL : Modify this only when the URL of the CMAP data changed.
+## NCARG_ROOT  : Insert this only when an error occurs due to the failure
+##                 of searching the NCL root directory automatically.
+
+
+##------------------------- Do not modify below.
+cd process ; . ./main.sh

@@ -1,0 +1,74 @@
+ EXIST T-DATE
+           3       82012
+ EXIST T-DATE
+           5       82100
+ EXIST T-DATE
+           7       82112
+ EXIST T-DATE
+           9       82200
+ EXIST T-DATE
+          10       82206
+ EXIST T-DATE
+          11       82212
+ EXIST T-DATE
+          15       82312
+ EXIST T-DATE
+          17       82400
+ EXIST T-DATE
+          19       82412
+ EXIST T-DATE
+          21       82500
+ EXIST T-DATE
+          23       82512
+ EXIST T-DATE
+          25       82600
+ EXIST T-DATE
+          28       82618
+ EXIST T-DATE
+          29       82700
+ EXIST T-DATE
+          30       82706
+ EXIST T-DATE
+          33       82800
+ EXIST T-DATE
+          35       82812
+ EXIST T-DATE
+          37       82900
+ EXIST T-DATE
+          38       82906
+ EXIST T-DATE
+          40       82918
+ EXIST T-DATE
+          41       83000
+ EXIST T-DATE
+          42       83006
+ EXIST T-DATE
+          43       83012
+ EXIST T-DATE
+          48       83118
+ EXIST T-DATE
+          49       90100
+ EXIST T-DATE
+          50       90106
+ EXIST T-DATE
+          51       90112
+ EXIST T-DATE
+          55       90212
+ EXIST T-DATE
+          57       90300
+ EXIST T-DATE
+          59       90312
+ EXIST T-DATE
+          61       90400
+ EXIST T-DATE
+          63       90412
+ EXIST T-DATE
+          65       90500
+ EXIST T-DATE
+          67       90512
+ T-ERROR
+           3   3.312703       1.457441       8.429733    
+ U-ERROR
+           5   4.646771       3.265132       22.31195    
+ V-ERROR
+           5   5.938457       3.156836       22.24596    

@@ -1,0 +1,9 @@
+&specparm
+ rdir  = '/export9/radiosonde/rusa/pohang31_500/add_data'
+ year  = 2002
+ month = 08
+ leap  = 'F'
+ tau   = 6.0
+ lat   = 36.032
+ addmsg = ''
+/ 

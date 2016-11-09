@@ -1,0 +1,39 @@
+#!/bin/bash
+
+expname=era-int
+#--------------------------------------------
+files=( $expname_*01_daily.nc )
+#files=( merra/merra_nbe_201210_daily.nc )
+for ff in ${files[@]} ; do
+  ff2="$( basename $ff .nc )"_monthly.nc
+  echo $ff
+
+  ncap2 -h -s 'div_p = div ; where(div_p < 0)  div_p=0' \
+           -s 'div_n = div ; where(div_n > 0)  div_n=0 ; elsewhere div_n=abs(div_n)' \
+           -s 'div = abs(div)' \
+           -s 'nbemaj = nbe - curv' \
+           -s 'nbemaj_p = nbemaj ; where(nbemaj_p < 0)  nbemaj_p=0' \
+           -s 'nbemaj_n = nbemaj ; where(nbemaj_n > 0)  nbemaj_n=0 ; elsewhere nbemaj_n=abs(nbemaj_n)' \
+           -s 'nbemaj = abs(nbemaj)' \
+           -s 'nbeall = nbe + term2' \
+           -s 'nbeall_p = nbeall ; where(nbeall_p < 0)  nbeall_p=0' \
+           -s 'nbeall_n = nbeall ; where(nbeall_n > 0)  nbeall_n=0 ; elsewhere nbeall_n=abs(nbeall_n)' \
+           -s 'nbeall = abs(nbeall)' \
+           -s 'nbe_p = nbe ; where(nbe_p < 0)  nbe_p=0' \
+           -s 'nbe_n = nbe ; where(nbe_n > 0)  nbe_n=0 ; elsewhere nbe_n=abs(nbe_n)' \
+           -s 'nbe = abs(nbe)' \
+           -s 'curv_p = curv ; where(curv_p < 0)  curv_p=0' \
+           -s 'curv_n = curv ; where(curv_n > 0)  curv_n=0 ; elsewhere curv_n=abs(curv_n)' \
+           -s 'curv = abs(curv)' \
+           -s 'term2_p = term2 ; where(term2_p < 0)  term2_p=0' \
+           -s 'term2_n = term2 ; where(term2_n > 0)  term2_n=0 ; elsewhere term2_n=abs(term2_n)' \
+           -s 'term2 = abs(term2)' \
+           -s 'adv_p = adv ; where(adv_p < 0)  adv_p=0' \
+           -s 'adv_n = adv ; where(adv_n > 0)  adv_n=0 ; elsewhere adv_n=abs(adv_n)' \
+           -s 'adv = abs(adv)' \
+        $ff -o $ff2
+  ncwa -h -a time $ff2 -O $ff2
+#  ncap2 -h -s 'nbe(:,0,:)=1.e32' -s 'nbe(:,120,:)=1.e32' $ff2 -O $ff2
+done
+#--------------------------------------------
+

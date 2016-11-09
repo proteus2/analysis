@@ -1,0 +1,17 @@
+#
+#
+FC = /usr/bin/f90
+RM = /usr/bin/rm
+
+test:		test.o fft.o  cfftpack.o regress.o
+		$(FC) -o test test.o fft.o cfftpack.o regress.o 
+fft.o:		fft.f90
+		$(FC) -c fft.f90 fft.o
+cfftpack.o:	cfftpack.f90
+		$(FC) -c cfftpack.f90 cfftpack.o
+regress.o:	regress.f90
+		$(FC) -c regress.f90  regress.o
+test.o:		test.f90 fft.o cfftpack.o regress.o
+		$(FC) -c test.f90 fft.o cfftpack.o regress.o
+clean:		*.o *.mod
+		$(RM) *.o *.mod

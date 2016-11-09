@@ -1,0 +1,1 @@
+/data18/kyh/qbo_obs/qbo_sonde_hr.nc

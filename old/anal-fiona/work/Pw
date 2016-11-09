@@ -1,0 +1,5 @@
+cp pw.f90 compile/anal.f90
+cd compile
+make
+runnn
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+dir=/home/kyh/dat/dat_sonde/0001
+
+for dd in $dir/* ; do
+  files=$( /bin/ls $dd )
+  for ff in ${files[@]} ; do echo $dd/$ff
+    mv $dd/$ff $dd/${ff}_0
+    tr -d '\15\32' < $dd/${ff}_0 > $dd/$ff
+    [ $? -eq 0 ] && rm -f $dd/${ff}_0
+  done
+done
+

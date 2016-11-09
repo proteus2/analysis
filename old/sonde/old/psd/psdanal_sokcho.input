@@ -1,0 +1,8 @@
+&psdparm
+ rdir  = '/export9/radiosonde/rusa/sokcho31_500/add_data'
+ year  = 2002
+ month = 8
+ leap  = 'F'
+ tau   = 6.0
+ addmsg(1) = ''
+/ 
