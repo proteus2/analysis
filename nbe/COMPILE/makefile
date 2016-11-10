@@ -23,7 +23,7 @@ LIB_SUBS = libsubs.a
 
 # main
 
-nbe_ra:	nbe_ra.f90  $(LIB_SUBS)
+nbe_ra:	nbe_ra.f90  $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) -L$(NCLIB) $(NCLIBNAME)
 
 # modules

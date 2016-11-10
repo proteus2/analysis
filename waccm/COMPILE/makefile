@@ -26,7 +26,7 @@ F_INC = c_math.inc c_phys.inc
 
 # main
 
-tem_mm_cam:	tem_mm_cam.f90  $(LIB_SUBS)
+tem_mm_cam:	tem_mm_cam.f90  $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
 # modules

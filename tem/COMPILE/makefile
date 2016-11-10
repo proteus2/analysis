@@ -24,28 +24,28 @@ LIB_SUBS = libsubs.a
 
 # main
 
-tem_ra:	tem_ra.f90  $(LIB_SUBS)
+tem_ra:	tem_ra.f90  $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-tem_ra-lastmiss:	tem_ra-lastmiss.f90  $(LIB_SUBS)
+tem_ra-lastmiss:	tem_ra-lastmiss.f90  $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-tem_qg:	tem_qg.f90  $(LIB_SUBS)
+tem_qg:	tem_qg.f90  $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-tem_qg_betap_gp:	tem_qg_betap_gp.f90  $(LIB_SUBS)
+tem_qg_betap_gp:	tem_qg_betap_gp.f90  $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-epf_fc2_ra:	epf_fc2_ra.f90  $(LIB_SUBS)
+epf_fc2_ra:	epf_fc2_ra.f90  $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
 reconstr_epf:	reconstr_epf.f90 $(LIB_SUBS)
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-epfsa0_fc2_ra:	epfsa0_fc2_ra.f90 $(LIB_SUBS)
+epfsa0_fc2_ra:	epfsa0_fc2_ra.f90 $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-epfsa1_fc2_ra:	epfsa1_fc2_ra.f90 $(LIB_SUBS)
+epfsa1_fc2_ra:	epfsa1_fc2_ra.f90 $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
 reconstr_epfsa:	reconstr_epfsa.f90 $(LIB_SUBS)

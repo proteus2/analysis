@@ -51,7 +51,7 @@ mudcom.o:	mudcom.F
 mud2crf90.o:	mud2crf90.F mudcom.o
 		$(FC) -c mud2crf90.F
 
-SUBS_COMP:	
+SUBS_COMP:	$(F_INC)
 		$(FC) -c $(ALL_SUB_F)
 
 # clean

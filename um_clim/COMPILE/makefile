@@ -4,6 +4,7 @@ RM = rm -f
 NCINC ?= $(NETCDF)/include
 NCLIB ?= $(NETCDF)/lib
 NCLIBNAME ?= -lnetcdf -lnetcdff
+#NCLIBNAME ?= -lnetcdf
 LIB_FFTPACK ?= $(UTIL)/num_analysis/FFT/fftpack5.1/$(VER_COMP)/lib/libfftpack.a
 
 EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf reconstr_varsa wavedcp_var reconstr_epfsa reconstr_epfsa1
@@ -29,55 +30,55 @@ F_INC = c_math.inc c_phys.inc
 w-cont_um:	w-cont_um.f90  $(LIB_SUBS)
 		$(FC) $< -o $@ $(LIB_SUBS) -L$(NCLIB) $(NCLIBNAME)
 
-tem_z_um:	tem_z_um.f90  $(LIB_SUBS) $(LIB_FFTPACK)
+tem_z_um:	tem_z_um.f90  $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-tem_z_cp_um:	tem_z_cp_um.f90  $(LIB_SUBS) $(LIB_FFTPACK)
+tem_z_cp_um:	tem_z_cp_um.f90  $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
 epf_z_um:	epf_z_um.f90  $(LIB_SUBS) $(LIB_FFTPACK)
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-fft_x_um:	fft_x_um.f90  $(LIB_SUBS) $(LIB_FFTPACK)
+fft_x_um:	fft_x_um.f90  $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-fft_x-wgt_um:	fft_x-wgt_um.f90  $(LIB_SUBS) $(LIB_FFTPACK)
+fft_x-wgt_um:	fft_x-wgt_um.f90  $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-fft_t2_um:	fft_t2_um.f90  $(LIB_SUBS) $(LIB_FFTPACK)
+fft_t2_um:	fft_t2_um.f90  $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-fft_t2i_um:	fft_t2i_um.f90  $(LIB_SUBS) $(LIB_FFTPACK)
+fft_t2i_um:	fft_t2i_um.f90  $(LIB_SUBS) $(LIB_FFTPACK) c_math.inc c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-reconstr_var:	reconstr_var.f90  $(LIB_SUBS) $(LIB_FFTPACK)
+reconstr_var:	reconstr_var.f90  $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
 reconstr_varsa:	reconstr_varsa.f90  $(LIB_SUBS) $(LIB_FFTPACK)
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-wavedcp_var:	wavedcp_var.f90 $(LIB_SUBS)
+wavedcp_var:	wavedcp_var.f90 $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) -L$(NCLIB) $(NCLIBNAME)
 
-epf_z_fc2_um:	epf_z_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK)
+epf_z_fc2_um:	epf_z_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-epf_z_cp_fc2_um:	epf_z_cp_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK)
+epf_z_cp_fc2_um:	epf_z_cp_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-epfsa0_z_fc2_um:	epfsa0_z_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK)
+epfsa0_z_fc2_um:	epfsa0_z_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-epfsa1_z_fc2_um:	epfsa1_z_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK)
+epfsa1_z_fc2_um:	epfsa1_z_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-epfsa0_z_cp_fc2_um:	epfsa0_z_cp_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK)
+epfsa0_z_cp_fc2_um:	epfsa0_z_cp_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-epfsa1_z_cp_fc2_um:	epfsa1_z_cp_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK)
+epfsa1_z_cp_fc2_um:	epfsa1_z_cp_fc2_um.f90 $(LIB_SUBS) $(LIB_FFTPACK) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-reconstr_epf:	reconstr_epf.f90 $(LIB_SUBS)
+reconstr_epf:	reconstr_epf.f90 $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) -L$(NCLIB) $(NCLIBNAME)
 
 reconstr_epfsa:	reconstr_epfsa.f90 $(LIB_SUBS)
