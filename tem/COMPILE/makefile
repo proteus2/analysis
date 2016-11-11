@@ -1,74 +1,52 @@
 #
 #FC = $(FC_DBG) # -mcmodel=medium -shared-intel
-RM = rm -f
-NCINC ?= $(NETCDF)/include
-NCLIB ?= $(NETCDF)/lib
-NCLIBNAME ?= -lnetcdf -lnetcdff
-LIB_FFTPACK ?= $(UTIL)/num_analysis/FFT/fftpack5.1/$(VER_COMP)/lib/libfftpack.a
-
-EXEC_ALL := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp epf_fc2_ra reconstr_epf epfsa0_fc2_ra epfsa1_fc2_ra reconstr_epfsa reconstr_epfsa-a reconstr_epfsa1 reconstr_epfsa2
-MOD_N := m_reanal netio
-MOD_N := $(MOD_N) fft tem epf warc3d
+EXEC_ALL := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp  \
+            epf_fc2_ra reconstr_epf epfsa0_fc2_ra epfsa1_fc2_ra  \
+            reconstr_epfsa reconstr_epfsa-a reconstr_epfsa1 reconstr_epfsa2
+MOD_DEP_N := m_reanal netio
+MOD_N := tem epf warc3d
 SUB_N := fdcoef
+INCL_c_phys := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp  \
+               epf_fc2_ra epfsa0_fc2_ra epfsa1_fc2_ra
 
-MOD_F = $(addsuffix .f90,$(MOD_N))
-MOD_O = $(MOD_F:.f90=.o)
-SUB_F = $(addsuffix .f90,$(SUB_N))
-SUB_O = $(SUB_F:.f90=.o)
+NCINC := $(filter-out -g,$(shell nc-config --fflags))
+NCLIB := $(shell nc-config --flibs)
 
-ALL_SUB_F = $(MOD_F) $(SUB_F)
-ALL_SUB_O = $(MOD_O) $(SUB_O)
+COMPBASE_D := $(VER_COMP)_nc$(filter-out netCDF,$(shell nc-config --version))
+EXEC_D := $(COMPBASE_D)/bin
+LIB_D := $(COMPBASE_D)/lib
+LIB_SUBS := libsubs.a
+SUBSLIB := -L$(LIB_D) -lsubs -module $(LIB_D)
 
-LIB_SUBS = libsubs.a
+ALL_SUB_N := $(MOD_DEP_N) $(MOD_N) $(SUB_N)
+ALL_SUB_F := $(addsuffix .f90,$(ALL_SUB_N))
+ALL_SUB_O := $(ALL_SUB_F:.f90=.o)
+EXEC_FULL := $(patsubst %,$(EXEC_D)/%,$(EXEC_ALL))
 
+ifeq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),$(INCL_c_phys)))
+  INCL_F += c_phys.inc
+endif
 
 # main
 
-tem_ra:	tem_ra.f90  $(LIB_SUBS) c_phys.inc
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
+$(EXEC_ALL):	%:	$(EXEC_D)/%
 
-tem_ra-lastmiss:	tem_ra-lastmiss.f90  $(LIB_SUBS) c_phys.inc
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
+$(EXEC_FULL):	$(EXEC_D)/%:	%.f90 $(LIB_D)/$(LIB_SUBS) $(INCL_F)
+		mkdir -p $(EXEC_D)
+		$(FC) $< -o $@ $(SUBSLIB) $(NCLIB)
 
-tem_qg:	tem_qg.f90  $(LIB_SUBS) c_phys.inc
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
+# library
 
-tem_qg_betap_gp:	tem_qg_betap_gp.f90  $(LIB_SUBS) c_phys.inc
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-epf_fc2_ra:	epf_fc2_ra.f90  $(LIB_SUBS) c_phys.inc
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-reconstr_epf:	reconstr_epf.f90 $(LIB_SUBS)
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-epfsa0_fc2_ra:	epfsa0_fc2_ra.f90 $(LIB_SUBS) c_phys.inc
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-epfsa1_fc2_ra:	epfsa1_fc2_ra.f90 $(LIB_SUBS) c_phys.inc
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-reconstr_epfsa:	reconstr_epfsa.f90 $(LIB_SUBS)
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-reconstr_epfsa-a:	reconstr_epfsa-a.f90 $(LIB_SUBS)
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-reconstr_epfsa1:	reconstr_epfsa1.f90 $(LIB_SUBS)
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-reconstr_epfsa2:	reconstr_epfsa2.f90 $(LIB_SUBS)
-		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
-
-# modules
-
-$(LIB_SUBS):	$(ALL_SUB_F)
-		$(FC) -c -I$(NCINC) $(ALL_SUB_F)
-		ar -rv $@ $(ALL_SUB_O)
-		rm -f $(ALL_SUB_O)
+$(LIB_D)/$(LIB_SUBS):	$(ALL_SUB_F)
+		mkdir -p $(LIB_D)
+		cp $? $(LIB_D)/
+		( cd $(LIB_D) ; $(FC) -c $? $(NCINC) )
+		( cd $(LIB_D) ; ar -rv $(notdir $@ ) $(?:.f90=.o) )
+		( cd $(LIB_D) ; rm -f $? $(?:.f90=.o) )
 
 # clean
 
 clean:	
-		$(RM) $(EXEC_ALL) *.a *.o *.mod
+		rm -rf $(LIB_D) $(EXEC_D)
+		rmdir $(COMPBASE_D)
 
