@@ -2,7 +2,7 @@ MODULE tem
 
   implicit none
 
-  private ::  set_gridvar_p, set_gridvar_z
+  private ::  set_gridvar_p, set_gridvar_betap, set_gridvar_z
   private ::  grady_2nd, gradz_2nd_irr
   private ::  missing_bdy
 
