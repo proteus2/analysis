@@ -10,17 +10,13 @@ MODULE warc3d
       (/'v_res  ','w_res  ','cor    ','uadv_y ','uadv_z ',               &
         'epd    ','epd_y  ','epd_z  ','f_y    ','f_z    ',               &
         'u_force'/)
-  character(len=64), dimension(10) ::  varname_tem_qg =                  &
+  character(len=64), dimension(10) ::  varname_warc_qg =                 &
       (/'v_res  ','w_res  ','cor    ','epd    ','epd_y  ',               &
         'epd_z  ','f_y    ','f_z    ','u_force','tadv_z '/)
   character(len=64), dimension(12) ::  varname_tem_z =                   &
       (/'v_res  ','w_res  ','cor    ','uadv_y ','uadv_z ',               &
         'epd    ','epd_y  ','epd_z  ','f_y    ','f_z    ',               &
         'u_force','ru_eddy'/)
-!  character(len=64), dimension(13) ::  varname_tem_p =                   &
-!      (/'v_res  ','w_res  ','cor    ','uadv_y ','uadv_z ',               &
-!        'epd    ','f_y    ','f_z    ','tadv_y ','tadv_z ',               &
-!        't_eddy ','u_force','t_force'/)
 
   real, dimension(:,:), allocatable ::  dptmdz_from_thlev
 
@@ -28,8 +24,7 @@ MODULE warc3d
   real, dimension(:),   allocatable, private ::  lat_pre, ht_pre, zp
   real, dimension(:,:), allocatable, private ::  coslat, f, rho0, rbeta, &
                                                  r_earth, rcos, rrhocos, &
-                                                 r3, r3rho, r_t, r2_t,   &
-                                                 r3_t
+                                                 exner
 
   real, parameter, private ::  g = 9.80665, rd = 287.05, cp = 1005.
   real, parameter, private ::  kappa = rd/cp
@@ -167,7 +162,7 @@ SUBROUTINE tem_hydro_p(                                                  &
 
 END subroutine tem_hydro_p
 
-SUBROUTINE tem_qg(                                                       &
+SUBROUTINE warc_s_qg(                                                    &
      nx,ny,nz,lat,p,u,v,pt,wm,h_scale,missv,                             &
      vres,wres,cor,epd,epd_y,epd_z,fy,fz,u_force,tadvz )
 
@@ -178,40 +173,44 @@ SUBROUTINE tem_qg(                                                       &
   real, dimension(ny,nz),    intent(in) ::  wm
   real, dimension(nx,ny,nz), intent(in) ::  u, v, pt
 
-  real, dimension(ny,nz), intent(out) ::  vres, wres, fy, fz
+  real, dimension(ny,nz), intent(out) ::  ures, vres, wres, fx, fy, fz
   real, dimension(ny,nz), intent(out) ::  cor, epd, epd_y, epd_z
   real, dimension(ny,nz), intent(out) ::  u_force
   real, dimension(ny,nz), intent(out) ::  tadvz
 
-  real, dimension(ny,nz) ::  um, ptm
+  real, dimension(ny,nz) ::  vm, ptm
   real, dimension(ny,nz) ::  phi, rvpt, rvu
   real, dimension(ny,nz) ::  dptmdy, dptmdz
   real, dimension(ny,nz) ::  temp
 
-  real, dimension(:,:,:), allocatable ::  prt, v_prt
+  real, dimension(:,:,:), allocatable ::  pt_prt, u_prt, v_prt
 
   integer ::  j,k
 
   call set_gridvar_p(ny,nz,lat,p,h_scale)
 
   ! mean and perturbation
-  allocate( prt(nx,ny,nz), v_prt(nx,ny,nz) )
+  allocate( pt_prt(nx,ny,nz), u_prt(nx,ny,nz), v_prt(nx,ny,nz) )
 
-  um  (:,:) = sum(u , dim=1)/float(nx)
+  ures(:,:) = sum(u , dim=1)/float(nx)
   vres(:,:) = sum(v , dim=1)/float(nx)
   ptm (:,:) = sum(pt, dim=1)/float(nx)
 
+  u_prt(:,:,:) = u(:,:,:) - spread(ures(:,:),1,nx)
   v_prt(:,:,:) = v(:,:,:) - spread(vres(:,:),1,nx)
 
-  prt(:,:,:) = pt(:,:,:) - spread(ptm(:,:),1,nx)
+  pt_prt(:,:,:) = pt(:,:,:) - spread(ptm(:,:),1,nx)
 
-  rvpt(:,:) = sum(v_prt*prt, dim=1)/float(nx)
+  rupt(:,:) = sum(u_prt*pt_prt, dim=1)/float(nx)
+  rvpt(:,:) = sum(v_prt*pt_prt, dim=1)/float(nx)
 
-  prt(:,:,:) = u(:,:,:) - spread(um(:,:),1,nx)
+  rvu(:,:) = sum(v_prt*u_prt, dim=1)/float(nx)
 
-  rvu(:,:) = sum(v_prt*prt, dim=1)/float(nx)
+  u_prt(:,:,:) = 0.5*(u_prt(:,:,:)*u_prt(:,:,:))
+  v_prt(:,:,:) = 0.5*(v_prt(:,:,:)*v_prt(:,:,:))
+  pt_prt(:,:,:) = 0.5*(pt_prt(:,:,:)*pt_prt(:,:,:))*(exner*rd/h_scale)
 
-  deallocate( prt, v_prt )
+  deallocate( pt_prt, u_prt, v_prt )
 
   rvpt(:,:) = rho0(:,:)*rvpt(:,:)
   rvu (:,:) = rho0(:,:)*rvu (:,:)
@@ -274,9 +273,9 @@ SUBROUTINE tem_qg(                                                       &
   tadvz(:,:) = -wres(:,:)*dptmdz(:,:) * 86400.
   call missing_bdy(ny,nz,tadvz,missv,1,1,1,0)
 
-END subroutine tem_qg
+END subroutine warc_s_qg
 
-SUBROUTINE tem_qg_betap_gp(                                              &
+SUBROUTINE warc_qg_betap_gp(                                             &
      nx,ny,nz,lat,p,gp,vm,wm,lat0,h_scale,missv,                         &
      vres,wres,cor,epd,epd_y,epd_z,fy,fz,u_force,tadvz )
 
@@ -412,7 +411,7 @@ SUBROUTINE tem_qg_betap_gp(                                              &
   tadvz(:,:) = -wres(:,:)*dpt0dz(:,:) * 86400.
   call missing_bdy(ny,nz,tadvz,missv,1,1,2,1)
 
-END subroutine tem_qg_betap_gp
+END subroutine warc_qg_betap_gp
 
 SUBROUTINE tem_z(                                                        &
      nx,ny,nz,lat,z,u,v,w,pt,rho,missv,                                  &
@@ -587,6 +586,7 @@ SUBROUTINE set_gridvar_p(ny,nz,lat,p,h_scale)
   if (abs(lat(ny)) == 90.)  coslat(ny,:) = 0.
   f   (:,:) = spread(2.*ome_earth*sin(lat(:)*deg2rad),2,nz)
   rho0(:,:) = spread(p(:)/g/h_scale                  ,1,ny)
+  exner(:,:) = spread((p(:)/1.e5)**kappa              ,1,ny)
 
   ny_pre = ny  ;  nz_pre = nz
   lat_pre(:) = lat(:)

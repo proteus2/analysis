@@ -27,9 +27,7 @@ MODULE tem
   integer,                           private ::  ny_pre, nz_pre
   real, dimension(:),   allocatable, private ::  lat_pre, ht_pre, zp
   real, dimension(:,:), allocatable, private ::  coslat, f, rho0, rbeta, &
-                                                 r_earth, rcos, rrhocos, &
-                                                 r3, r3rho, r_t, r2_t,   &
-                                                 r3_t
+                                                 r_earth, rcos, rrhocos
 
   real, parameter, private ::  g = 9.80665, rd = 287.05, cp = 1005.
   real, parameter, private ::  kappa = rd/cp
