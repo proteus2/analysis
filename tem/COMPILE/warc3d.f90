@@ -10,11 +10,15 @@ MODULE warc3d
       (/'v_res  ','w_res  ','cor    ','uadv_y ','uadv_z ',               &
         'epd    ','epd_y  ','epd_z  ','f_y    ','f_z    ',               &
         'u_force'/)
-  character(len=64), dimension(10) ::  varname_warc_qg =                 &
-      (/'v_res  ','w_res  ','cor    ','epd    ','epd_y  ',               &
-        'epd_z  ','f_y    ','f_z    ','u_force','tadv_z '/)
+!  character(len=64), dimension(10) ::  varname_warc_qg =                 &
+!      (/'v_res  ','w_res  ','cor    ','epd    ','epd_y  ',               &
+!        'epd_z  ','f_y    ','f_z    ','u_force','tadv_z '/)
+  character(len=64), dimension(8) ::  varname_warc_qg =                  &
+      (/'epd    ','epd_x  ','epd_y  ','epd_z  ','f_x    ',               &
+        'f_y    ','f_z    ','U0     '/)
 
   integer,                           private ::  ny_pre, nz_pre
+  integer,                           private ::  j5s, j5e
   real, dimension(:),   allocatable, private ::  lat_pre, ht_pre, zp
   real, dimension(:,:), allocatable, private ::  coslat, f, rho0
 
@@ -167,7 +171,7 @@ END subroutine warc_hydro_p
 
 SUBROUTINE warc_s_qg(                                                    &
      nx,ny,nz,lat,p,u,v,pt,gp,dlon,h_scale,missv,                        &
-     u0,epd,epd_x,epd_y,epd_z,fx,fy,fz )
+     epd,epd_x,epd_y,epd_z,fx,fy,fz,u0 )
 ! Plumb (1985, JAS, Eq. 7.1)
 
   integer,                   intent(in) ::  nx, ny, nz
@@ -206,6 +210,10 @@ SUBROUTINE warc_s_qg(                                                    &
   dpt0dz(:,:) = pt0(:,:)*dpt0dz(:,:)
 
   prt(:,:,:) = (gp(:,:,:) - spread(gp0(:,:),1,nx))/spread(f(:,:),1,nx)
+  if ( minval(abs(lat)) == 0. ) then
+    j = sum(minloc(abs(lat)))
+    prt(:,j,:) = 0.5*(prt(:,j-1,:) + prt(:,j+1,:))
+  end if
   
   call gradx_2nd(nx,ny,nz,v_prt*prt,lat,dlon, fx)
   fx(:,:,:) = v_prt(:,:,:)*v_prt(:,:,:) - 0.5*fx(:,:,:)
@@ -260,12 +268,22 @@ SUBROUTINE warc_s_qg(                                                    &
 
   epd(:,:,:) = epd_x(:,:,:) + epd_y(:,:,:) + epd_z(:,:,:)
   call missing_bdy(nx,ny,nz,epd,missv,1,1,1,1)
+ 
+  if (j5s /= 0) then
+    epd  (:,j5s:j5e,:) = missv
+    epd_x(:,j5s:j5e,:) = missv
+    epd_y(:,j5s:j5e,:) = missv
+    epd_z(:,j5s:j5e,:) = missv
+    fx   (:,j5s:j5e,:) = missv
+    fy   (:,j5s:j5e,:) = missv
+    fz   (:,j5s:j5e,:) = missv
+  end if
 
 END subroutine warc_s_qg
 
 SUBROUTINE warc_s_qg_gp(                                                 &
      nx,ny,nz,lat,p,gp,pt0,dlon,h_scale,missv,                           &
-     u0,epd,epd_x,epd_y,epd_z,fx,fy,fz )
+     epd,epd_x,epd_y,epd_z,fx,fy,fz,u0 )
 ! Plumb (1985, JAS, Eq. 5.7)
 
   integer,                   intent(in) ::  nx, ny, nz
@@ -295,25 +313,32 @@ SUBROUTINE warc_s_qg_gp(                                                 &
   gp0(:,:) = sum(gp, dim=1)/float(nx)
 
   call grady_2nd(1,ny,nz,-gp0/f,lat, u0)
+  if ( minval(abs(lat)) == 0. ) then
+    j = sum(minloc(abs(lat)))
+    u0(j,:) = 0.5*(u0(j-1,:) + u0(j+1,:))
+  end if
 
   temp(:,:) = log(pt0(:,:))
   call gradz_2nd_irr(1,ny,nz,temp,zp, dpt0dz)
   dpt0dz(:,:) = pt0(:,:)*dpt0dz(:,:)
 
   prt(:,:,:) = (gp(:,:,:) - spread(gp0(:,:),1,nx))/spread(f(:,:),1,nx)
+  if ( minval(abs(lat)) == 0. ) then
+    j = sum(minloc(abs(lat)))
+    prt(:,j,:) = 0.5*(prt(:,j-1,:) + prt(:,j+1,:))
+  end if
 
   call gradx_2nd(nx,ny,nz,prt,lat,dlon, prt_x)
-  call gradx_2nd(nx,ny,nz,prt_x,lat,dlon, fx)
+!  call gradx_2nd(nx,ny,nz,prt_x,lat,dlon, fx)
+  call gradxx_2nd(nx,ny,nz,prt,lat,dlon, fx)
   fx(:,:,:) = 0.5*(prt_x(:,:,:)*prt_x(:,:,:) - prt(:,:,:)*fx(:,:,:))
 
   call grady_2nd(nx,ny,nz,prt,lat, prt_a)
   call gradx_2nd(nx,ny,nz,prt_a,lat,dlon, fy)
-!  call grady_2nd(nx,ny,nz,prt_x,lat, fy)
   fy(:,:,:) = 0.5*(prt_x(:,:,:)*prt_a(:,:,:) - prt(:,:,:)*fy(:,:,:))
 
   call gradz_2nd_irr(nx,ny,nz,prt,zp, prt_a)
   call gradx_2nd(nx,ny,nz,prt_a,lat,dlon, fz)
-!  call gradz_2nd_irr(nx,ny,nz,prt_x,zp, fz)
   fz(:,:,:) = 0.5*(prt_x(:,:,:)*prt_a(:,:,:) - prt(:,:,:)*fz(:,:,:))
 
   temp(:,:) = f(:,:)*f(:,:)/dpt0dz(:,:)*                                 &
@@ -360,6 +385,17 @@ SUBROUTINE warc_s_qg_gp(                                                 &
   epd(:,:,:) = epd_x(:,:,:) + epd_y(:,:,:) + epd_z(:,:,:)
   call missing_bdy(nx,ny,nz,epd,missv,1,1,1,1)
 
+  if (j5s /= 0) then
+    epd  (:,j5s:j5e,:) = missv
+    epd_x(:,j5s:j5e,:) = missv
+    epd_y(:,j5s:j5e,:) = missv
+    epd_z(:,j5s:j5e,:) = missv
+    fx   (:,j5s:j5e,:) = missv
+    fy   (:,j5s:j5e,:) = missv
+    fz   (:,j5s:j5e,:) = missv
+    u0(j5s:j5e,:) = missv
+  end if
+
 END subroutine warc_s_qg_gp
 
 SUBROUTINE set_gridvar3d_p(ny,nz,lat,p,h_scale)
@@ -368,6 +404,8 @@ SUBROUTINE set_gridvar3d_p(ny,nz,lat,p,h_scale)
   real,                intent(in) ::  h_scale
   real, dimension(ny), intent(in) ::  lat
   real, dimension(nz), intent(in) ::  p
+
+  integer ::  j
 
   if ( allocated(lat_pre) ) then
     if ( ny == ny_pre .and. nz == nz_pre ) then
@@ -386,6 +424,18 @@ SUBROUTINE set_gridvar3d_p(ny,nz,lat,p,h_scale)
   if (abs(lat(ny)) == 90.)  coslat(ny,:) = 0.
   f   (:,:) = spread(2.*ome_earth*sin(lat(:)*deg2rad),2,nz)
   rho0(:,:) = spread(p(:)/g/h_scale                  ,1,ny)
+
+  j5s = 0  ;  j5e = 0
+  do j=1, ny
+    if ( abs(lat(j)) < 5. ) then
+      j5s = j  ;  EXIT
+    end if
+  enddo
+  do j=ny, 1, -1
+    if ( abs(lat(j)) < 5. ) then
+      j5e = j  ;  EXIT
+    end if
+  enddo
 
   ny_pre = ny  ;  nz_pre = nz
   lat_pre(:) = lat(:)
@@ -469,6 +519,34 @@ SUBROUTINE gradz_2nd_irr(nx,ny,nz,var,z, gradz)
   gradz(:,:,nz) = (var(:,:,nz) - var(:,:,nz-1))*inv_dz_n
 
 END subroutine gradz_2nd_irr
+
+SUBROUTINE gradxx_2nd(nx,ny,nz,var,lat,dlon, gradxx)
+
+  integer,                   intent(in)  ::  nx, ny, nz
+  real, dimension(nx,ny,nz), intent(in)  ::  var
+  real, dimension(ny)      , intent(in)  ::  lat
+  real,                      intent(in)  ::  dlon
+  real, dimension(nx,ny,nz), intent(out) ::  gradxx
+
+  integer ::  j,k
+  real    ::  inv_dx2(ny)
+
+  inv_dx2(:) = 1.0/((dlon*deg2rad*a_earth)/cos(lat(:)*deg2rad))**2
+  if (abs(lat(1 )) == 90.)  inv_dx2(1 ) = 0.
+  if (abs(lat(ny)) == 90.)  inv_dx2(ny) = 0.
+
+  gradxx(2:nx-1,:,:) = (var(1:nx-2,:,:) + var(3:nx,:,:)) -               &
+                       2.*var(2:nx-1,:,:)
+  gradxx(1 ,:,:) = (var(nx  ,:,:) + var(2,:,:)) - 2.*var(1 ,:,:)
+  gradxx(nx,:,:) = (var(nx-1,:,:) + var(1,:,:)) - 2.*var(nx,:,:)
+
+  do k=1, nz
+  do j=1, ny
+    gradxx(:,j,k) = gradxx(:,j,k)*inv_dx2(j)
+  enddo
+  enddo
+
+END subroutine gradxx_2nd
 
 SUBROUTINE missing_bdy(nx,ny,nz,var,missv,nm_y1,nm_y2,nm_z1,nm_z2)
 

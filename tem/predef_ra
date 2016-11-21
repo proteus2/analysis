@@ -11,8 +11,9 @@ P_PREDEF="-999."
 FILE_I_HEAD=( '/data11/data-arch/ERA-I' )
 FILE_I_FORM=( XXXX  XXXX  era-int.XXXX.anal.XXXX.pl.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM            VAR_I     HH      YYYY MM      -999 )
-VAR_I=(      u  v  ome  t )  # Do not change this order.
-VAR_I_NAME=( U_GDS0_ISBL  V_GDS0_ISBL  W_GDS0_ISBL  T_GDS0_ISBL )
+VAR_I=(      u  v  ome  t  gp )  # Do not change this order.
+VAR_I_NAME=( U_GDS0_ISBL  V_GDS0_ISBL  W_GDS0_ISBL  T_GDS0_ISBL  Z_GDS0_ISBL )
+UNIT_H="m2s-2"
 ;;
 #-----------------------------------------------------------------------
 'merra')  RA_CODENAME="MERRA"
@@ -24,8 +25,9 @@ P_PREDEF="-999."
 FILE_I_HEAD=( '/data11/data-arch/MERRA' )
 FILE_I_FORM=( XXXX  XXXX  merra.XXXX.assm.pl.XXXXXXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM          VAR_I        YYYY MM  DD      -999 )
-VAR_I=(      u  v  omega  t )  # Do not change this order.
-VAR_I_NAME=( u  v  omega  t )
+VAR_I=(      u  v  omega  t  h )  # Do not change this order.
+VAR_I_NAME=( u  v  omega  t  h )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 'merra2')  RA_CODENAME="MERRA2"
@@ -37,8 +39,9 @@ P_PREDEF="-999."
 FILE_I_HEAD=( '/data11/data-arch/MERRA2' )
 FILE_I_FORM=( XXXX  XXXX  merra2.XXXX.assm.pl.XXXXXXXXXXXX.nc4  -999 )
 FILE_I_XXXX=( YYYY  MM          VAR_I        YYYY MM  DD       -999 )
-VAR_I=(      u  v  omega  t )  # Do not change this order.
-VAR_I_NAME=( U  V  OMEGA  T )
+VAR_I=(      u  v  omega  t  h )  # Do not change this order.
+VAR_I_NAME=( U  V  OMEGA  T  H )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 'jra55')  RA_CODENAME="JRA55"
@@ -50,8 +53,10 @@ P_PREDEF="-999."
 FILE_I_HEAD=( '/data11/data-arch/JRA55' )
 FILE_I_FORM=( XXXX  XXXX  jra55.XXXX.anal.pl.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM          VAR_I        YYYY MM      -999 )
-VAR_I=(      ugrd  vgrd  vvel  tmp )  # Do not change this order.
-VAR_I_NAME=( U_GRD_GDS0_ISBL  V_GRD_GDS0_ISBL  V_VEL_GDS0_ISBL  TMP_GDS0_ISBL )
+VAR_I=(      ugrd  vgrd  vvel  tmp  hgt )  # Do not change this order.
+VAR_I_NAME=( U_GRD_GDS0_ISBL  V_GRD_GDS0_ISBL  V_VEL_GDS0_ISBL  TMP_GDS0_ISBL  \
+             HGT_GDS0_ISBL )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 'cfsr')  RA_CODENAME="CFSR"
@@ -63,8 +68,9 @@ P_PREDEF="-999."
 FILE_I_HEAD=( '/data11/data-arch/CFSR/anal' )
 FILE_I_FORM=( XXXX  XXXX  cfsr.XXXX.anal.gdas.XXXXXXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM         VAR_I          YYYY MM  DD      -999 )
-VAR_I=(      u  v  omega  t )  # Do not change this order.
-VAR_I_NAME=( UGRD  VGRD  VVEL  TMP )
+VAR_I=(      u  v  omega  t  h )  # Do not change this order.
+VAR_I_NAME=( UGRD  VGRD  VVEL  TMP  HGT )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 'era-int_f')  RA_CODENAME="ERA-I-nr"
@@ -77,8 +83,9 @@ P_PREDEF=( ${p_all[@]}  -999. )
 FILE_I_HEAD=( '/data11/data-arch/ERA-I-nr' )
 FILE_I_FORM=( XXXX  XXXX  era-int_f.XXXX.anal.XXXX.ml.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM              VAR_I     HH      YYYY MM      -999 )
-VAR_I=(      u  v  ome  t )  # Do not change this order.
-VAR_I_NAME=( u  v  w    t )
+VAR_I=(      u  v  ome  t  gp )  # Do not change this order.
+VAR_I_NAME=( u  v  w    t  z  )
+UNIT_H="m2s-2"
 ;;
 #-----------------------------------------------------------------------
 'merra_f')  RA_CODENAME="MERRA-nr"
@@ -90,8 +97,9 @@ P_PREDEF=( -999. )
 FILE_I_HEAD=( '/data11/data-arch/MERRA-nr' )
 FILE_I_FORM=( XXXX  XXXX  merra_f.XXXX.anal.ml.XXXXXXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM            VAR_I        YYYY MM  DD      -999 )
-VAR_I=(      u0  v0  omega-ch  t0 )  # Do not change this order.
-VAR_I_NAME=( u   v   omega     t  )
+VAR_I=(      u0  v0  omega-ch  t0 h0 )  # Do not change this order.
+VAR_I_NAME=( u   v   omega     t  h  )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 'merra2_f')  RA_CODENAME="MERRA2-nr"
@@ -104,8 +112,9 @@ P_PREDEF=( ${p_all[@]}  -999. )
 FILE_I_HEAD=( '/data11/data-arch/MERRA2-nr' )
 FILE_I_FORM=( XXXX  XXXX  merra2.XXXX.assm.ml.XXXXXXXXXXXX.nc4  -999 )
 FILE_I_XXXX=( YYYY  MM          VAR_I        YYYY MM  DD       -999 )
-VAR_I=(      u0  v0  omega0  t0 )  # Do not change this order.
-VAR_I_NAME=( U   V   OMEGA   T )
+VAR_I=(      u0  v0  omega0  t0  h0 )  # Do not change this order.
+VAR_I_NAME=( U   V   OMEGA   T   H  )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 'jra55_f')  RA_CODENAME="JRA55-nr"
@@ -118,8 +127,10 @@ P_PREDEF=( ${p_all[@]}  -999. )
 FILE_I_HEAD=( '/data11/data-arch/JRA55-nr' )
 FILE_I_FORM=( XXXX  XXXX  jra55_f.XXXX.anal.ml.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM            VAR_I        YYYY MM      -999 )
-VAR_I=(      ugrd  vgrd  vvel  tmp )  # Do not change this order.
-VAR_I_NAME=( U_GRD_GDS4_HYBL  V_GRD_GDS4_HYBL  V_VEL_GDS4_HYBL  TMP_GDS4_HYBL )
+VAR_I=(      ugrd  vgrd  vvel  tmp  hgt )  # Do not change this order.
+VAR_I_NAME=( U_GRD_GDS4_HYBL  V_GRD_GDS4_HYBL  V_VEL_GDS4_HYBL  TMP_GDS4_HYBL  \
+             HGT_GDS4_HYBL )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 'jra55c')  RA_CODENAME="JRA55C"
@@ -131,8 +142,10 @@ P_PREDEF="-999."
 FILE_I_HEAD=( '/data11/data-arch/JRA55C' )
 FILE_I_FORM=( XXXX  XXXX  jra55c.XXXX.anal.pl.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM           VAR_I        YYYY MM      -999 )
-VAR_I=(      ugrd  vgrd  vvel  tmp )  # Do not change this order.
-VAR_I_NAME=( U_GRD_GDS0_ISBL  V_GRD_GDS0_ISBL  V_VEL_GDS0_ISBL  TMP_GDS0_ISBL )
+VAR_I=(      ugrd  vgrd  vvel  tmp  hgt )  # Do not change this order.
+VAR_I_NAME=( U_GRD_GDS0_ISBL  V_GRD_GDS0_ISBL  V_VEL_GDS0_ISBL  TMP_GDS0_ISBL  \
+             HGT_GDS0_ISBL )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 'jra55c_f')  RA_CODENAME="JRA55C-nr"
@@ -145,8 +158,10 @@ P_PREDEF=( ${p_all[@]}  -999. )
 FILE_I_HEAD=( '/data11/data-arch/JRA55C-nr' )
 FILE_I_FORM=( XXXX  XXXX  jra55c_f.XXXX.anal.ml.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM             VAR_I        YYYY MM      -999 )
-VAR_I=(      ugrd  vgrd  vvel  tmp )  # Do not change this order.
-VAR_I_NAME=( U_GRD_GDS4_HYBL  V_GRD_GDS4_HYBL  V_VEL_GDS4_HYBL  TMP_GDS4_HYBL )
+VAR_I=(      ugrd  vgrd  vvel  tmp  hgt )  # Do not change this order.
+VAR_I_NAME=( U_GRD_GDS4_HYBL  V_GRD_GDS4_HYBL  V_VEL_GDS4_HYBL  TMP_GDS4_HYBL  \
+             HGT_GDS4_HYBL )
+UNIT_H="m"
 ;;
 #-----------------------------------------------------------------------
 '*')  echo 'NO AVAILABLE CASES.'  ;  exit 1

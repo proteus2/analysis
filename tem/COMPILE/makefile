@@ -1,13 +1,15 @@
 #
-#FC = $(FC_DBG) # -mcmodel=medium -shared-intel
+FC = $(FC_DBG) # -mcmodel=medium -shared-intel
 EXEC_ALL := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp  \
             epf_fc2_ra reconstr_epf epfsa0_fc2_ra epfsa1_fc2_ra  \
-            reconstr_epfsa reconstr_epfsa-a reconstr_epfsa1 reconstr_epfsa2
+            reconstr_epfsa reconstr_epfsa-a reconstr_epfsa1 reconstr_epfsa2  \
+            warc3d_qg_ra warc3d_qg_gp_ra
 MOD_DEP_N := m_reanal netio
 MOD_N := tem epf warc3d
 SUB_N := fdcoef
 INCL_c_phys := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp  \
-               epf_fc2_ra epfsa0_fc2_ra epfsa1_fc2_ra
+               epf_fc2_ra epfsa0_fc2_ra epfsa1_fc2_ra  \
+               warc3d_qg_ra warc3d_qg_gp_ra
 
 NCINC := $(filter-out -g,$(shell nc-config --fflags))
 NCLIB := $(shell nc-config --flibs)
@@ -23,6 +25,9 @@ ALL_SUB_F := $(addsuffix .f90,$(ALL_SUB_N))
 ALL_SUB_O := $(ALL_SUB_F:.f90=.o)
 EXEC_FULL := $(patsubst %,$(EXEC_D)/%,$(EXEC_ALL))
 
+ifneq ($(ALL_SUB_N),$(filter-out $(INCL_c_phys),$(ALL_SUB_N)))
+  INCL_F_SUB += c_phys.inc
+endif
 ifeq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),$(INCL_c_phys)))
   INCL_F += c_phys.inc
 endif
@@ -37,7 +42,7 @@ $(EXEC_FULL):	$(EXEC_D)/%:	%.f90 $(LIB_D)/$(LIB_SUBS) $(INCL_F)
 
 # library
 
-$(LIB_D)/$(LIB_SUBS):	$(ALL_SUB_F)
+$(LIB_D)/$(LIB_SUBS):	$(ALL_SUB_F) $(INCL_F_SUB)
 		mkdir -p $(LIB_D)
 		cp $? $(LIB_D)/
 		( cd $(LIB_D) ; $(FC) -c $? $(NCINC) )

@@ -10,7 +10,7 @@ MODULE reanal
   real    ::  missv, p_predef(300), lat_rng(2), p_rng(2)
   data  p_predef(1) /-999./
 
-  character(len=32)  ::  expname, var_name(99)
+  character(len=32)  ::  expname, var_name(99), unit_h
   character(len=32)  ::  var_i(99), var_i_name(99), file_i_xxxx(99)
   character(len=32)  ::  var_i2(99), var_i_name2(99), file_i_xxxx2(99)
   character(len=128) ::  file_i_head, file_i_form(99), file_o
