@@ -20,6 +20,8 @@ esac
 src=$1 ; shift
 arg=( $@ )
 exe=run_$src.$$
+tmpstr=$( nc-config --version )
+COMPBASE_D=${VER_COMP}_nc${tmpstr#"netCDF "}
 
 if [ $l_comp -eq 1 ] ; then
   echo '========================================='
@@ -27,29 +29,30 @@ if [ $l_comp -eq 1 ] ; then
 
   # compile
   cd COMPILE
-  while [ -e COMPILING_NOW ] ; do
+  while [ -e $COMPBASE_D/COMPILING_NOW ] ; do
     echo ' Other program has been compiled. Sleep 5 sec.' ; sleep 5
   done
-  touch COMPILING_NOW
+  [ -d $COMPBASE_D ] || mkdir -p $COMPBASE_D
+  touch $COMPBASE_D/COMPILING_NOW
   make $src
   if [ $? -ne 0 ] ; then
-    rm -f COMPILING_NOW
+    rm -f $COMPBASE_D/COMPILING_NOW
     echo "COMPILE ERROR : $src"
     echo "== STOP ================================="
     exit 1
   fi
   cd ..
 else
-  if [ ! -x COMPILE/$src ] ; then echo ' No execution file.' ; exit 2 ; fi
+  if [ ! -x COMPILE/$COMPBASE_D/bin/$src ] ; then echo ' No execution file.' ; exit 2 ; fi
 fi
 
 if [ $l_run -eq 1 ] ; then
   [ -e $TMPDIR/exec/$exe ] && rm -f $TMPDIR/exec/$exe
-  cp COMPILE/$src $TMPDIR/exec/$exe
+  cp COMPILE/$COMPBASE_D/bin/$src $TMPDIR/exec/$exe
 fi
 
 if [ $l_comp -eq 1 ] ; then
-  rm -f COMPILE/COMPILING_NOW
+  rm -f COMPILE/$COMPBASE_D/COMPILING_NOW
   echo '-----------------------------------------'
   echo ' Compile ends'
   echo '========================================='
