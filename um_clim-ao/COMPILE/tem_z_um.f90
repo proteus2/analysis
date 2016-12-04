@@ -69,15 +69,6 @@ PROGRAM TEM_UM_z
 
   day_from_ref = get_dayfromref(year,mon,date,hour)
 
-  ex0 = .TRUE.
-  do iv_i=1, 5
-    file_i(iv_i) = get_ifilename()
-    inquire(file=trim(file_i(iv_i)), exist=ex1)
-    if ( .not. ex1 )  print*, '    ',trim(file_i(iv_i)),' not found.'
-    ex0 = ( ex0 .and. ex1 )
-  enddo
-  if (.not. ex0)  STOP
-
   ! get variable
   allocate( u(nx,ny,nz), v(nx,ny,nz), w(nx,ny,nz), pt(nx,ny,nz),         &
             rho(nx,ny,nz) )
@@ -230,6 +221,15 @@ PROGRAM TEM_UM_z
 
   SUBROUTINE get_5var
 
+  ex0 = .TRUE.
+  do iv_i=1, 5
+    file_i(iv_i) = get_ifilename()
+    inquire(file=trim(file_i(iv_i)), exist=ex1)
+    if ( .not. ex1 )  print*, '    ',trim(file_i(iv_i)),' not found.'
+    ex0 = ( ex0 .and. ex1 )
+  enddo
+  if (.not. ex0)  STOP
+
   nx_i = nx  ;  ny_i = ny  ;  nz_i = nz   ! for get_ivar3d
 
   ! read 5 var.s
@@ -298,7 +298,7 @@ PROGRAM TEM_UM_z
   allocate( set(iv)%axis4(set(iv)%nd(4)) )
   set(iv)%axis1 = lat
   set(iv)%axis2 = ht
-  set(iv)%axis3 = t
+  set(iv)%axis3 = t(1:nd3a)
   set(iv)%axis4 = -999.
     
   END subroutine setdim

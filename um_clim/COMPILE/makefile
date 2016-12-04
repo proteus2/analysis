@@ -1,7 +1,7 @@
 #
 #FC = $(FC_DBG)
 
-EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf reconstr_varsa wavedcp_var reconstr_epfsa reconstr_epfsa1 dp_um
+EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf reconstr_varsa wavedcp_var reconstr_epfsa reconstr_epfsa1 dp_um vintp_z2p_um
 MOD_DEP_N := nrtype nr nrutil m_hadgem netio
 MOD_N := fft tem epf
 SUB_N := spline splint tridag_ser locate fdcoef
@@ -10,7 +10,8 @@ INCL_c_math := fft_t2i_um
 INCL_c_phys := tem_z_um tem_z_cp_um  \
                fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var  \
                epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um  \
-               epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf wavedcp_var
+               epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf wavedcp_var  \
+               vintp_z2p_um
 USE_FFTPACK := tem_z_um tem_z_cp_um epf_z_um  \
                fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var  \
                epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um  \

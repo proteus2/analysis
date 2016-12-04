@@ -270,7 +270,7 @@ PROGRAM TEM_UM_z
   allocate( set(iv)%axis4(set(iv)%nd(4)) )
   set(iv)%axis1 = lat
   set(iv)%axis2 = ht
-  set(iv)%axis3 = t
+  set(iv)%axis3 = t(1:nd3a)
   set(iv)%axis4 = -999.
     
   END subroutine setdim

@@ -29,6 +29,8 @@ P990=( s FID  pa  pa )
 P991=( s FILE_I_HEAD  "/hippo0/HG2CMIP/L60CGW" )
 P992=( s FILE_I_FORM  XXXX/${P101[2]}a.XXXX_XXXXXXXXXXXX00.nc  -999 )
 P993=( s FILE_I_XXXX  FID              FID  YYYY MM  DD        -999 )
+P994=( s FILE_ALT  -999 )
+P995=( s VAR_ALT  -999 )
 P999=( s FILE_O  '' )
 #=================================================
 P102=( n YYYY  '' )
@@ -61,7 +63,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   cr_file $F_NAMELIST
   cr_nl $F_NAMELIST ANALCASE "${P101[*]}" "${P102[*]}" "${P103[*]}" "${P104[*]}" "${P105[*]}" "${P106[*]}"
   cr_nl $F_NAMELIST PARAM "${P201[*]}" "${P202[*]}" "${P203[*]}" "${P204[*]}" "${P205[*]}" "${P206[*]}"
-  cr_nl $F_NAMELIST FILEIO "${P901[*]}" "${P902[*]}" "${P903[*]}" "${P990[*]}" "${P991[*]}" "${P992[*]}" "${P993[*]}" "${P999[*]}"
+  cr_nl $F_NAMELIST FILEIO "${P901[*]}" "${P902[*]}" "${P903[*]}" "${P990[*]}" "${P991[*]}" "${P992[*]}" "${P993[*]}" "${P994[*]}" "${P995[*]}" "${P999[*]}"
   cat $F_NAMELIST
 
   # compile and run --------------------
