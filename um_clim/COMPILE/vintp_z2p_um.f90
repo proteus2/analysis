@@ -188,7 +188,7 @@ PROGRAM VINTP_UM_z2p
 
   write(6,*)  ;  write(6,*) trim(file_o)  ;  write(6,*)
 
-  call outnc(trim(file_o),nv,set,'transformed Eulerian mean eqn.')
+  call outnc(trim(file_o),nv,set,'interpolated to pressure levels')
 
 ! END
 
