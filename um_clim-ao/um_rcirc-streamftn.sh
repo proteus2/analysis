@@ -10,7 +10,7 @@ M2=$EXTCTL2
 #== Parameter 1 - CASE ===========================
 P101=( s EXPNAME  uantc )
 #== Parameter 2 ==================================
-P201=( n DAYS_AVRG  30 )           # averaged days
+#P201=( n DAYS_AVRG  30 )           # averaged days, > 1
 #== Parameter 9 - I/O ============================
 P901=( n MISSV  1.e32 )            # if no missing points, set 1.0
 P991=( s FILE_I_HEAD  "/data18/kyh/dat/AOL60CGW/tem" )

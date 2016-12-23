@@ -13,7 +13,7 @@ P104=( n HH  00  8 ) # should be 0 # starting time [UTC] and frequency [/day]
 P105=( n REFDATE  1941  12  1 )
 P106=( n OPT_30D  1 )
 #== Parameter 2 ==================================
-P201=( n DAYS_AVRG  30 )           # averaged days
+P201=( n DAYS_AVRG  30 )           # averaged days, > 1
 #== Parameter 9 - I/O ============================
 P901=( n DAY1  1 )                 # the earlist date-of-file among input files
 P902=( n NDAY_I  3 )               # number of days in one input file
