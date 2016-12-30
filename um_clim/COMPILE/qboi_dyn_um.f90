@@ -226,8 +226,8 @@ PROGRAM QBOI_DYN_UM
     t(i_time) = t(i_time) + day_from_ref/ntavg
   else
     var3d(:,:,iv_dudt) = var3d(:,:,iv_um)
-    if (days_avrg == 0)  var3d(:,:,iv_dif(:)) =                          &
-                         var3d(:,:,iv_dif(:))*(float(nhour)/86400.)
+    if (days_avrg == 0)  var3d(:,:,iv_dif(:)) = var3d(:,:,iv_dif(:))*    &
+                                                float(nhour)
     if (i_time /= 1) then
       var4d(:,:,i_time_last,iv_avg(:)) =                                 &
           var4d(:,:,i_time_last,iv_avg(:)) +                             &
@@ -235,14 +235,14 @@ PROGRAM QBOI_DYN_UM
       t(i_time_last) = t(i_time_last) + day_from_ref/(ntavg*2.)
       var4d(:,:,i_time_last,iv_dif(:)) =                                 &
           var4d(:,:,i_time_last,iv_dif(:)) +                             &
-          var3d(:,:,iv_dif(:))/max(1., float(days_avrg)*86400.)
+          var3d(:,:,iv_dif(:))/(max(1., float(days_avrg))*86400.)
     end if
     if (imon /= nmon+1) then
       var4d(:,:,i_time,iv_avg(:)) = var4d(:,:,i_time,iv_avg(:)) +        &
                                     var3d(:,:,iv_avg(:))/(ntavg*2.)
       t(i_time) = t(i_time) + day_from_ref/(ntavg*2.)
       var4d(:,:,i_time,iv_dif(:)) = var4d(:,:,i_time,iv_dif(:)) -        &
-          var3d(:,:,iv_dif(:))/max(1., float(days_avrg)*86400.)
+          var3d(:,:,iv_dif(:))/(max(1., float(days_avrg))*86400.)
     end if
   end if
 
