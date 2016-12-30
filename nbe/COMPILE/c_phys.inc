@@ -8,3 +8,4 @@
   real, parameter :: rho_s = p0/g/h_scale
   real, parameter :: r_earth = 6371.e3
   real, parameter :: lapse_rate_sfc = 6.5e-3
+  real, parameter :: omega_earth = 7.292116e-5

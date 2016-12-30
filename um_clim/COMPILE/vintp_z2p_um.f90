@@ -80,10 +80,6 @@ PROGRAM VINTP_UM_z2p
 
 ! INTERPOLATE VARIABLES VERTICALLY
 
-  SELECT case ( 2 )
-
-  CASE ( 1 )
-
   k_low(:,:,:) = -1   ! if above the top
 
   L_PLEV1:  DO kpi=1, npi
@@ -113,27 +109,22 @@ PROGRAM VINTP_UM_z2p
 
   ENDDO  L_PLEV1
 
-  CASE ( 2 )
-
-  k_low(:,:,:) = -1   ! if above the top
-
-  L_PLEV1v:  DO kpi=1, npi
-
-  ! searching up
-  do k=1, nz2
-  do j=1, ny2
-  do i=1, nx
-    if ( lnp3d(i,j,k) < lnpi(kpi) .and. k_low(i,j,kpi) == -1 )           &
-       k_low(i,j,kpi) = k-1
-  enddo
-  enddo
-  enddo
-  ! k_low = 0, if below the bottom
-
-  ENDDO  L_PLEV1v
-
-  END select
-
+!+ for vector platforms
+!  L_PLEV1v:  DO kpi=1, npi
+!
+!  ! searching up
+!  do k=1, nz2
+!  do j=1, ny2
+!  do i=1, nx
+!    if ( lnp3d(i,j,k) < lnpi(kpi) .and. k_low(i,j,kpi) == -1 )           &
+!       k_low(i,j,kpi) = k-1
+!  enddo
+!  enddo
+!  enddo
+!  ! k_low = 0, if below the bottom
+!
+!  ENDDO  L_PLEV1v
+!-
 
   inv_dlnpi3d(:,:,1:nz2-1) = 1./(lnp3d(:,:,1:nz2-1) - lnp3d(:,:,2:nz2))
   inv_dlnpi3d(:,:,nz2:nz) = 0.
@@ -253,17 +244,17 @@ PROGRAM VINTP_UM_z2p
   else
     ntavg = float(nhour*days_avrg)
     if (i_time == i_time_last) then
-      var5d(:,:,:,i_time,:) = var5d(:,:,:,i_time,:) +                   &
+      var5d(:,:,:,i_time,:) = var5d(:,:,:,i_time,:) +                    &
                               var4d(:,:,:,:)/ntavg
       t(i_time) = t(i_time) + day_from_ref/ntavg
     else
       if (i_time /= 1) then
-        var5d(:,:,:,i_time_last,:) = var5d(:,:,:,i_time_last,:) +       &
+        var5d(:,:,:,i_time_last,:) = var5d(:,:,:,i_time_last,:) +        &
                                      var4d(:,:,:,:)/(ntavg*2.)
         t(i_time_last) = t(i_time_last) + day_from_ref/(ntavg*2.)
       end if
       if (imon /= nmon+1) then
-        var5d(:,:,:,i_time,:) = var5d(:,:,:,i_time,:) +                 &
+        var5d(:,:,:,i_time,:) = var5d(:,:,:,i_time,:) +                  &
                                 var4d(:,:,:,:)/(ntavg*2.)
         t(i_time) = t(i_time) + day_from_ref/(ntavg*2.)
       end if

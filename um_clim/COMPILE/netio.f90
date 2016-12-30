@@ -1799,7 +1799,7 @@
    end subroutine out5d
 
 
-SUBROUTINE outnc(wname,nvar,set,title,nmode)
+SUBROUTINE outnc(wname,nvar,set,title,nmode,missv)
 
   implicit none
 
@@ -1807,9 +1807,11 @@ SUBROUTINE outnc(wname,nvar,set,title,nmode)
   type(vset), dimension(nvar), intent(in) ::  set
   character(len=*),            intent(in) ::  wname, title
   integer, optional,           intent(in) ::  nmode
+  real,    optional,           intent(in) ::  missv
 
   integer ::  iv, ia, ncid, cnt, aid, ii, st, ndim
   integer ::  n_rec
+  real    ::  missingv
   integer, dimension(nvar*4) ::  dimid, axid
   character(len=64) ::  ctemp(nvar*4)
   integer, dimension(4,nvar) ::  tag
@@ -1820,6 +1822,9 @@ SUBROUTINE outnc(wname,nvar,set,title,nmode)
   if ( present(nmode) ) then
     if ( nmode >= 1 .and. nmode <= 4 )  n_rec = nmode
   end if
+
+  missingv = 1.e+32
+  if ( present(missv) )  missingv = missv
 
   st = nf_create(trim(wname),nf_share,ncid)
 
@@ -1849,7 +1854,7 @@ SUBROUTINE outnc(wname,nvar,set,title,nmode)
       end if
     enddo
     st = nf_def_var(ncid,trim(set(iv)%vname),nf_real,ndim,vardimid(1:ndim),varid(iv))
-    st = nf_put_att_real(ncid,varid(iv),'_FillValue',nf_real,1,1.e+32)
+    st = nf_put_att_real(ncid,varid(iv),'_FillValue',nf_real,1,missingv)
 
   enddo
   st = nf_put_att_text(ncid,nf_global,'title',len_trim(title),title)

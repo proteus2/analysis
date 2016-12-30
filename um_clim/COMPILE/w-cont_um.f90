@@ -1,4 +1,6 @@
 PROGRAM W_continuity_eqn
+! terrain-following structure of the vertical coordinates is ignored.
+! i.e., U_x|z = U_x|e - U_z*Z_x|e ~= U_x|e
 
   use hadgem
   use netio
