@@ -75,7 +75,7 @@ begin
 ;--------------------------------------- ctr
  wi = 60
  he = 25
- xf = 15
+ xf = 20
  yf = 10
 
  xstr = "p [hPa]"
@@ -106,7 +106,7 @@ begin
 
  set_size(plot1,xf,yf,wi,he)
  axis_range(plot1,p2*0.999,p1*1.001,z1,z2,True,False)
- axis_str(plot1,"",xstr,ystr)
+ axis_str(plot1,"Model-level mean (red) and 2SD range (black) of pressure over 15N-15S",xstr,ystr)
 
  draw(plot1)
 
