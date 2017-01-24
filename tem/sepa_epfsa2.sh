@@ -56,7 +56,7 @@ P999=( s FILE_O  '' )
 #=================================================
 P102=( n YYYY  '' )
 
-F_SOURCE='reconstr_epfsa-a'
+F_SOURCE='sepa_epfsa2'
 F_NAMELIST="$TMPDIR/namelist/namelist.$F_SOURCE-$$"
 F_LOG="log/log.$F_SOURCE-$$"
 
@@ -73,7 +73,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   P102[2]=$YYYY
   P103[2]=$MM
   ODIR=${P990[2]}/$YYYY
-  P999[2]="$ODIR/${P101[2]}.epfsa-a_yz_recon0.$YYYY.${MM}.nc"
+  P999[2]="$ODIR/${P101[2]}.epfsa_yz_recon2.$YYYY.${MM}.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 
   # create namelist --------------------

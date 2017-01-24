@@ -6,7 +6,7 @@ NCLIB ?= $(NETCDF)/lib
 NCLIBNAME ?= -lnetcdf -lnetcdff
 LIB_FFTPACK ?= $(UTIL)/num_analysis/FFT/fftpack5.1/$(VER_COMP)/lib/libfftpack.a
 
-EXEC_ALL := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp epf_fc2_ra reconstr_epf epfsa0_fc2_ra epfsa1_fc2_ra reconstr_epfsa reconstr_epfsa-a reconstr_epfsa1 reconstr_epfsa2
+EXEC_ALL := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp epf_fc2_ra sepa_epf epfsa0_fc2_ra epfsa1_fc2_ra sepa_epfsa sepa_epfsa-a sepa_epfsa1 sepa_epfsa2
 MOD_N := m_reanal netio
 MOD_N := $(MOD_N) fft tem epf warc3d
 SUB_N := fdcoef
@@ -39,7 +39,7 @@ tem_qg_betap_gp:	tem_qg_betap_gp.f90  $(LIB_SUBS) c_phys.inc
 epf_fc2_ra:	epf_fc2_ra.f90  $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-reconstr_epf:	reconstr_epf.f90 $(LIB_SUBS)
+sepa_epf:	sepa_epf.f90 $(LIB_SUBS)
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
 epfsa0_fc2_ra:	epfsa0_fc2_ra.f90 $(LIB_SUBS) c_phys.inc
@@ -48,16 +48,16 @@ epfsa0_fc2_ra:	epfsa0_fc2_ra.f90 $(LIB_SUBS) c_phys.inc
 epfsa1_fc2_ra:	epfsa1_fc2_ra.f90 $(LIB_SUBS) c_phys.inc
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-reconstr_epfsa:	reconstr_epfsa.f90 $(LIB_SUBS)
+sepa_epfsa:	sepa_epfsa.f90 $(LIB_SUBS)
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-reconstr_epfsa-a:	reconstr_epfsa-a.f90 $(LIB_SUBS)
+sepa_epfsa-a:	sepa_epfsa-a.f90 $(LIB_SUBS)
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-reconstr_epfsa1:	reconstr_epfsa1.f90 $(LIB_SUBS)
+sepa_epfsa1:	sepa_epfsa1.f90 $(LIB_SUBS)
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
-reconstr_epfsa2:	reconstr_epfsa2.f90 $(LIB_SUBS)
+sepa_epfsa2:	sepa_epfsa2.f90 $(LIB_SUBS)
 		$(FC) $< -o $@ $(LIB_SUBS) $(LIB_FFTPACK) -L$(NCLIB) $(NCLIBNAME)
 
 # modules

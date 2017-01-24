@@ -23,7 +23,6 @@ PROGRAM RC_EPFSA_RA
   character(len=32), dimension(nv) ::  ovarname
 
   real, dimension(:,:,:,:), allocatable ::  varo, var4d, var4d2, vtmp
-  real, dimension(:,:,:,:), allocatable ::  var4d0
   real, dimension(:,:,:),   allocatable ::  kr
   real, dimension(:,:),     allocatable ::  um, okbi, lzrgw, or2d
   real, dimension(:,:),     allocatable ::  tmp1, tmp2, tmp3, tmp4
@@ -115,7 +114,6 @@ PROGRAM RC_EPFSA_RA
 !U
 !U  call switch_para_in
 
-  allocate( var4d0   (nk,-nome+1:nome,ny2,nv*2)   )
   allocate( var4d    (nk,-nome+1:nome,ny2,nv*2)   )
   allocate( var4d2   (nk,-nome+1:nome,ny2,nv  )   )
   allocate( vtmp     (nk,-nome+1:nome,ny2,4) )
@@ -128,14 +126,13 @@ PROGRAM RC_EPFSA_RA
   call get_4var
 
   print*, ' Calculating...', k, '/', nz2
-  call reconstr
+  call sepa_sum
   print*, ' .'
 
   ENDDO  L_LEV
 
   deallocate( tmp1, tmp2 )
   deallocate( var4d, vtmp, okbi, lzrgw )
-  deallocate( var4d0 )
 
   nd1a = NY2
   nd2a = NZ2
@@ -294,16 +291,12 @@ PROGRAM RC_EPFSA_RA
 
   END subroutine get_4var
 
-  SUBROUTINE reconstr
+  SUBROUTINE sepa_sum
 
   integer ::  k1, k2, o1a, o2a, o1r, o2r, o1m, o2m, o1m0, o2m0
 
   real, parameter ::  pi = 3.14159265358979323846
   real, parameter ::  beta = 2.*(7.292116e-5)/6371229.
-
-  var4d0(:,:,:,:) = var4d(:,:,:,:)
-  var4d(:,:,:,:) = abs(var4d(:,:,:,:))
-  var4d2(:,:,:,:) = abs(var4d2(:,:,:,:))
 
   okbi(:,:) = or2d(:,:)*spread(kr0(:),2,nome*2)/beta
 
@@ -313,7 +306,7 @@ PROGRAM RC_EPFSA_RA
 !  end where
 
 ! low-pass filter for large-scale waves ( k = 1-20, period > 4/3 days )
-! This should be same with reconstr_epf.f90
+! This should be same with sepa_epf.f90
   k1 = 1  ;  k2 = 20
   o1a = -(nmon+2*nmon_patch)*22 + 1  ;  o2a = (nmon+2*nmon_patch)*22 - 1
   var4d(k1:k2,:o1a-1,:,:) = 0.  ;  var4d2(k1:k2,:o1a-1,:,:) = 0.
@@ -354,10 +347,10 @@ PROGRAM RC_EPFSA_RA
   vtmp = 0.
   do i=-2, 2
   do j=4, ny2-3
-    vtmp(:,:,j,1) = vtmp(:,:,j,1) + var4d0(:,:,j+i,2 )
-    vtmp(:,:,j,2) = vtmp(:,:,j,2) + var4d0(:,:,j+i,6 )
-    vtmp(:,:,j,3) = vtmp(:,:,j,3) + var4d0(:,:,j+i,10)
-    vtmp(:,:,j,4) = vtmp(:,:,j,4) + var4d0(:,:,j+i,14)
+    vtmp(:,:,j,1) = vtmp(:,:,j,1) + var4d(:,:,j+i,2 )
+    vtmp(:,:,j,2) = vtmp(:,:,j,2) + var4d(:,:,j+i,6 )
+    vtmp(:,:,j,3) = vtmp(:,:,j,3) + var4d(:,:,j+i,10)
+    vtmp(:,:,j,4) = vtmp(:,:,j,4) + var4d(:,:,j+i,14)
   enddo
   enddo
   vtmp(:,:,:,:) = vtmp(:,:,:,:)*0.2
@@ -456,7 +449,7 @@ PROGRAM RC_EPFSA_RA
     enddo
   end if
 
-  END subroutine reconstr
+  END subroutine sepa_sum
 
   SUBROUTINE setdim
 

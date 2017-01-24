@@ -56,7 +56,7 @@ P999=( s FILE_O  '' )
 #=================================================
 P102=( n YYYY  '' )
 
-F_SOURCE='reconstr_epfsa'
+F_SOURCE='sepa_epfsa'
 F_NAMELIST="$TMPDIR/namelist/namelist.$F_SOURCE-$$"
 F_LOG="log/log.$F_SOURCE-$$"
 

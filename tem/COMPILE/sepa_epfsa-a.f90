@@ -23,6 +23,7 @@ PROGRAM RC_EPFSA_RA
   character(len=32), dimension(nv) ::  ovarname
 
   real, dimension(:,:,:,:), allocatable ::  varo, var4d, var4d2, vtmp
+  real, dimension(:,:,:,:), allocatable ::  var4d0
   real, dimension(:,:,:),   allocatable ::  kr
   real, dimension(:,:),     allocatable ::  um, okbi, lzrgw, or2d
   real, dimension(:,:),     allocatable ::  tmp1, tmp2, tmp3, tmp4
@@ -114,6 +115,7 @@ PROGRAM RC_EPFSA_RA
 !U
 !U  call switch_para_in
 
+  allocate( var4d0   (nk,-nome+1:nome,ny2,nv*2)   )
   allocate( var4d    (nk,-nome+1:nome,ny2,nv*2)   )
   allocate( var4d2   (nk,-nome+1:nome,ny2,nv  )   )
   allocate( vtmp     (nk,-nome+1:nome,ny2,4) )
@@ -126,13 +128,14 @@ PROGRAM RC_EPFSA_RA
   call get_4var
 
   print*, ' Calculating...', k, '/', nz2
-  call reconstr
+  call sepa_sum
   print*, ' .'
 
   ENDDO  L_LEV
 
   deallocate( tmp1, tmp2 )
   deallocate( var4d, vtmp, okbi, lzrgw )
+  deallocate( var4d0 )
 
   nd1a = NY2
   nd2a = NZ2
@@ -291,22 +294,26 @@ PROGRAM RC_EPFSA_RA
 
   END subroutine get_4var
 
-  SUBROUTINE reconstr
+  SUBROUTINE sepa_sum
 
-  integer ::  k1, k2, o1a, o2a, o1r, o2r, o1m, o2m
+  integer ::  k1, k2, o1a, o2a, o1r, o2r, o1m, o2m, o1m0, o2m0
 
   real, parameter ::  pi = 3.14159265358979323846
   real, parameter ::  beta = 2.*(7.292116e-5)/6371229.
 
+  var4d0(:,:,:,:) = var4d(:,:,:,:)
+  var4d(:,:,:,:) = abs(var4d(:,:,:,:))
+  var4d2(:,:,:,:) = abs(var4d2(:,:,:,:))
+
   okbi(:,:) = or2d(:,:)*spread(kr0(:),2,nome*2)/beta
 
-  lzrgw = -999.e3
-  where ( okbi > -1. )
-    lzrgw(:,:) = 2.*pi*or2d(:,:)**2/(nbv*beta*(1.+okbi(:,:)))
-  end where
+!  lzrgw = 999.e3
+!  where ( okbi > -1. )
+!    lzrgw(:,:) = 2.*pi*or2d(:,:)**2/(nbv*beta*(1.+okbi(:,:)))
+!  end where
 
 ! low-pass filter for large-scale waves ( k = 1-20, period > 4/3 days )
-! This should be same with reconstr_epf.f90
+! This should be same with sepa_epf.f90
   k1 = 1  ;  k2 = 20
   o1a = -(nmon+2*nmon_patch)*22 + 1  ;  o2a = (nmon+2*nmon_patch)*22 - 1
   var4d(k1:k2,:o1a-1,:,:) = 0.  ;  var4d2(k1:k2,:o1a-1,:,:) = 0.
@@ -344,33 +351,33 @@ PROGRAM RC_EPFSA_RA
   varo(:,k,:,12) = varo(:,k,:,12) + varo(:,k,:,18)
 
 ! Fs_H, Fs_M, Fa_H, Fa_M
-!  vtmp = 0.
-!  do i=-2, 2
-!  do j=4, ny2-3
-!    vtmp(:,:,j,1) = vtmp(:,:,j,1) + var4d(:,:,j+i,2 )
-!    vtmp(:,:,j,2) = vtmp(:,:,j,2) + var4d(:,:,j+i,6 )
-!    vtmp(:,:,j,3) = vtmp(:,:,j,3) + var4d(:,:,j+i,10)
-!    vtmp(:,:,j,4) = vtmp(:,:,j,4) + var4d(:,:,j+i,14)
-!  enddo
-!  enddo
-!  vtmp(:,:,:,:) = vtmp(:,:,:,:)*0.2
-!  vtmp(:,:,:,1) = vtmp(:,:,:,1) - vtmp(:,:,:,2)
-!  vtmp(:,:,:,3) = vtmp(:,:,:,3) - vtmp(:,:,:,4)
+  vtmp = 0.
+  do i=-2, 2
+  do j=4, ny2-3
+    vtmp(:,:,j,1) = vtmp(:,:,j,1) + var4d0(:,:,j+i,2 )
+    vtmp(:,:,j,2) = vtmp(:,:,j,2) + var4d0(:,:,j+i,6 )
+    vtmp(:,:,j,3) = vtmp(:,:,j,3) + var4d0(:,:,j+i,10)
+    vtmp(:,:,j,4) = vtmp(:,:,j,4) + var4d0(:,:,j+i,14)
+  enddo
+  enddo
+  vtmp(:,:,:,:) = vtmp(:,:,:,:)*0.2
+  vtmp(:,:,:,1) = vtmp(:,:,:,1) - vtmp(:,:,:,2)
+  vtmp(:,:,:,3) = vtmp(:,:,:,3) - vtmp(:,:,:,4)
 
 ! KW(3)
-!  do n=-nome+1, -1
-!  do i=1, nk
-!    ! |F_uw/F_vT| < 1 : Filtering from KW
-!    do j=ny2/2+1, ny2-3
-!      if ( abs(vtmp(i,n,j,2)/vtmp(i,n,j,1)) < 1. .or. &
-!           abs(vtmp(i,n,ny2+1-j,2)/vtmp(i,n,ny2+1-j,1)) < 1. ) then
-!        var4d(i,n,j:,1:8) = 0.
-!        var4d(i,n,:ny2+1-j,1:8) = 0.
-!        EXIT
-!      end if
-!    enddo
-!  enddo
-!  enddo
+  do n=-nome+1, -1
+  do i=1, nk
+    ! |F_uw/F_vT| < 1 : Filtering from KW
+    do j=ny2/2+1, ny2-3
+      if ( abs(vtmp(i,n,j,2)/vtmp(i,n,j,1)) < 1. .or. &
+           abs(vtmp(i,n,ny2+1-j,2)/vtmp(i,n,ny2+1-j,1)) < 1. ) then
+        var4d(i,n,j:,1:8) = 0.
+        var4d(i,n,:ny2+1-j,1:8) = 0.
+        EXIT
+      end if
+    enddo
+  enddo
+  enddo
   var4d(:,-nome+1:-1,1:3      ,1:8) = 0.
   var4d(:,-nome+1:-1,ny2-2:ny2,1:8) = 0.
 
@@ -382,24 +389,27 @@ PROGRAM RC_EPFSA_RA
   varo(:,k,:,4) = varo(:,k,:,4) - tmp1(:,:)
   varo(:,k,:,7) = varo(:,k,:,7) - tmp2(:,:)
 
-! MRGW(5,6) ( period >= 2 days )
-  o1m = -(nmon+2*nmon_patch)*15  ;  o2m = (nmon+2*nmon_patch)*15
+! MRGW(5,6) ( 2 <= period <= 10 days )
+  o1m  = -(nmon+2*nmon_patch)*15  ;  o2m  = (nmon+2*nmon_patch)*15
+  o1m0 = -(nmon+2*nmon_patch)*3   ;  o2m0 = (nmon+2*nmon_patch)*3
 
+  var4d(:,o1m0+1:o2m0-1,:,9:16) = 0.
   do n=o1m, o2m
+    if ( n > o1m0 .and. n < o2m0 )  CYCLE
   do i=1, nk
-    if (lzrgw(i,n) <= lz0_rgw) then
-      var4d(i,n,:,9:16) = 0.
+!    if (lzrgw(i,n) <= lz0_rgw) then
+!      var4d(i,n,:,9:16) = 0.
 !    else
-!      ! F_uw/F_vT > 0 : Filtering from MRGW
-!      do j=ny2/2+1, ny2-3
-!        if ( vtmp(i,n,j,4)/vtmp(i,n,j,3) > 0. .or. &
-!             vtmp(i,n,ny2+1-j,4)/vtmp(i,n,ny2+1-j,3) > 0. ) then
-!          var4d(i,n,j:,9:16) = 0.
-!          var4d(i,n,:ny2+1-j,9:16) = 0.
-!          EXIT
-!        end if
-!      enddo
-    end if
+      ! F_uw/F_vT > 0 : Filtering from MRGW
+      do j=ny2/2+1, ny2-3
+        if ( vtmp(i,n,j,4)/vtmp(i,n,j,3) > 0. .or. &
+             vtmp(i,n,ny2+1-j,4)/vtmp(i,n,ny2+1-j,3) > 0. ) then
+          var4d(i,n,j:,9:16) = 0.
+          var4d(i,n,:ny2+1-j,9:16) = 0.
+          EXIT
+        end if
+      enddo
+!    end if
   enddo
   enddo
   var4d(:,o1m:o2m,1:3      ,9:16) = 0.
@@ -446,7 +456,7 @@ PROGRAM RC_EPFSA_RA
     enddo
   end if
 
-  END subroutine reconstr
+  END subroutine sepa_sum
 
   SUBROUTINE setdim
 

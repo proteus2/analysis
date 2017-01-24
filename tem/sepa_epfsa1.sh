@@ -23,27 +23,40 @@ P106=( n OPT_30D  1 )
 P201=( n K_LARGEST  -999 )
 P202=( n PERIOD_SMALLEST  -999 )
 P203=( n LAT_RNG  -30.0  30.0 )
-P204=( n P_RNG  500  0.5 )   # should be same with epf_fc2.sh
+P204=( n P_RNG  500  0.5 )   # should be same with epfsa*_fc2.sh
 P205=( n NMON_PATCH  1 )
 #== Parameter 9 - I/O ============================
 P901=( n NT_F4  ${NT_F4[@]} )
 P902=( n P_PREDEF  ${P_PREDEF[@]} )
 P990=( s FILE_I_HEAD  "$DATD/tem/$RA_CODENAME/epf" )
-P991=( s FILE_I_FORM  XXXX/${P101[2]}.epf_koyz.XXXX.XXXX.nc  -999  \
-                      XXXX/${P101[2]}.epf2_koyz.XXXX.XXXX.nc  -999 )
-P992=( s FILE_I_XXXX  YYYY                     YYYY  MM      -999 )
-P993=( s VAR_I_NAME  f_y  f_z  epd  epd_z  \
-                     f_uv  f_uw  epd_uv  epd_uw )
+P991=( s FILE_I_FORM  XXXX/${P101[2]}.epXXXX_koyz.XXXX.XXXX.nc  -999 )
+P992=( s FILE_I_XXXX  YYYY              AUX       YYYY  MM      -999 )
+P892=( s NL_AUX  fsa0  fsa0  fsa0  fsa0 \
+                 f2sa0  f2sa0  f2sa0  f2sa0 \
+                 fsa0  fsa0  fsa0  fsa0 \
+                 f2sa0  f2sa0  f2sa0  f2sa0 \
+                 fsa1  fsa1  fsa1  fsa1 \
+                 f2sa1  f2sa1  f2sa1  f2sa1 \
+                 fsa1  fsa1  fsa1  fsa1 \
+                 f2sa1  f2sa1  f2sa1  f2sa1 )
+P993=( s VAR_I_NAME  f_y_s  f_z_s  epd_s  epd_z_s \
+                     f_uv_s  f_uw_s  epd_uv_s  epd_uw_s \
+                     f_y_a  f_z_a  epd_a  epd_z_a \
+                     f_uv_a  f_uw_a  epd_uv_a  epd_uw_a \
+                     f_y_s  f_z_s  epd_s  epd_z_s \
+                     f_uv_s  f_uw_s  epd_uv_s  epd_uw_s \
+                     f_y_a  f_z_a  epd_a  epd_z_a \
+                     f_uv_a  f_uw_a  epd_uv_a  epd_uw_a )  # Do not change this order.
 P994=( s FILE_I_HEAD2  ${FILE_I_HEAD[0]} )
 P995=( s FILE_I_FORM2  ${FILE_I_FORM[@]} )
 P996=( s FILE_I_XXXX2  ${FILE_I_XXXX[@]} )
 P997=( s VAR_I2       ${VAR_I[0]}      )  # u
 P998=( s VAR_I_NAME2  ${VAR_I_NAME[0]} )
-P999=( s FILE_O  ''  '' )
+P999=( s FILE_O  '' )
 #=================================================
 P102=( n YYYY  '' )
 
-F_SOURCE='reconstr_epf'
+F_SOURCE='sepa_epfsa1'
 F_NAMELIST="$TMPDIR/namelist/namelist.$F_SOURCE-$$"
 F_LOG="log/log.$F_SOURCE-$$"
 
@@ -60,33 +73,19 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   P102[2]=$YYYY
   P103[2]=$MM
   ODIR=${P990[2]}/$YYYY
-  P999[2]="$ODIR/${P101[2]}.epf_yz_recon0.$YYYY.${MM}.nc"
-  P999[3]="$ODIR/${P101[2]}.epf2_yz_recon0.$YYYY.${MM}.nc"
+  P999[2]="$ODIR/${P101[2]}.epfsa_yz_recon1.$YYYY.${MM}.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 
-  for i in {1..2} ; do
+  # create namelist --------------------
+  cr_file $F_NAMELIST
+  cr_nl $F_NAMELIST ANALCASE "${P101[*]}" "${P102[*]}" "${P103[*]}" "${P104[*]}" "${P105[*]}" "${P106[*]}"
+  cr_nl $F_NAMELIST PARAM "${P201[*]}" "${P202[*]}" "${P203[*]}" "${P204[*]}" "${P205[*]}"
+  cr_nl $F_NAMELIST FILEIO "${P901[*]}" "${P902[*]}" "${P990[*]}" "${P991[*]}" "${P992[*]}" "${P892[*]}" "${P993[*]}" "${P994[*]}" "${P995[*]}" "${P996[*]}" "${P997[*]}" "${P998[*]}" "${P999[*]}"
+  cat $F_NAMELIST
 
-    # create namelist --------------------
-    if [ $i -eq 1 ] ; then
-      P991n="${P991[*]:0:4}"
-      P993n="${P993[*]:0:6}"
-      P999n="${P999[*]:0:3}"
-    else
-      P991n="${P991[*]:0:2} ${P991[*]:4:2}"
-      P993n="${P993[*]:0:2} ${P993[*]:6:4}"
-      P999n="${P999[*]:0:2} ${P999[3]}"
-    fi
-    cr_file $F_NAMELIST
-    cr_nl $F_NAMELIST ANALCASE "${P101[*]}" "${P102[*]}" "${P103[*]}" "${P104[*]}" "${P105[*]}" "${P106[*]}"
-    cr_nl $F_NAMELIST PARAM "${P201[*]}" "${P202[*]}" "${P203[*]}" "${P204[*]}" "${P205[*]}"
-    cr_nl $F_NAMELIST FILEIO "${P901[*]}" "${P902[*]}" "${P990[*]}" "${P991n[*]}" "${P992[*]}" "${P993n[*]}" "${P994[*]}" "${P995[*]}" "${P996[*]}" "${P997[*]}" "${P998[*]}" "${P999n[*]}"
-    cat $F_NAMELIST
-
-    # compile and run --------------------
-    comnrun $F_SOURCE $F_NAMELIST # &> $F_LOG
-    echo "pid : $$"
-
-  done
+  # compile and run --------------------
+  comnrun $F_SOURCE $F_NAMELIST # &> $F_LOG
+  echo "pid : $$"
 
 M=$(( $M+1 ))
 done
