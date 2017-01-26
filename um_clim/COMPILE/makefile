@@ -1,23 +1,23 @@
 #
 #FC = $(FC_DBG)
 
-EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf reconstr_varsa wavedcp_var reconstr_epfsa reconstr_epfsa1 reconstr_epfsa2 reconstr_epfsa_c dp_um qboi_vintp_z2p_um qboi_dyn_um streamftn-rcirc_um
+EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um sepa_recon_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um sepa_epf sepa_recon_varsa wavedcp_var sepa_epfsa sepa_epfsa1 sepa_epfsa2 sepa_epfsa_c dp_um qboi_vintp_z2p_um qboi_dyn_um streamftn-rcirc_um
 MOD_DEP_N := nrtype nr nrutil m_hadgem netio
 MOD_N := fft tem epf
 SUB_N := spline splint tridag_ser locate svdcmp-sq svbksb pythag fdcoef
 LIB_FFTPACK ?= $(UTIL)/num_analysis/FFT/fftpack5.1/$(VER_COMP)/lib/libfftpack.a
 INCL_c_math := fft_t2i_um qboi_dyn_um
 INCL_c_phys := tem_z_um tem_z_cp_um  \
-               fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var  \
+               fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um sepa_recon_var  \
                epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um  \
-               epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf wavedcp_var  \
+               epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um sepa_epf wavedcp_var  \
                streamftn-rcirc_um
 INCL_c_phys_q := qboi_vintp_z2p_um qboi_dyn_um
 INCL_netcdf := streamftn-rcirc_um
 USE_FFTPACK := tem_z_um tem_z_cp_um epf_z_um  \
-               fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var  \
+               fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um sepa_recon_var  \
                epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um  \
-               epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_varsa
+               epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um sepa_recon_varsa
 
 NCINC := $(filter-out -g,$(shell nc-config --fflags))
 NCLIB := $(shell nc-config --flibs)

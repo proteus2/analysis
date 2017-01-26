@@ -91,7 +91,7 @@ PROGRAM RC_EPF_UM_z
   call get_4var
 
   print*, ' Calculating...', k, '/', nz2
-  call reconstr
+  call sepa_sum
   print*, ' .'
 
   ENDDO  L_LEV
@@ -216,7 +216,7 @@ PROGRAM RC_EPF_UM_z
 
   END subroutine get_4var
 
-  SUBROUTINE reconstr
+  SUBROUTINE sepa_sum
 
   integer ::  k1, k2, o1, o2
 
@@ -290,7 +290,7 @@ PROGRAM RC_EPF_UM_z
     enddo
   end if
 
-  END subroutine reconstr
+  END subroutine sepa_sum
 
   SUBROUTINE setdim
 

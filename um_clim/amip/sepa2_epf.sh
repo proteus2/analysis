@@ -26,9 +26,9 @@ P901=( n DAY1  -999 )              # the earlist date-of-file among input files
 P902=( n NDAY_I  30 )              # number of days in one input file
 P990=( s FID  pj )
 P991=( s FILE_I_HEAD  "/prime0/kyh/dat/L60CGW/epf-wc" )
-P992=( s FILE_I_FORM  XXXX/${P101[2]}.epf_koyz.XXXX.XXXX.nc  -999 )
+P992=( s FILE_I_FORM  XXXX/${P101[2]}.epf2_koyz.XXXX.XXXX.nc  -999 )
 P993=( s FILE_I_XXXX  YYYY                     YYYY  MM      -999 )
-P994=( s VAR_I_NAME  f_y  f_z  epd  epd_z )
+P994=( s VAR_I_NAME  f_uv  f_uw  epd_uv  epd_uw )
 P995=( s FILE_I_HEAD2  "/hippo0/HG2AMIP/L60CGW" )
 P996=( s FILE_I_FORM2  XXXX/${P101[2]}a.XXXX_XXXXXXXX.nc  -999 )
 P997=( s FILE_I_XXXX2  FID              FID  YYYY MM      -999 )
@@ -37,7 +37,7 @@ P999=( s FILE_O  '' )
 #=================================================
 P102=( n YYYY  '' )
 
-F_SOURCE='reconstr_epf'
+F_SOURCE='sepa_epf'
 F_NAMELIST="$TMPDIR/namelist/namelist.$F_SOURCE-$$"
 F_LOG="log/log.$F_SOURCE-$$"
 
@@ -54,9 +54,9 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   P102[2]=$YYYY
   P103[2]=$MM
   ODIR=${P991[2]}/$YYYY
-  P999[2]="$ODIR/${P101[2]}.epf_yz_recon0.$YYYY.${MM}.nc"
+  P999[2]="$ODIR/${P101[2]}.epf2_yz_recon0.$YYYY.${MM}.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
-#  [ -e ${P999[2]} ] && mv ${P999[2]} $ODIR/old.${P101[2]}.epf_yz_recon0.$YYYY.${MM}.nc
+#  [ -e ${P999[2]} ] && mv ${P999[2]} $ODIR/old.${P101[2]}.epf2_yz_recon0.$YYYY.${MM}.nc
 
   # create namelist --------------------
   cr_file $F_NAMELIST

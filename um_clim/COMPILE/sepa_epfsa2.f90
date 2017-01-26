@@ -95,7 +95,7 @@ PROGRAM RC_EPFSA_UM_z
   call get_4var
 
   print*, ' Calculating...', k, '/', nz2
-  call reconstr
+  call sepa_sum
   print*, ' .'
 
   ENDDO  L_LEV
@@ -237,7 +237,7 @@ PROGRAM RC_EPFSA_UM_z
 
   END subroutine get_4var
 
-  SUBROUTINE reconstr
+  SUBROUTINE sepa_sum
 
   integer ::  k1, k2, o1a, o2a, o1r, o2r, o1m, o2m, o1m0, o2m0
 
@@ -252,7 +252,7 @@ PROGRAM RC_EPFSA_UM_z
   end where
 
 ! low-pass filter for large-scale waves ( k = 1-20, period > 4/3 days )
-! This should be same with reconstr_epf.f90
+! This should be same with sepa_epf.f90
   k1 = 1  ;  k2 = 20
   o1a = -(nmon+2*nmon_patch)*22 + 1  ;  o2a = (nmon+2*nmon_patch)*22 - 1
   var4d(k1:k2,:o1a-1,:,:) = 0.  ;  var4d2(k1:k2,:o1a-1,:,:) = 0.
@@ -395,7 +395,7 @@ PROGRAM RC_EPFSA_UM_z
     enddo
   end if
 
-  END subroutine reconstr
+  END subroutine sepa_sum
 
   SUBROUTINE setdim
 

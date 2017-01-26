@@ -44,16 +44,15 @@ P994=( s VAR_I_NAME  f_y_s  f_z_s  epd_s  epd_z_s \
                      f_uv_s  f_uw_s  epd_uv_s  epd_uw_s \
                      f_y_a  f_z_a  epd_a  epd_z_a \
                      f_uv_a  f_uw_a  epd_uv_a  epd_uw_a )  # Do not change this order.
-P995=( s FILE_I_HEAD2  "/prime0/kyh/dat/L60CGW/fcoef_ko" )
-P996=( s FILE_I_FORM2  XXXX/${P101[2]}.fft_XXXXXXXX.XXXX.XXXX.nc  -999 )
-P997=( s FILE_I_XXXX2  YYYY                VAR_I_N AUX YYYY  MM      -999 )
-P897=( s NL_AUX2  _wave_ko  _wave_ko_zr  _wave_ko  -wc_wave_ko )
-P998=( s VAR_I_NAME2  u  theta  rhov  rhodz_dt )
+P995=( s FILE_I_HEAD2  "/hippo0/HG2AMIP/L60CGW" )
+P996=( s FILE_I_FORM2  XXXX/${P101[2]}a.XXXX_XXXXXXXX.nc  -999 )
+P997=( s FILE_I_XXXX2  FID              FID  YYYY MM      -999 )
+P998=( s VAR_I_NAME2  u )
 P999=( s FILE_O  '' )
 #=================================================
 P102=( n YYYY  '' )
 
-F_SOURCE='reconstr_varsa'
+F_SOURCE='sepa_epfsa'
 F_NAMELIST="$TMPDIR/namelist/namelist.$F_SOURCE-$$"
 F_LOG="log/log.$F_SOURCE-$$"
 
@@ -69,8 +68,8 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   MM=$(( M ))  ;  if [ $M -lt 10 ] ; then MM="0$MM" ; fi
   P102[2]=$YYYY
   P103[2]=$MM
-  ODIR=/prime0/kyh/dat/L60CGW/fcoef_ko-wav4/$YYYY
-  P999[2]="$ODIR/${P101[2]}.fft_var4_ko.$YYYY.${MM}.nc"
+  ODIR=${P991[2]}/$YYYY
+  P999[2]="$ODIR/${P101[2]}.epfsa_yz_recon0.$YYYY.${MM}.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 #  [ -e ${P999[2]} ] && mv ${P999[2]} $ODIR/old.${P101[2]}.epfsa0_yz_recon0.$YYYY.${MM}.nc
 
@@ -78,7 +77,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   cr_file $F_NAMELIST
   cr_nl $F_NAMELIST ANALCASE "${P101[*]}" "${P102[*]}" "${P103[*]}" "${P104[*]}" "${P105[*]}" "${P106[*]}"
   cr_nl $F_NAMELIST PARAM "${P201[*]}" "${P202[*]}" "${P203[*]}" "${P204[*]}" "${P205[*]}"
-  cr_nl $F_NAMELIST FILEIO "${P901[*]}" "${P902[*]}" "${P990[*]}" "${P991[*]}" "${P992[*]}" "${P993[*]}" "${P893[*]}" "${P994[*]}" "${P995[*]}" "${P996[*]}" "${P997[*]}" "${P897[*]}" "${P998[*]}" "${P999[*]}"
+  cr_nl $F_NAMELIST FILEIO "${P901[*]}" "${P902[*]}" "${P990[*]}" "${P991[*]}" "${P992[*]}" "${P993[*]}" "${P893[*]}" "${P994[*]}" "${P995[*]}" "${P996[*]}" "${P997[*]}" "${P998[*]}" "${P999[*]}"
   cat $F_NAMELIST
 
   # compile and run --------------------
