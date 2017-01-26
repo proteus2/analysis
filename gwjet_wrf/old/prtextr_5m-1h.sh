@@ -1,5 +1,5 @@
 #! /bin/bash
-# import : DIRTMP
+# import : TMPDIR
 
 EXTCTL1=1        ### CONTROLLED FOR SPLITTING - 1
 EXTCTL2=49       ### CONTROLLED FOR SPLITTING - 2

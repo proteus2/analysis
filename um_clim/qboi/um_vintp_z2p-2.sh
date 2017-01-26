@@ -1,5 +1,5 @@
 #! /bin/bash
-# import : DIRTMP
+# import : TMPDIR
 
 expname=L60CGW
 expcode=uanuj

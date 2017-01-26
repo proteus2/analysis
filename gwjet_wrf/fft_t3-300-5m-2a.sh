@@ -1,5 +1,5 @@
 #! /bin/bash
-# import : DIRTMP
+# import : TMPDIR
 
 z0=8000  #0      # -250
 z9=8000  #15000  # 25000

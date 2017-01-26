@@ -1,5 +1,5 @@
 #! /bin/bash
-# import : DIRTMP
+# import : TMPDIR
 
 fdir="/data18/GW_jet_wrf/Hist/wrfout_5min"
 
