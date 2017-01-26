@@ -54,7 +54,7 @@ P999=( s FILE_O  '' )
 P102=( n YYYY  '' )
 P103=( n MM  ''  1 )               # starting month and number of months per year
 
-F_SOURCE='vintp_z2p_um'
+F_SOURCE='qboi_vintp_z2p_um'
 F_NAMELIST="$TMPDIR/namelist/namelist.$F_SOURCE-$$"
 F_LOG="log/log.$F_SOURCE-$$"
 

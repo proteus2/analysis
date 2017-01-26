@@ -5,7 +5,7 @@ PROGRAM VINTP_UM_z2p
 
   implicit none
 
-  include 'c_phys.inc'
+  include 'c_phys-qboi.inc'
 
   real, parameter  ::  h1_realistic_temp = 200.  ! [m]
   real, parameter  ::  h1_safecalc_hgt = 2000.  ! [m]

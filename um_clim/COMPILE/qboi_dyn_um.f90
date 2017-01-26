@@ -6,7 +6,7 @@ PROGRAM QBOI_DYN_UM
   implicit none
 
   include 'c_math.inc'
-  include 'c_phys.inc'
+  include 'c_phys-qboi.inc'
 
   integer, parameter ::  nv = 12
   integer, parameter ::  k_start = 4  ! > 1; max(k_t1) = 5 for h1 = 200 m

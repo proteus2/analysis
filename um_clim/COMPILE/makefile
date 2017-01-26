@@ -1,17 +1,19 @@
 #
 #FC = $(FC_DBG)
 
-EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf reconstr_varsa wavedcp_var reconstr_epfsa reconstr_epfsa1 dp_um vintp_z2p_um qboi_dyn_um
+EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf reconstr_varsa wavedcp_var reconstr_epfsa reconstr_epfsa1 reconstr_epfsa2 reconstr_epfsa_c dp_um qboi_vintp_z2p_um qboi_dyn_um streamftn-rcirc_um
 MOD_DEP_N := nrtype nr nrutil m_hadgem netio
 MOD_N := fft tem epf
-SUB_N := spline splint tridag_ser locate fdcoef
+SUB_N := spline splint tridag_ser locate svdcmp-sq svbksb pythag fdcoef
 LIB_FFTPACK ?= $(UTIL)/num_analysis/FFT/fftpack5.1/$(VER_COMP)/lib/libfftpack.a
 INCL_c_math := fft_t2i_um qboi_dyn_um
 INCL_c_phys := tem_z_um tem_z_cp_um  \
                fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var  \
                epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um  \
                epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um reconstr_epf wavedcp_var  \
-               vintp_z2p_um qboi_dyn_um
+               streamftn-rcirc_um
+INCL_c_phys_q := qboi_vintp_z2p_um qboi_dyn_um
+INCL_netcdf := streamftn-rcirc_um
 USE_FFTPACK := tem_z_um tem_z_cp_um epf_z_um  \
                fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um reconstr_var  \
                epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um  \
@@ -37,6 +39,12 @@ endif
 ifeq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),$(INCL_c_phys)))
   INCL_F += c_phys.inc
 endif
+ifeq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),$(INCL_c_phys_q)))
+  INCL_F += c_phys-qboi.inc
+endif
+ifeq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),$(INCL_netcdf)))
+  INCL_NC += $(NCINC)
+endif
 ifeq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),$(USE_FFTPACK)))
   LIB_EXTERNAL += $(LIB_FFTPACK)
 endif
@@ -48,7 +56,7 @@ $(EXEC_ALL):	%:	$(EXEC_D)/%
 $(EXEC_FULL):	$(EXEC_D)/%:	%.f90 $(LIB_D)/$(LIB_SUBS) $(INCL_F)  \
                                 $(LIB_EXTERNAL)
 		mkdir -p $(EXEC_D)
-		$(FC) $< -o $@ $(SUBSLIB) $(NCLIB) $(LIB_EXTERNAL)
+		$(FC) $< -o $@ $(SUBSLIB) $(INCL_NC) $(NCLIB) $(LIB_EXTERNAL)
 
 # library
 
