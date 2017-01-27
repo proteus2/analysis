@@ -18,7 +18,11 @@ COMPBASE_D := $(VER_COMP)_nc$(filter-out netCDF,$(shell nc-config --version))
 EXEC_D := $(COMPBASE_D)/bin
 LIB_D := $(COMPBASE_D)/lib
 LIB_SUBS := libsubs.a
-SUBSLIB := -L$(LIB_D) -lsubs -module $(LIB_D)
+ifeq ($(findstring gfortran, $(FC) ),gfortran)
+  SUBSLIB := -L$(LIB_D) -lsubs -J$(LIB_D)
+else
+  SUBSLIB := -L$(LIB_D) -lsubs -module $(LIB_D)
+endif
 
 ALL_SUB_N := $(MOD_DEP_N) $(MOD_N) $(SUB_N)
 ALL_SUB_F := $(addsuffix .f90,$(ALL_SUB_N))

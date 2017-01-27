@@ -1,7 +1,7 @@
 #
 #FC = $(FC_DBG)
 
-EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um sepa_recon_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um sepa_epf sepa_recon_varsa wavedcp_var sepa_epfsa sepa_epfsa1 sepa_epfsa2 sepa_epfsa_c dp_um qboi_vintp_z2p_um qboi_dyn_um streamftn-rcirc_um
+EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um sepa_recon_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um sepa_epf sepa_recon_varsa wavedcp_var sepa_epfsa sepa_epfsa1 sepa_epfsa2 sepa_epfsa_c sepa_epfsa_fc2 dp_um qboi_vintp_z2p_um qboi_dyn_um streamftn-rcirc_um
 MOD_DEP_N := nrtype nr nrutil m_hadgem netio
 MOD_N := fft tem epf
 SUB_N := spline splint tridag_ser locate svdcmp-sq svbksb pythag fdcoef
@@ -26,7 +26,11 @@ COMPBASE_D := $(VER_COMP)_nc$(filter-out netCDF,$(shell nc-config --version))
 EXEC_D := $(COMPBASE_D)/bin
 LIB_D := $(COMPBASE_D)/lib
 LIB_SUBS := libsubs.a
-SUBSLIB := -L$(LIB_D) -lsubs -module $(LIB_D)
+ifeq ($(findstring gfortran, $(FC) ),gfortran)
+  SUBSLIB := -L$(LIB_D) -lsubs -J$(LIB_D)
+else
+  SUBSLIB := -L$(LIB_D) -lsubs -module $(LIB_D)
+endif
 
 ALL_SUB_N := $(MOD_DEP_N) $(MOD_N) $(SUB_N)
 ALL_SUB_F := $(addsuffix .f90,$(ALL_SUB_N))

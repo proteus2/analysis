@@ -42,17 +42,17 @@ analgw:		anal_gw.f90 LIBS_COMP $(LIB_FFTPACK)
 LIBS_COMP:	$(LIB_NR) $(LIB_ETC) $(LIB_SUBS)
 
 $(LIB_NR):		$(D_NR)
-		( cd $(D_NR) ; $(FC) -c $(F_NR) -module $(D_LIB) )
+		( cd $(D_NR) ; $(FC) -c $(F_NR) $(FLG_MODDIR) )
 		( cd $(D_NR) ; ar -rv $@ $(F_NR:.f90=.o) )
 		( cd $(D_NR) ; rm -f $(F_NR:.f90=.o) )
 
 $(LIB_ETC):		$(D_ETC) $(LIB_NR)
-		( cd $(D_ETC) ; $(FC) -c $(F_ETC) -module $(D_LIB) )
+		( cd $(D_ETC) ; $(FC) -c $(F_ETC) $(FLG_MODDIR) )
 		( cd $(D_ETC) ; ar -rv $@ $(F_ETC:.f90=.o) )
 		( cd $(D_ETC) ; rm -f $(F_ETC:.f90=.o) )
 
 $(LIB_SUBS):	$(F_MOD_SUB) $(LIB_ETC) $(LIB_NR)
-		$(FC) -c $(F_MOD_SUB) -module $(D_LIB)
+		$(FC) -c $(F_MOD_SUB) $(FLG_MODDIR)
 		ar -rv $@ $(F_MOD_SUB:.f90=.o)
 		rm -f $(F_MOD_SUB:.f90=.o)
 
@@ -62,3 +62,10 @@ clean:
 		( cd $(D_LIB) ; rm -f *.a *.mod )
 
 # ----------------------------------------------------------------------
+
+ifeq ($(findstring gfortran, $(FC) ),gfortran)
+  FLG_MODDIR := -J$(D_LIB)
+else
+  FLG_MODDIR := -module $(D_LIB)
+endif
+
