@@ -16,8 +16,9 @@ P106=( n OPT_30D  1 )
 #== Parameter 2 ==================================
 P201=( n K_LARGEST  -999 )
 P202=( n PERIOD_SMALLEST  -999 )
-P203=( n LAT_RNG  -30.0  30.0 )
-P204=( n Z_RNG  8.4  -999 )
+P203=( n LAT_RNG  -22.5  22.5 )
+P204=( n Z_RNG  15.0  36.0 )
+#P204=( n Z_RNG  8.4  -999 )
 #P203=( n LAT_RNG  -999  -999 )
 #P204=( n Z_RNG  -999  -999 )
 P205=( n NMON_PATCH  1 )
@@ -69,7 +70,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   P102[2]=$YYYY
   P103[2]=$MM
   ODIR=$DATD/AOL60CGW/epf-wc_sepa/$YYYY
-  P999[2]="$ODIR/sepa_"
+  P999[2]="$ODIR/sepa_${P101[2]}.epf_koyz.$YYYY.${MM}"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 #  [ -e ${P999[2]} ] && mv ${P999[2]} $ODIR/old.${P101[2]}.epfsa0_yz_recon0.$YYYY.${MM}.nc
 

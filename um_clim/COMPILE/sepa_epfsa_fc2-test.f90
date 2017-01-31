@@ -5,7 +5,7 @@ PROGRAM RC_EPFSA_UM_z
 
   implicit none
 
-  integer, parameter ::  nv = 8, nrc = 22, nrco = 9
+  integer, parameter ::  nv = 8, nrc = 22
 
   integer ::  k_largest, period_smallest, nmon_patch
 
@@ -16,15 +16,14 @@ PROGRAM RC_EPFSA_UM_z
                     FILE_I_XXXX2, VAR_I_NAME2, FILE_O, NL_AUX
 
   integer ::  iz, imon, ihour, i_time
-  integer ::  nk, nome, rcs(nrco)
+  integer ::  nk, nome
   integer ::  iy1(2), iz1(2), iy2(2), iz2(2), ny2, nz2, nta
-  integer ::  i,j,k,n, irc
+  integer ::  i,j,k,n
   real    ::  wgt
   character(len=32), dimension(nv) ::  ovarname
-  character(len=128) ::  file_o_rc, title_o_rc
 
   real, dimension(:,:,:,:,:,:), allocatable ::  var6d
-  real, dimension(:,:,:,:), allocatable ::  var4d, var4d2, vtmp
+  real, dimension(:,:,:,:), allocatable ::  varo, var4d, var4d2, vtmp
   real, dimension(:,:,:),   allocatable ::  kr
   real, dimension(:,:),     allocatable ::  um, okbi, lzrgw, or2d
   real, dimension(:,:),     allocatable ::  tmp1, tmp2, tmp3, tmp4
@@ -105,35 +104,24 @@ PROGRAM RC_EPFSA_UM_z
   deallocate( tmp1, tmp2 )
   deallocate( var4d, vtmp, okbi, lzrgw )
 
-  nd1a = NK+1
-  nd2a = NTA
-  nd3a = NY2
-  nd4a = NZ2
+  nd1a = NY2
+  nd2a = NZ2
+  nd3a = NRC
+  nd4a = 1
 
-  rcs = (/3,4,5,6,7,8,14,17,18/)
+  do iv=1, nv
+    call setdim
+    allocate( set(iv)%var_out(nd1a,nd2a,nd3a,nd4a) )
+    set(iv)%var_out(:,:,:,:) = 1.e32
 
-  do irc=1, nrco
-
-    do iv=1, nv
-      call setdim
-      if ( .not. allocated(set(iv)%var_out) )  &
-         allocate( set(iv)%var_out(nd1a,nd2a,nd3a,nd4a) )
-      set(iv)%var_out(:,:,:,:) = 1.e32
-
-      set(iv)%var_out(2:,         1:nome+1,:,:) = var6d(:,0:nome,:,:,iv,rcs(irc))
-      set(iv)%var_out(2:,nta-nome+2:nta   ,:,:) = var6d(:, :-1  ,:,:,iv,rcs(irc))
-    enddo
+    set(iv)%var_out(:,:,:,1) = varo(:,:,iv,:)
+  enddo
 
 ! DUMP
 
-    write(file_o_rc,'(a,i2.2,a)') trim(file_o)//'_', rcs(irc), '.nc'
-    write(title_o_rc,'(a,i2.1)') 'Reconstructed EP flux, ', rcs(irc)
+  write(6,*)  ;  write(6,*) trim(file_o)  ;  write(6,*)
 
-    write(6,*) trim(file_o_rc)
-
-    call outnc(trim(file_o_rc),nv,set,trim(title_o_rc))
-
-  enddo
+  call outnc(trim(file_o),nv,set,'Reconstructed EP flux')
 
 ! END
 
@@ -202,6 +190,7 @@ PROGRAM RC_EPFSA_UM_z
   or2d(:,:) = spread(or,1,nk)
   kr0(:) = kwn(:)/a_earth
 
+  allocate( varo(ny2,nz2,nv,nrc) )
   allocate( var6d(nk,-nome+1:nome,ny2,nz2,nv,nrc) )
   var6d(:,:,:,:,:,:) = 0.
 
@@ -226,7 +215,7 @@ PROGRAM RC_EPFSA_UM_z
     var4d(:, :-1  ,:,iv_i:iv_i) = get_ivara4d(2,nk,nta-nome+2,nome-1, &
                    iy2(1),ny2,iz2(1)-1+k,1)
   enddo
-!o  var4d(:,:,:,:) = var4d(:,:,:,:)*2.
+  var4d(:,:,:,:) = var4d(:,:,:,:)*2.
   var4d(nk,:   ,:,:) = 0.
   var4d(: ,nome,:,:) = 0.
 
@@ -245,7 +234,7 @@ PROGRAM RC_EPFSA_UM_z
     var4d2(:, :-1  ,:,iv:iv) = var4d2(:, :-1  ,:,iv:iv) +                &
        get_ivara4d(2,nk,nta-nome+2,nome-1,iy2(1),ny2,iz2(1)-1+k,1)
   enddo
-!o  var4d2(:,:,:,:) = var4d2(:,:,:,:)*2.
+  var4d2(:,:,:,:) = var4d2(:,:,:,:)*2.
   var4d2(nk,:   ,:,:) = 0.
   var4d2(: ,nome,:,:) = 0.
 
@@ -275,28 +264,34 @@ PROGRAM RC_EPFSA_UM_z
     var4d(k2+1:,:,:,:) = 0.  ;  var4d2(k2+1:,:,:,:) = 0.
   end if
 
-
 ! low-freq. IGW(7,8), RW(4) ( period <, >= 2.5 days ) step 1
   o1r = -(nmon+2*nmon_patch)*12  ;  o2r = (nmon+2*nmon_patch)*12
 
-!o  ! IGW: symm + antisymm
-!o  varo(:,k,:,7) = sum(sum(var4d(:,:o1r-1,:,1:8 ), dim=1), dim=1) + &
-!o                  sum(sum(var4d(:,:o1r-1,:,9:16), dim=1), dim=1)
-!o  varo(:,k,:,8) = sum(sum(var4d(:,o2r+1:,:,1:8 ), dim=1), dim=1) + &
-!o                  sum(sum(var4d(:,o2r+1:,:,9:16), dim=1), dim=1)
-!o  ! IGW: symm-antisymm cross-correl.
-!o  varo(:,k,:,17) = sum(sum(var4d2(:,:o1r-1,:,:), dim=1), dim=1)
-!o  varo(:,k,:,18) = sum(sum(var4d2(:,o2r+1:,:,:), dim=1), dim=1)
-!o  ! RW: symm + antisymm
-!o  varo(:,k,:,1) = sum(sum(var4d(:,o1r:-1,:,1:8 ), dim=1), dim=1) + &
-!o                  sum(sum(var4d(:,o1r:-1,:,9:16), dim=1), dim=1)
-!o  varo(:,k,:,2) = sum(sum(var4d(:,0 :o2r,:,1:8 ), dim=1), dim=1) + &
-!o                  sum(sum(var4d(:,0 :o2r,:,9:16), dim=1), dim=1)
-!o  varo(:,k,:,4) = varo(:,k,:,1) + varo(:,k,:,2)
-!o  ! RW: symm-antisymm cross-correl.
-!o  varo(:,k,:,11) = sum(sum(var4d2(:,o1r:-1,:,:), dim=1), dim=1)
-!o  varo(:,k,:,12) = sum(sum(var4d2(:,0 :o2r,:,:), dim=1), dim=1)
-!o  varo(:,k,:,14) = varo(:,k,:,11) + varo(:,k,:,12)
+  ! IGW: symm + antisymm
+  varo(:,k,:,7) = sum(sum(var4d(:,:o1r-1,:,1:8 ), dim=1), dim=1) + &
+                  sum(sum(var4d(:,:o1r-1,:,9:16), dim=1), dim=1)
+  varo(:,k,:,8) = sum(sum(var4d(:,o2r+1:,:,1:8 ), dim=1), dim=1) + &
+                  sum(sum(var4d(:,o2r+1:,:,9:16), dim=1), dim=1)
+  ! IGW: symm-antisymm cross-correl.
+  varo(:,k,:,17) = sum(sum(var4d2(:,:o1r-1,:,:), dim=1), dim=1)
+  varo(:,k,:,18) = sum(sum(var4d2(:,o2r+1:,:,:), dim=1), dim=1)
+  ! RW: symm + antisymm
+  varo(:,k,:,1) = sum(sum(var4d(:,o1r:-1,:,1:8 ), dim=1), dim=1) + &
+                  sum(sum(var4d(:,o1r:-1,:,9:16), dim=1), dim=1)
+  varo(:,k,:,2) = sum(sum(var4d(:,0 :o2r,:,1:8 ), dim=1), dim=1) + &
+                  sum(sum(var4d(:,0 :o2r,:,9:16), dim=1), dim=1)
+  varo(:,k,:,4) = varo(:,k,:,1) + varo(:,k,:,2)
+  ! RW: symm-antisymm cross-correl.
+  varo(:,k,:,11) = sum(sum(var4d2(:,o1r:-1,:,:), dim=1), dim=1)
+  varo(:,k,:,12) = sum(sum(var4d2(:,0 :o2r,:,:), dim=1), dim=1)
+  varo(:,k,:,14) = varo(:,k,:,11) + varo(:,k,:,12)
+
+! total large-scale waves
+  varo(:,k,:,1) = varo(:,k,:,1) + varo(:,k,:,7)
+  varo(:,k,:,2) = varo(:,k,:,2) + varo(:,k,:,8)
+  varo(:,k,:,11) = varo(:,k,:,11) + varo(:,k,:,17)
+  varo(:,k,:,12) = varo(:,k,:,12) + varo(:,k,:,18)
+
 
   ! IGW: symm + antisymm
   var6d(:,:o1r-1,:,k,:,7) = var4d(:,:o1r-1,:,1:8 ) + &
@@ -309,24 +304,17 @@ PROGRAM RC_EPFSA_UM_z
   ! RW: symm + antisymm
   var6d(:,o1r:o2r,:,k,:,4) = var4d(:,o1r:o2r,:,1:8 ) + &
                              var4d(:,o1r:o2r,:,9:16)
+ 
   ! RW: symm-antisymm cross-correl.
   var6d(:,o1r:o2r,:,k,:,14) = var4d2(:,o1r:o2r,:,:)
 
-
 ! total large-scale waves
-
-!o  varo(:,k,:,1) = varo(:,k,:,1) + varo(:,k,:,7)
-!o  varo(:,k,:,2) = varo(:,k,:,2) + varo(:,k,:,8)
-!o  varo(:,k,:,11) = varo(:,k,:,11) + varo(:,k,:,17)
-!o  varo(:,k,:,12) = varo(:,k,:,12) + varo(:,k,:,18)
-
   var6d(:,:-1,:,k,:,1) = var4d(:,:-1,:,1:8 ) + &
                          var4d(:,:-1,:,9:16)
   var6d(:,0: ,:,k,:,2) = var4d(:,0: ,:,1:8 ) + &
                          var4d(:,0: ,:,9:16)
   var6d(:,:-1,:,k,:,11) = var4d2(:,:-1,:,:)
   var6d(:,0: ,:,k,:,12) = var4d2(:,0: ,:,:)
-
 
 ! Fs_H, Fs_M, Fa_H, Fa_M
   vtmp = 0.
@@ -341,7 +329,6 @@ PROGRAM RC_EPFSA_UM_z
   vtmp(:,:,:,:) = vtmp(:,:,:,:)*0.2
   vtmp(:,:,:,1) = vtmp(:,:,:,1) - vtmp(:,:,:,2)
   vtmp(:,:,:,3) = vtmp(:,:,:,3) - vtmp(:,:,:,4)
-
 
 ! KW(3)
   do n=-nome+1, -1
@@ -362,17 +349,16 @@ PROGRAM RC_EPFSA_UM_z
 
   tmp1(:,:) = sum(sum(var4d(:,o1r:-1,:,1:8), dim=1), dim=1)
   tmp2(:,:) = sum(sum(var4d(:,:o1r-1,:,1:8), dim=1), dim=1)
-!o  varo(:,k,:,3) = tmp1(:,:) + tmp2(:,:)
+  varo(:,k,:,3) = tmp1(:,:) + tmp2(:,:)
 
   var6d(:,:-1,:,k,:,3) = var4d(:,:-1,:,1:8)
 
   ! RW(4), IGW(7) step 2
-!o  varo(:,k,:,4) = varo(:,k,:,4) - tmp1(:,:)
-!o  varo(:,k,:,7) = varo(:,k,:,7) - tmp2(:,:)
+  varo(:,k,:,4) = varo(:,k,:,4) - tmp1(:,:)
+  varo(:,k,:,7) = varo(:,k,:,7) - tmp2(:,:)
 
   var6d(:,o1r:-1,:,k,:,4) = var6d(:,o1r:-1,:,k,:,4) - var4d(:,o1r:-1,:,1:8)
   var6d(:,:o1r-1,:,k,:,7) = var6d(:,:o1r-1,:,k,:,7) - var4d(:,:o1r-1,:,1:8)
-
 
 ! MRGW(5,6) ( 2 <= period <= 10 days )
   o1m  = -(nmon+2*nmon_patch)*15  ;  o2m  = (nmon+2*nmon_patch)*15
@@ -400,23 +386,23 @@ PROGRAM RC_EPFSA_UM_z
   var4d(:,o1m:o2m,1:3      ,9:16) = 0.
   var4d(:,o1m:o2m,ny2-2:ny2,9:16) = 0.
 
-!o  varo(:,k,:,5) = sum(sum(var4d(:,o1r:-1,:,9:16), dim=1), dim=1)
-!o  varo(:,k,:,6) = sum(sum(var4d(:,0:o2r ,:,9:16), dim=1), dim=1)
+  varo(:,k,:,5) = sum(sum(var4d(:,o1r:-1,:,9:16), dim=1), dim=1)
+  varo(:,k,:,6) = sum(sum(var4d(:,0:o2r ,:,9:16), dim=1), dim=1)
 
   var6d(:,o1r:-1,:,k,:,5) = var4d(:,o1r:-1,:,9:16)
   var6d(:,0:o2r ,:,k,:,6) = var4d(:,0:o2r ,:,9:16)
   ! o1r > o1m ; o2r < o2m
 
   ! RW(4) step 3
-!o  varo(:,k,:,4) = varo(:,k,:,4) - (varo(:,k,:,5) + varo(:,k,:,6))
+  varo(:,k,:,4) = varo(:,k,:,4) - (varo(:,k,:,5) + varo(:,k,:,6))
 
   var6d(:,o1r:o2r,:,k,:,4) = var6d(:,o1r:o2r,:,k,:,4) - var4d(:,o1r:o2r,:,9:16)
 
   tmp1(:,:) = sum(sum(var4d(:,o1m:o1r-1,:,9:16), dim=1), dim=1)
   tmp2(:,:) = sum(sum(var4d(:,o2r+1:o2m,:,9:16), dim=1), dim=1)
 
-!o  varo(:,k,:,5) = varo(:,k,:,5) + tmp1(:,:)
-!o  varo(:,k,:,6) = varo(:,k,:,6) + tmp2(:,:)
+  varo(:,k,:,5) = varo(:,k,:,5) + tmp1(:,:)
+  varo(:,k,:,6) = varo(:,k,:,6) + tmp2(:,:)
 
   var6d(:,o1m:o1r-1,:,k,:,5) = var6d(:,o1m:o1r-1,:,k,:,5) +  &
                                var4d(:,o1m:o1r-1,:,9:16)
@@ -424,8 +410,8 @@ PROGRAM RC_EPFSA_UM_z
                                var4d(:,o2r+1:o2m,:,9:16)
 
   ! IGW(7,8) step 3
-!o  varo(:,k,:,7) = varo(:,k,:,7) - tmp1(:,:)
-!o  varo(:,k,:,8) = varo(:,k,:,8) - tmp2(:,:)
+  varo(:,k,:,7) = varo(:,k,:,7) - tmp1(:,:)
+  varo(:,k,:,8) = varo(:,k,:,8) - tmp2(:,:)
 
   var6d(:,o1m:o1r-1,:,k,:,7) = var6d(:,o1m:o1r-1,:,k,:,7) -  &
                                var4d(:,o1m:o1r-1,:,9:16)
@@ -434,26 +420,24 @@ PROGRAM RC_EPFSA_UM_z
 
 
 ! temporary : (S+A) + symm-antisymm cross-correl.
-
-!o  ! total large-scale waves
-!o  varo(:,k,:,9 ) = varo(:,k,:,1) + varo(:,k,:,11)
-!o  varo(:,k,:,10) = varo(:,k,:,2) + varo(:,k,:,12)
-!o  ! E+W
-!o  varo(:,k,:,19) = varo(:,k,:,9) + varo(:,k,:,10)
-!o  ! RW
-!o  varo(:,k,:,20) = varo(:,k,:,4) + varo(:,k,:,14)
-!o  ! IGW
-!o  varo(:,k,:,21) = varo(:,k,:,7) + varo(:,k,:,17)
-!o  varo(:,k,:,22) = varo(:,k,:,8) + varo(:,k,:,18)
-
   ! total large-scale waves
+  varo(:,k,:,9 ) = varo(:,k,:,1) + varo(:,k,:,11)
+  varo(:,k,:,10) = varo(:,k,:,2) + varo(:,k,:,12)
+  ! E+W
+  varo(:,k,:,19) = varo(:,k,:,9) + varo(:,k,:,10)
+  ! RW
+  varo(:,k,:,20) = varo(:,k,:,4) + varo(:,k,:,14)
+  ! IGW
+  varo(:,k,:,21) = varo(:,k,:,7) + varo(:,k,:,17)
+  varo(:,k,:,22) = varo(:,k,:,8) + varo(:,k,:,18)
+
   var6d(:,:,:,k,:,9 ) = var6d(:,:,:,k,:,1) + var6d(:,:,:,k,:,11)
   var6d(:,:,:,k,:,10) = var6d(:,:,:,k,:,2) + var6d(:,:,:,k,:,12)
-  ! E+W
+
   var6d(:,:,:,k,:,19) = var6d(:,:,:,k,:,9) + var6d(:,:,:,k,:,10)
-  ! RW
+
   var6d(:,:,:,k,:,20) = var6d(:,:,:,k,:,4) + var6d(:,:,:,k,:,14)
-  ! IGW
+
   var6d(:,:,:,k,:,21) = var6d(:,:,:,k,:,7) + var6d(:,:,:,k,:,17)
   var6d(:,:,:,k,:,22) = var6d(:,:,:,k,:,8) + var6d(:,:,:,k,:,18)
 
@@ -463,21 +447,26 @@ PROGRAM RC_EPFSA_UM_z
 
   do iv=1, nv
     if (var4d(3,3,1    ,iv) == 2.e32) then
+      varo(1    ,k,iv,:) = 1.e32
       var6d(:,:,1,k,iv,:) = 1.e32
     end if
     if (var4d(3,3,ny2  ,iv) == 2.e32) then
+      varo(ny2  ,k,iv,:) = 1.e32
       var6d(:,:,ny2,k,iv,:) = 1.e32
     end if
     if (var4d(3,3,2    ,iv) == 2.e32) then
+      varo(2    ,k,iv,:) = 1.e32
       var6d(:,:,2,k,iv,:) = 1.e32
     end if
     if (var4d(3,3,ny2-1,iv) == 2.e32) then
+      varo(ny2-1,k,iv,:) = 1.e32
       var6d(:,:,ny2-1,k,iv,:) = 1.e32
     end if
   end do
   if ( k <= 2 .or. k >= nz2-1 ) then
     do iv=1, nv
       if (var4d(3,3,3,iv) == 2.e32) then
+        varo(:,k,iv,:) = 1.e32
         var6d(:,:,:,k,iv,:) = 1.e32
       end if
     enddo
@@ -488,24 +477,24 @@ PROGRAM RC_EPFSA_UM_z
   SUBROUTINE setdim
 
   set(iv)%vname = trim(ovarname(iv))
-  set(iv)%axis = (/'k_wn  ','ome_fr','lat   ','z     '/) 
+  set(iv)%axis = (/'lat   ','z     ','wg    ','      '/) 
   set(iv)%nd(:) = (/nd1a,nd2a,nd3a,nd4a/)
-  if ( .not. allocated(set(iv)%axis1) ) then
-    allocate( set(iv)%axis1(set(iv)%nd(1)) )
-    allocate( set(iv)%axis2(set(iv)%nd(2)) )
-    allocate( set(iv)%axis3(set(iv)%nd(3)) )
-    allocate( set(iv)%axis4(set(iv)%nd(4)) )
-  end if
-  set(iv)%axis1(:) = lon(1:nk+1)
-  set(iv)%axis2(:) = lat(1:nta)
-  set(iv)%axis3 = lat0
-  set(iv)%axis4 = ht0
+  allocate( set(iv)%axis1(set(iv)%nd(1)) )
+  allocate( set(iv)%axis2(set(iv)%nd(2)) )
+  allocate( set(iv)%axis3(set(iv)%nd(3)) )
+  allocate( set(iv)%axis4(set(iv)%nd(4)) )
+  set(iv)%axis1 = lat0
+  set(iv)%axis2 = ht0
+  set(iv)%axis3 = (/1,2,3,4,5,6,7,8,9,10,                                &
+                    11,12,13,14,15,16,17,18,19,20,21,22/)*1.
+  set(iv)%axis4 = -999.
 
   END subroutine setdim
 
   SUBROUTINE finalize
 
 !U  deallocate( um )
+  deallocate( varo )
   deallocate( var6d )
   deallocate( lon, lat, ht, lat0, ht0 )
   deallocate( kwn, ome, kr, or, or2d, kr0 )
