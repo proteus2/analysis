@@ -70,7 +70,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   P102[2]=$YYYY
   P103[2]=$MM
   ODIR=$DATD/AOL60CGW/epf-wc_sepa/$YYYY
-  P999[2]="$ODIR/sepa_${P101[2]}.epf_koyz.$YYYY.${MM}"
+  P999[2]="$ODIR/${P101[2]}.epf_koyz.$YYYY.${MM}_sepa0"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 #  [ -e ${P999[2]} ] && mv ${P999[2]} $ODIR/old.${P101[2]}.epfsa0_yz_recon0.$YYYY.${MM}.nc
 

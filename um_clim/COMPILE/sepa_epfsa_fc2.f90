@@ -5,7 +5,7 @@ PROGRAM RC_EPFSA_UM_z
 
   implicit none
 
-  integer, parameter ::  nv = 8, nrc = 22, nrco = 9
+  integer, parameter ::  nv = 8, nrc = 11, nrco = 6
 
   integer ::  k_largest, period_smallest, nmon_patch
 
@@ -16,7 +16,7 @@ PROGRAM RC_EPFSA_UM_z
                     FILE_I_XXXX2, VAR_I_NAME2, FILE_O, NL_AUX
 
   integer ::  iz, imon, ihour, i_time
-  integer ::  nk, nome, rcs(nrco)
+  integer ::  nk, nome, rcs(nrco), orcs(nrco)
   integer ::  iy1(2), iz1(2), iy2(2), iz2(2), ny2, nz2, nta
   integer ::  i,j,k,n, irc
   real    ::  wgt
@@ -110,7 +110,8 @@ PROGRAM RC_EPFSA_UM_z
   nd3a = NY2
   nd4a = NZ2
 
-  rcs = (/3,4,5,6,7,8,14,17,18/)
+  orcs = (/3,4,5,7,14,17/)
+  rcs = (/2,3,4,5,7 ,8 /)  ! 3,4,(5,6),(7,8),14,(17,18)
 
   do irc=1, nrco
 
@@ -126,8 +127,8 @@ PROGRAM RC_EPFSA_UM_z
 
 ! DUMP
 
-    write(file_o_rc,'(a,i2.2,a)') trim(file_o)//'_', rcs(irc), '.nc'
-    write(title_o_rc,'(a,i2.1)') 'Reconstructed EP flux, ', rcs(irc)
+    write(file_o_rc,'(a,i2.2,a)') trim(file_o)//'_', orcs(irc), '.nc'
+    write(title_o_rc,'(a,i2.1)') 'Reconstructed EP flux, ', orcs(irc)
 
     write(6,*) trim(file_o_rc)
 
@@ -298,19 +299,19 @@ PROGRAM RC_EPFSA_UM_z
 !o  varo(:,k,:,12) = sum(sum(var4d2(:,0 :o2r,:,:), dim=1), dim=1)
 !o  varo(:,k,:,14) = varo(:,k,:,11) + varo(:,k,:,12)
 
-  ! IGW: symm + antisymm
-  var6d(:,:o1r-1,:,k,:,7) = var4d(:,:o1r-1,:,1:8 ) + &
+  ! IGW: symm + antisymm ( 7,8 --> 5 )
+  var6d(:,:o1r-1,:,k,:,5) = var4d(:,:o1r-1,:,1:8 ) + &
                             var4d(:,:o1r-1,:,9:16)
-  var6d(:,o2r+1:,:,k,:,8) = var4d(:,o2r+1:,:,1:8 ) + &
+  var6d(:,o2r+1:,:,k,:,5) = var4d(:,o2r+1:,:,1:8 ) + &
                             var4d(:,o2r+1:,:,9:16)
-  ! IGW: symm-antisymm cross-correl.
-  var6d(:,:o1r-1,:,k,:,17) = var4d2(:,:o1r-1,:,:)
-  var6d(:,o2r+1:,:,k,:,18) = var4d2(:,o2r+1:,:,:)
-  ! RW: symm + antisymm
-  var6d(:,o1r:o2r,:,k,:,4) = var4d(:,o1r:o2r,:,1:8 ) + &
+  ! IGW: symm-antisymm cross-correl. ( 17,18 --> 8 )
+  var6d(:,:o1r-1,:,k,:,8) = var4d2(:,:o1r-1,:,:)
+  var6d(:,o2r+1:,:,k,:,8) = var4d2(:,o2r+1:,:,:)
+  ! RW: symm + antisymm ( 4 --> 3 )
+  var6d(:,o1r:o2r,:,k,:,3) = var4d(:,o1r:o2r,:,1:8 ) + &
                              var4d(:,o1r:o2r,:,9:16)
-  ! RW: symm-antisymm cross-correl.
-  var6d(:,o1r:o2r,:,k,:,14) = var4d2(:,o1r:o2r,:,:)
+  ! RW: symm-antisymm cross-correl. ( 14 --> 7 )
+  var6d(:,o1r:o2r,:,k,:,7) = var4d2(:,o1r:o2r,:,:)
 
 
 ! total large-scale waves
@@ -320,12 +321,9 @@ PROGRAM RC_EPFSA_UM_z
 !o  varo(:,k,:,11) = varo(:,k,:,11) + varo(:,k,:,17)
 !o  varo(:,k,:,12) = varo(:,k,:,12) + varo(:,k,:,18)
 
-  var6d(:,:-1,:,k,:,1) = var4d(:,:-1,:,1:8 ) + &
-                         var4d(:,:-1,:,9:16)
-  var6d(:,0: ,:,k,:,2) = var4d(:,0: ,:,1:8 ) + &
-                         var4d(:,0: ,:,9:16)
-  var6d(:,:-1,:,k,:,11) = var4d2(:,:-1,:,:)
-  var6d(:,0: ,:,k,:,12) = var4d2(:,0: ,:,:)
+  ! ( 1,2 --> 1  /  11,12 --> 6 )
+  var6d(:,:,:,k,:,1) = var4d(:,:,:,1:8) + var4d(:,:,:,9:16)
+  var6d(:,:,:,k,:,6) = var4d2(:,:,:,:)
 
 
 ! Fs_H, Fs_M, Fa_H, Fa_M
@@ -364,14 +362,16 @@ PROGRAM RC_EPFSA_UM_z
   tmp2(:,:) = sum(sum(var4d(:,:o1r-1,:,1:8), dim=1), dim=1)
 !o  varo(:,k,:,3) = tmp1(:,:) + tmp2(:,:)
 
-  var6d(:,:-1,:,k,:,3) = var4d(:,:-1,:,1:8)
+  ! ( 3 --> 2 )
+  var6d(:,:-1,:,k,:,2) = var4d(:,:-1,:,1:8)
 
   ! RW(4), IGW(7) step 2
 !o  varo(:,k,:,4) = varo(:,k,:,4) - tmp1(:,:)
 !o  varo(:,k,:,7) = varo(:,k,:,7) - tmp2(:,:)
 
-  var6d(:,o1r:-1,:,k,:,4) = var6d(:,o1r:-1,:,k,:,4) - var4d(:,o1r:-1,:,1:8)
-  var6d(:,:o1r-1,:,k,:,7) = var6d(:,:o1r-1,:,k,:,7) - var4d(:,:o1r-1,:,1:8)
+  ! ( 4 --> 3  /  7,8 --> 5 )
+  var6d(:,o1r:-1,:,k,:,3) = var6d(:,o1r:-1,:,k,:,3) - var4d(:,o1r:-1,:,1:8)
+  var6d(:,:o1r-1,:,k,:,5) = var6d(:,:o1r-1,:,k,:,5) - var4d(:,:o1r-1,:,1:8)
 
 
 ! MRGW(5,6) ( 2 <= period <= 10 days )
@@ -403,14 +403,15 @@ PROGRAM RC_EPFSA_UM_z
 !o  varo(:,k,:,5) = sum(sum(var4d(:,o1r:-1,:,9:16), dim=1), dim=1)
 !o  varo(:,k,:,6) = sum(sum(var4d(:,0:o2r ,:,9:16), dim=1), dim=1)
 
-  var6d(:,o1r:-1,:,k,:,5) = var4d(:,o1r:-1,:,9:16)
-  var6d(:,0:o2r ,:,k,:,6) = var4d(:,0:o2r ,:,9:16)
+  ! ( 5,6 --> 4 )
+  var6d(:,o1r:o2r,:,k,:,4) = var4d(:,o1r:o2r,:,9:16)
   ! o1r > o1m ; o2r < o2m
 
   ! RW(4) step 3
 !o  varo(:,k,:,4) = varo(:,k,:,4) - (varo(:,k,:,5) + varo(:,k,:,6))
 
-  var6d(:,o1r:o2r,:,k,:,4) = var6d(:,o1r:o2r,:,k,:,4) - var4d(:,o1r:o2r,:,9:16)
+  ! ( 4 --> 3 )
+  var6d(:,o1r:o2r,:,k,:,3) = var6d(:,o1r:o2r,:,k,:,3) - var4d(:,o1r:o2r,:,9:16)
 
   tmp1(:,:) = sum(sum(var4d(:,o1m:o1r-1,:,9:16), dim=1), dim=1)
   tmp2(:,:) = sum(sum(var4d(:,o2r+1:o2m,:,9:16), dim=1), dim=1)
@@ -418,18 +419,20 @@ PROGRAM RC_EPFSA_UM_z
 !o  varo(:,k,:,5) = varo(:,k,:,5) + tmp1(:,:)
 !o  varo(:,k,:,6) = varo(:,k,:,6) + tmp2(:,:)
 
-  var6d(:,o1m:o1r-1,:,k,:,5) = var6d(:,o1m:o1r-1,:,k,:,5) +  &
+  ! ( 5,6 --> 4 )
+  var6d(:,o1m:o1r-1,:,k,:,4) = var6d(:,o1m:o1r-1,:,k,:,4) +  &
                                var4d(:,o1m:o1r-1,:,9:16)
-  var6d(:,o2r+1:o2m,:,k,:,6) = var6d(:,o2r+1:o2m,:,k,:,6) +  &
+  var6d(:,o2r+1:o2m,:,k,:,4) = var6d(:,o2r+1:o2m,:,k,:,4) +  &
                                var4d(:,o2r+1:o2m,:,9:16)
 
   ! IGW(7,8) step 3
 !o  varo(:,k,:,7) = varo(:,k,:,7) - tmp1(:,:)
 !o  varo(:,k,:,8) = varo(:,k,:,8) - tmp2(:,:)
 
-  var6d(:,o1m:o1r-1,:,k,:,7) = var6d(:,o1m:o1r-1,:,k,:,7) -  &
+  ! ( 7,8 --> 5 )
+  var6d(:,o1m:o1r-1,:,k,:,5) = var6d(:,o1m:o1r-1,:,k,:,5) -  &
                                var4d(:,o1m:o1r-1,:,9:16)
-  var6d(:,o2r+1:o2m,:,k,:,8) = var6d(:,o2r+1:o2m,:,k,:,8) -  &
+  var6d(:,o2r+1:o2m,:,k,:,5) = var6d(:,o2r+1:o2m,:,k,:,5) -  &
                                var4d(:,o2r+1:o2m,:,9:16)
 
 
@@ -446,16 +449,12 @@ PROGRAM RC_EPFSA_UM_z
 !o  varo(:,k,:,21) = varo(:,k,:,7) + varo(:,k,:,17)
 !o  varo(:,k,:,22) = varo(:,k,:,8) + varo(:,k,:,18)
 
-  ! total large-scale waves
-  var6d(:,:,:,k,:,9 ) = var6d(:,:,:,k,:,1) + var6d(:,:,:,k,:,11)
-  var6d(:,:,:,k,:,10) = var6d(:,:,:,k,:,2) + var6d(:,:,:,k,:,12)
-  ! E+W
-  var6d(:,:,:,k,:,19) = var6d(:,:,:,k,:,9) + var6d(:,:,:,k,:,10)
-  ! RW
-  var6d(:,:,:,k,:,20) = var6d(:,:,:,k,:,4) + var6d(:,:,:,k,:,14)
-  ! IGW
-  var6d(:,:,:,k,:,21) = var6d(:,:,:,k,:,7) + var6d(:,:,:,k,:,17)
-  var6d(:,:,:,k,:,22) = var6d(:,:,:,k,:,8) + var6d(:,:,:,k,:,18)
+  ! total large-scale waves ( 1,2 --> 1  /  11,12 --> 6  /  9,10 (19) --> 9 )
+  var6d(:,:,:,k,:,9 ) = var6d(:,:,:,k,:,1) + var6d(:,:,:,k,:,6)
+  ! RW ( 4 --> 3  /  14 --> 7  /  20 --> 10 )
+  var6d(:,:,:,k,:,10) = var6d(:,:,:,k,:,3) + var6d(:,:,:,k,:,7)
+  ! IGW ( 7,8 --> 5  /  17,18 --> 8  /  21,22 --> 11 )
+  var6d(:,:,:,k,:,11) = var6d(:,:,:,k,:,5) + var6d(:,:,:,k,:,8)
 
 !yh+ test
 !varo(:,k,:,:) = sum(sum(var6d(:,:,:,k,:,:), dim=1), dim=1) - varo(:,k,:,:)
