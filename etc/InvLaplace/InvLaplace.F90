@@ -1,6 +1,7 @@
 Module InvLaplace
 !
    USE Base, ONLY: i4, r4, r8, r16
+   USE InvLaplaceExtern, ONLY: FS
 !
    IMPLICIT NONE
 !
@@ -32,7 +33,7 @@ CONTAINS
 !
 !-------------------------------------------------------------------------------
 !
-   SUBROUTINE LINVSIDI(func, p, c, mm, t, y, ierr)
+   SUBROUTINE LINVSIDI(p, c, mm, t, y, ierr)
 !
       IMPLICIT NONE
 !
@@ -69,14 +70,6 @@ CONTAINS
       INTEGER(i4) :: n
       INTEGER(i4) :: i, k, l
       INTEGER(i4) :: ierr1, ierr2
-!
-      INTERFACE
-         FUNCTION func(s)
-            DOUBLE COMPLEX, INTENT(IN) :: s
-            DOUBLE COMPLEX :: func
-         END FUNCTION
-      END INTERFACE
-!!!
 !
       y(:) = 0._r8
 !
@@ -122,7 +115,7 @@ CONTAINS
          psia(k) = 0._r8 
          DO i = 1, n
             xa = k*za(0) + za(0)*x(i)
-            val = func(c + ai*xa)
+            val = FS(c + ai*xa)
             valr = REAL(val)
             valr = valr * COS(tt*xa)
             psia(k) = psia(k) + w(i)*valr
@@ -133,7 +126,7 @@ CONTAINS
          psib(k) = 0._r8
          DO i = 1, n
             xb = k*zb(0) + zb(0)*x(i)
-            val = func(c + ai*xb)
+            val = FS(c + ai*xb)
             vali = AIMAG(val)
             vali = -vali*SIN(tt*xb)
             psib(k) = psib(k) + w(i)*vali
@@ -146,11 +139,11 @@ CONTAINS
             DO i = 1, n
                xa = (2*k-1)*za(0) + 2*za(0)*x(i)
                xb = k*zb(0) + zb(0)*x(i)
-               val = func(c + ai*xa) 
+               val = FS(c + ai*xa) 
                valr = REAL(val)
                valr = valr*COS(tt*xa)
                psia(k) = psia(k) + w(i)*valr
-               val = func(c + ai*xb) 
+               val = FS(c + ai*xb) 
                vali = AIMAG(val)
                vali = -vali*SIN(tt*xb)
                psib(k) = psib(k) + w(i)*vali

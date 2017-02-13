@@ -1,0 +1,1149 @@
+
+
+
+
+      PROBLEM    1      DIMENSIONS    5   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   5.000000    
+
+      FINAL L2 NORM OF THE RESIDUALS     2.236068    
+
+      NUMBER OF FUNCTION EVALUATIONS           4
+
+      NUMBER OF JACOBIAN EVALUATIONS           3
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+      -1.0000000     -1.0000000     -1.0000000     -1.0000000     -1.0000000    
+
+
+
+
+      PROBLEM    1      DIMENSIONS    5   50
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   8.062258    
+
+      FINAL L2 NORM OF THE RESIDUALS     6.708204    
+
+      NUMBER OF FUNCTION EVALUATIONS           4
+
+      NUMBER OF JACOBIAN EVALUATIONS           3
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+      -1.0000000     -1.0000000     -1.0000000     -1.0000000     -1.0000000    
+
+
+
+
+      PROBLEM    2      DIMENSIONS    5   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   291.5219    
+
+      FINAL L2 NORM OF THE RESIDUALS     1.463850    
+
+      NUMBER OF FUNCTION EVALUATIONS           4
+
+      NUMBER OF JACOBIAN EVALUATIONS           2
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+        261.6065       131.3032      -91.67526       66.15162      -102.7302    
+
+
+
+
+      PROBLEM    2      DIMENSIONS    5   50
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   3101.600    
+
+      FINAL L2 NORM OF THE RESIDUALS     3.482630    
+
+      NUMBER OF FUNCTION EVALUATIONS           5
+
+      NUMBER OF JACOBIAN EVALUATIONS           2
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       -153.5391      -76.26953      -69.09018      -37.63477       132.7835    
+
+
+
+
+      PROBLEM    3      DIMENSIONS    5   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   126.0397    
+
+      FINAL L2 NORM OF THE RESIDUALS     1.909727    
+
+      NUMBER OF FUNCTION EVALUATIONS           3
+
+      NUMBER OF JACOBIAN EVALUATIONS           2
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000      -210.3615       32.12042       81.13457      1.0000000    
+
+
+
+
+      PROBLEM    3      DIMENSIONS    5   50
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   1748.950    
+
+      FINAL L2 NORM OF THE RESIDUALS     3.691729    
+
+      NUMBER OF FUNCTION EVALUATIONS           3
+
+      NUMBER OF JACOBIAN EVALUATIONS           2
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000       110.3866      -146.5594       54.73401      1.0000000    
+
+
+
+
+      PROBLEM    4      DIMENSIONS    2    2
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   4.919350    
+
+      FINAL L2 NORM OF THE RESIDUALS     0.000000    
+
+      NUMBER OF FUNCTION EVALUATIONS          22
+
+      NUMBER OF JACOBIAN EVALUATIONS          16
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000      1.0000000    
+
+
+
+
+      PROBLEM    4      DIMENSIONS    2    2
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   1340.063    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.2220446E-14
+
+      NUMBER OF FUNCTION EVALUATIONS           8
+
+      NUMBER OF JACOBIAN EVALUATIONS           5
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000      1.0000000    
+
+
+
+
+      PROBLEM    4      DIMENSIONS    2    2
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   143000.1    
+
+      FINAL L2 NORM OF THE RESIDUALS     0.000000    
+
+      NUMBER OF FUNCTION EVALUATIONS           7
+
+      NUMBER OF JACOBIAN EVALUATIONS           5
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000      1.0000000    
+
+
+
+
+      PROBLEM    5      DIMENSIONS    3    3
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   50.00000    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.8661763E-16
+
+      NUMBER OF FUNCTION EVALUATIONS          11
+
+      NUMBER OF JACOBIAN EVALUATIONS           8
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000     -0.5442346E-17   0.000000    
+
+
+
+
+      PROBLEM    5      DIMENSIONS    3    3
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   102.9563    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.1129685E-16
+
+      NUMBER OF FUNCTION EVALUATIONS          20
+
+      NUMBER OF JACOBIAN EVALUATIONS          15
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000      0.7098021E-18   0.000000    
+
+
+
+
+      PROBLEM    5      DIMENSIONS    3    3
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   991.2618    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.7801636E-22
+
+      NUMBER OF FUNCTION EVALUATIONS          19
+
+      NUMBER OF JACOBIAN EVALUATIONS          16
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000      0.4901913E-23   0.000000    
+
+
+
+
+      PROBLEM    6      DIMENSIONS    4    4
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   14.66288    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.3889916E-22
+
+      NUMBER OF FUNCTION EVALUATIONS         236
+
+      NUMBER OF JACOBIAN EVALUATIONS         191
+
+      EXIT PARAMETER                           5
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.5270510E-11 -0.5270510E-12  0.2480670E-11  0.2480670E-11
+
+
+
+
+      PROBLEM    6      DIMENSIONS    4    4
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   1270.984    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.8520233E-20
+
+      NUMBER OF FUNCTION EVALUATIONS         237
+
+      NUMBER OF JACOBIAN EVALUATIONS         191
+
+      EXIT PARAMETER                           5
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.7792702E-10 -0.7792702E-11  0.3684482E-10  0.3684482E-10
+
+
+
+
+      PROBLEM    6      DIMENSIONS    4    4
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   126887.9    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.1884851E-19
+
+      NUMBER OF FUNCTION EVALUATIONS         236
+
+      NUMBER OF JACOBIAN EVALUATIONS         191
+
+      EXIT PARAMETER                           5
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.1159157E-09 -0.1159157E-10  0.5480671E-10  0.5480671E-10
+
+
+
+
+      PROBLEM    7      DIMENSIONS    2    2
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   20.01250    
+
+      FINAL L2 NORM OF THE RESIDUALS     6.998875    
+
+      NUMBER OF FUNCTION EVALUATIONS          14
+
+      NUMBER OF JACOBIAN EVALUATIONS           8
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+        11.41248     -0.8968279    
+
+
+
+
+      PROBLEM    7      DIMENSIONS    2    2
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   12432.83    
+
+      FINAL L2 NORM OF THE RESIDUALS     6.998875    
+
+      NUMBER OF FUNCTION EVALUATIONS          19
+
+      NUMBER OF JACOBIAN EVALUATIONS          12
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+        11.41300     -0.8967960    
+
+
+
+
+      PROBLEM    7      DIMENSIONS    2    2
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.1142645E+08
+
+      FINAL L2 NORM OF THE RESIDUALS     6.998875    
+
+      NUMBER OF FUNCTION EVALUATIONS          24
+
+      NUMBER OF JACOBIAN EVALUATIONS          17
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+        11.41278     -0.8968051    
+
+
+
+
+      PROBLEM    8      DIMENSIONS    3   15
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   6.456136    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.9063596E-01
+
+      NUMBER OF FUNCTION EVALUATIONS           6
+
+      NUMBER OF JACOBIAN EVALUATIONS           5
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.8241058E-01   1.133037       2.343695    
+
+
+
+
+      PROBLEM    8      DIMENSIONS    3   15
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   36.14185    
+
+      FINAL L2 NORM OF THE RESIDUALS     4.174769    
+
+      NUMBER OF FUNCTION EVALUATIONS          39
+
+      NUMBER OF JACOBIAN EVALUATIONS          38
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.8406667     -0.1524932E+09 -0.1557266E+09
+
+
+
+
+      PROBLEM    8      DIMENSIONS    3   15
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   384.1147    
+
+      FINAL L2 NORM OF THE RESIDUALS     4.174769    
+
+      NUMBER OF FUNCTION EVALUATIONS          13
+
+      NUMBER OF JACOBIAN EVALUATIONS          12
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.8406667     -0.1498515E+09 -0.1537985E+09
+
+
+
+
+      PROBLEM    9      DIMENSIONS    4   11
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.7289151E-01
+
+      FINAL L2 NORM OF THE RESIDUALS    0.1753584E-01
+
+      NUMBER OF FUNCTION EVALUATIONS          18
+
+      NUMBER OF JACOBIAN EVALUATIONS          16
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.1928078      0.1912627      0.1230528      0.1360532    
+
+
+
+
+      PROBLEM    9      DIMENSIONS    4   11
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   2.979370    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.3205220E-01
+
+      NUMBER OF FUNCTION EVALUATIONS          75
+
+      NUMBER OF JACOBIAN EVALUATIONS          66
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+        103186.3      -14.07586      -4669913.      -2913098.    
+
+
+
+
+      PROBLEM    9      DIMENSIONS    4   11
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   29.95906    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.3070594E-01
+
+      NUMBER OF FUNCTION EVALUATIONS         230
+
+      NUMBER OF JACOBIAN EVALUATIONS         193
+
+      EXIT PARAMETER                           5
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.4132554E-02   573.6815       7.271500       4.911764    
+
+
+
+
+      PROBLEM   10      DIMENSIONS    3   16
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   41153.47    
+
+      FINAL L2 NORM OF THE RESIDUALS     9.377945    
+
+      NUMBER OF FUNCTION EVALUATIONS         126
+
+      NUMBER OF JACOBIAN EVALUATIONS         116
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.5609636E-02   6181.346       345.2236    
+
+
+
+
+      PROBLEM   10      DIMENSIONS    3   16
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   4168217.    
+
+      FINAL L2 NORM OF THE RESIDUALS     62375.99    
+
+      NUMBER OF FUNCTION EVALUATIONS           4
+
+      NUMBER OF JACOBIAN EVALUATIONS           3
+
+      EXIT PARAMETER                           4
+
+      FINAL APPROXIMATE SOLUTION
+
+        1.382320      -3664.049      -22.62443    
+
+
+
+
+      PROBLEM   11      DIMENSIONS    6   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   5.477226    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.5104662E-01
+
+      NUMBER OF FUNCTION EVALUATIONS           8
+
+      NUMBER OF JACOBIAN EVALUATIONS           7
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+      -0.1325457E-23   1.013638     -0.2443034       1.373771      -1.685639    
+        1.098097    
+
+
+
+
+      PROBLEM   11      DIMENSIONS    6   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   6433.126    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.4782959E-01
+
+      NUMBER OF FUNCTION EVALUATIONS          14
+
+      NUMBER OF JACOBIAN EVALUATIONS          13
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+      -0.1572521E-01   1.012435     -0.2329918       1.260430      -1.513728    
+       0.9929959    
+
+
+
+
+      PROBLEM   11      DIMENSIONS    6   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   674256.0    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.4782959E-01
+
+      NUMBER OF FUNCTION EVALUATIONS          15
+
+      NUMBER OF JACOBIAN EVALUATIONS          14
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+      -0.1572472E-01   1.012435     -0.2329919       1.260433      -1.513733    
+       0.9929989    
+
+
+
+
+      PROBLEM   11      DIMENSIONS    9   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   5.477226    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.1183214E-02
+
+      NUMBER OF FUNCTION EVALUATIONS          15
+
+      NUMBER OF JACOBIAN EVALUATIONS           8
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.5934540E-22  0.9997896      0.1478412E-01  0.1462915       1.001072    
+       -2.618333       4.105239      -3.144214       1.052811    
+
+
+
+
+      PROBLEM   11      DIMENSIONS    9   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   12088.13    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.1183115E-02
+
+      NUMBER OF FUNCTION EVALUATIONS          29
+
+      NUMBER OF JACOBIAN EVALUATIONS          15
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+      -0.1453567E-04  0.9997898      0.1476397E-01  0.1463460       1.000813    
+       -2.617723       4.104398      -3.143608       1.052625    
+
+
+
+
+      PROBLEM   11      DIMENSIONS    9   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   1269109.    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.1183120E-02
+
+      NUMBER OF FUNCTION EVALUATIONS          30
+
+      NUMBER OF JACOBIAN EVALUATIONS          17
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+      -0.1892359E-04  0.9997895      0.1476231E-01  0.1463349       1.000849    
+       -2.617828       4.104566      -3.143740       1.052661    
+
+
+
+
+      PROBLEM   11      DIMENSIONS   12   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   5.477226    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.2174050E-04
+
+      NUMBER OF FUNCTION EVALUATIONS          27
+
+      NUMBER OF JACOBIAN EVALUATIONS          10
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.4214713E-23   1.000002     -0.5457995E-03  0.3474041     -0.1528211    
+        1.033088      -3.187606       7.174984      -10.13502       8.972472    
+       -4.498934       1.004387    
+
+
+
+
+      PROBLEM   11      DIMENSIONS   12   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   19220.76    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.2176013E-04
+
+      NUMBER OF FUNCTION EVALUATIONS          27
+
+      NUMBER OF JACOBIAN EVALUATIONS          13
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+      -0.2168185E-06   1.000001     -0.5169278E-03  0.3469808     -0.1498129    
+        1.020617      -3.155063       7.119847      -10.07440       8.930726    
+       -4.482568       1.001600    
+
+
+
+
+      PROBLEM   11      DIMENSIONS   12   31
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   2018918.    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.2179327E-04
+
+      NUMBER OF FUNCTION EVALUATIONS          58
+
+      NUMBER OF JACOBIAN EVALUATIONS          34
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.1149255E-06   1.000001     -0.4986019E-03  0.3466106     -0.1465957    
+        1.005449      -3.112043       7.043105      -9.987643       8.870396    
+       -4.459027      0.9976542    
+
+
+
+
+      PROBLEM   12      DIMENSIONS    3   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   32.11158    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.1241267E-15
+
+      NUMBER OF FUNCTION EVALUATIONS           7
+
+      NUMBER OF JACOBIAN EVALUATIONS           6
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000       10.00000      1.0000000    
+
+
+
+
+      PROBLEM   13      DIMENSIONS    2   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   64.58565    
+
+      FINAL L2 NORM OF THE RESIDUALS     11.15178    
+
+      NUMBER OF FUNCTION EVALUATIONS          21
+
+      NUMBER OF JACOBIAN EVALUATIONS          12
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.2578199      0.2578300    
+
+
+
+
+      PROBLEM   14      DIMENSIONS    4   20
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   2815.438    
+
+      FINAL L2 NORM OF THE RESIDUALS     292.9550    
+
+      NUMBER OF FUNCTION EVALUATIONS         213
+
+      NUMBER OF JACOBIAN EVALUATIONS         197
+
+      EXIT PARAMETER                           5
+
+      FINAL APPROXIMATE SOLUTION
+
+       -11.57613       13.19704     -0.4042537      0.2365075    
+
+
+
+
+      PROBLEM   14      DIMENSIONS    4   20
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   555073.4    
+
+      FINAL L2 NORM OF THE RESIDUALS     292.9543    
+
+      NUMBER OF FUNCTION EVALUATIONS          47
+
+      NUMBER OF JACOBIAN EVALUATIONS          36
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       -11.59573       13.20411     -0.4034877      0.2367209    
+
+
+
+
+      PROBLEM   14      DIMENSIONS    4   20
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.6121125E+08
+
+      FINAL L2 NORM OF THE RESIDUALS     292.9544    
+
+      NUMBER OF FUNCTION EVALUATIONS         212
+
+      NUMBER OF JACOBIAN EVALUATIONS         197
+
+      EXIT PARAMETER                           5
+
+      FINAL APPROXIMATE SOLUTION
+
+       -11.58599       13.20045     -0.4041951      0.2363558    
+
+
+
+
+      PROBLEM   15      DIMENSIONS    1    8
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   1.886238    
+
+      FINAL L2 NORM OF THE RESIDUALS     1.886238    
+
+      NUMBER OF FUNCTION EVALUATIONS           2
+
+      NUMBER OF JACOBIAN EVALUATIONS           1
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.5000000    
+
+
+
+
+      PROBLEM   15      DIMENSIONS    1    8
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.5383344E+10
+
+      FINAL L2 NORM OF THE RESIDUALS     1.884248    
+
+      NUMBER OF FUNCTION EVALUATIONS          29
+
+      NUMBER OF JACOBIAN EVALUATIONS          28
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.9817315    
+
+
+
+
+      PROBLEM   15      DIMENSIONS    1    8
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.1180887E+19
+
+      FINAL L2 NORM OF THE RESIDUALS     1.884248    
+
+      NUMBER OF FUNCTION EVALUATIONS          47
+
+      NUMBER OF JACOBIAN EVALUATIONS          46
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.9817315    
+
+
+
+
+      PROBLEM   15      DIMENSIONS    8    8
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.1965139    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.5930324E-01
+
+      NUMBER OF FUNCTION EVALUATIONS          39
+
+      NUMBER OF JACOBIAN EVALUATIONS          20
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.4315367E-01  0.1930916      0.2663286      0.4999993      0.5000007    
+       0.7336714      0.8069084      0.9568463    
+
+
+
+
+      PROBLEM   15      DIMENSIONS    9    9
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.1699499    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.4450581E-15
+
+      NUMBER OF FUNCTION EVALUATIONS          12
+
+      NUMBER OF JACOBIAN EVALUATIONS           9
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.4420535E-01  0.1994907      0.2356191      0.4160469      0.5000000    
+       0.5839531      0.7643809      0.8005093      0.9557947    
+
+
+
+
+      PROBLEM   15      DIMENSIONS   10   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.1837478    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.8064710E-01
+
+      NUMBER OF FUNCTION EVALUATIONS          25
+
+      NUMBER OF JACOBIAN EVALUATIONS          12
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.5962027E-01  0.1667088      0.2391710      0.3988853      0.3988837    
+       0.6011163      0.6011147      0.7608290      0.8332912      0.9403797    
+
+
+
+
+      PROBLEM   16      DIMENSIONS   10   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   16.53022    
+
+      FINAL L2 NORM OF THE RESIDUALS    1.0000000    
+
+      NUMBER OF FUNCTION EVALUATIONS           7
+
+      NUMBER OF JACOBIAN EVALUATIONS           5
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+      -0.5469127E-01 -0.5469127E-01 -0.5469127E-01 -0.5469127E-01 -0.5469127E-01
+      -0.5469127E-01 -0.5469127E-01 -0.5469127E-01 -0.5469127E-01   11.54691    
+
+
+
+
+      PROBLEM   16      DIMENSIONS   10   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   9765624.    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.4996004E-14
+
+      NUMBER OF FUNCTION EVALUATIONS          13
+
+      NUMBER OF JACOBIAN EVALUATIONS           8
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.9794303      0.9794303      0.9794303      0.9794303      0.9794303    
+       0.9794303      0.9794303      0.9794303      0.9794303       1.205697    
+
+
+
+
+      PROBLEM   16      DIMENSIONS   10   10
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.9765625E+17
+
+      FINAL L2 NORM OF THE RESIDUALS    0.2664535E-14
+
+      NUMBER OF FUNCTION EVALUATIONS          22
+
+      NUMBER OF JACOBIAN EVALUATIONS          20
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000      1.0000000      1.0000000      1.0000000      1.0000000    
+       1.0000000      1.0000000      1.0000000      1.0000000       1.000000    
+
+
+
+
+      PROBLEM   16      DIMENSIONS   30   30
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   83.47604    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.3348091E-13
+
+      NUMBER OF FUNCTION EVALUATIONS          11
+
+      NUMBER OF JACOBIAN EVALUATIONS          10
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+        1.000000       1.000000       1.000000       1.000000       1.000000    
+        1.000000       1.000000       1.000000       1.000000       1.000000    
+        1.000000       1.000000       1.000000       1.000000       1.000000    
+        1.000000       1.000000       1.000000       1.000000       1.000000    
+        1.000000       1.000000       1.000000       1.000000       1.000000    
+        1.000000       1.000000       1.000000       1.000000      1.0000000    
+
+
+
+
+      PROBLEM   16      DIMENSIONS   40   40
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   128.0264    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.1830402E-12
+
+      NUMBER OF FUNCTION EVALUATIONS          11
+
+      NUMBER OF JACOBIAN EVALUATIONS          10
+
+      EXIT PARAMETER                           2
+
+      FINAL APPROXIMATE SOLUTION
+
+       1.0000000      1.0000000      1.0000000      1.0000000      1.0000000    
+       1.0000000      1.0000000      1.0000000      1.0000000      1.0000000    
+       1.0000000      1.0000000      1.0000000      1.0000000      1.0000000    
+       1.0000000      1.0000000      1.0000000      1.0000000      1.0000000    
+       1.0000000      1.0000000      1.0000000      1.0000000      1.0000000    
+       1.0000000      1.0000000      1.0000000      1.0000000      1.0000000    
+       1.0000000      1.0000000      1.0000000      1.0000000      1.0000000    
+       1.0000000      1.0000000      1.0000000      1.0000000       1.000000    
+
+
+
+
+      PROBLEM   17      DIMENSIONS    5   33
+
+
+      INITIAL L2 NORM OF THE RESIDUALS  0.9375640    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.7392493E-02
+
+      NUMBER OF FUNCTION EVALUATIONS          18
+
+      NUMBER OF JACOBIAN EVALUATIONS          15
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+       0.3754100       1.935845      -1.464685      0.1286753E-01  0.2212271E-01
+
+
+
+
+      PROBLEM   18      DIMENSIONS   11   65
+
+
+      INITIAL L2 NORM OF THE RESIDUALS   1.446865    
+
+      FINAL L2 NORM OF THE RESIDUALS    0.2003440    
+
+      NUMBER OF FUNCTION EVALUATIONS          16
+
+      NUMBER OF JACOBIAN EVALUATIONS          12
+
+      EXIT PARAMETER                           1
+
+      FINAL APPROXIMATE SOLUTION
+
+        1.309977      0.4315525      0.6336613      0.5994286      0.7541798    
+       0.9043000       1.365800       4.823732       2.398685       4.568876    
+        5.675342    
+ SUMMARY OF  53 CALLS TO LMDER1
+
+ NPROB   N    M   NFEV  NJEV  INFO  FINAL L2 NORM
+
+    1    5   10     4     3     1    2.236068    
+    1    5   50     4     3     1    6.708204    
+    2    5   10     4     2     1    1.463850    
+    2    5   50     5     2     1    3.482630    
+    3    5   10     3     2     1    1.909727    
+    3    5   50     3     2     1    3.691729    
+    4    2    2    22    16     2    0.000000    
+    4    2    2     8     5     2   0.2220446E-14
+    4    2    2     7     5     2    0.000000    
+    5    3    3    11     8     2   0.8661763E-16
+    5    3    3    20    15     2   0.1129685E-16
+    5    3    3    19    16     2   0.7801636E-22
+    6    4    4   236   191     5   0.3889916E-22
+    6    4    4   237   191     5   0.8520233E-20
+    6    4    4   236   191     5   0.1884851E-19
+    7    2    2    14     8     1    6.998875    
+    7    2    2    19    12     1    6.998875    
+    7    2    2    24    17     1    6.998875    
+    8    3   15     6     5     1   0.9063596E-01
+    8    3   15    39    38     1    4.174769    
+    8    3   15    13    12     1    4.174769    
+    9    4   11    18    16     1   0.1753584E-01
+    9    4   11    75    66     1   0.3205220E-01
+    9    4   11   230   193     5   0.3070594E-01
+   10    3   16   126   116     1    9.377945    
+   10    3   16     4     3     4    62375.99    
+   11    6   31     8     7     1   0.5104662E-01
+   11    6   31    14    13     1   0.4782959E-01
+   11    6   31    15    14     1   0.4782959E-01
+   11    9   31    15     8     1   0.1183214E-02
+   11    9   31    29    15     2   0.1183115E-02
+   11    9   31    30    17     2   0.1183120E-02
+   11   12   31    27    10     2   0.2174050E-04
+   11   12   31    27    13     2   0.2176013E-04
+   11   12   31    58    34     2   0.2179327E-04
+   12    3   10     7     6     2   0.1241267E-15
+   13    2   10    21    12     1    11.15178    
+   14    4   20   213   197     5    292.9550    
+   14    4   20    47    36     1    292.9543    
+   14    4   20   212   197     5    292.9544    
+   15    1    8     2     1     1    1.886238    
+   15    1    8    29    28     1    1.884248    
+   15    1    8    47    46     1    1.884248    
+   15    8    8    39    20     1   0.5930324E-01
+   15    9    9    12     9     2   0.4450581E-15
+   15   10   10    25    12     1   0.8064710E-01
+   16   10   10     7     5     1   1.0000000    
+   16   10   10    13     8     2   0.4996004E-14
+   16   10   10    22    20     2   0.2664535E-14
+   16   30   30    11    10     2   0.3348091E-13
+   16   40   40    11    10     2   0.1830402E-12
+   17    5   33    18    15     1   0.7392493E-02
+   18   11   65    16    12     1   0.2003440    

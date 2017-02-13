@@ -3,7 +3,7 @@
 
 EXTCTL1=1        ### CONTROLLED FOR SPLITTING - 1
 EXTCTL2=12       ### CONTROLLED FOR SPLITTING - 2
-YYYY1=1953
+YYYY1=1951
 YYYY2=2006
 M1=$EXTCTL1
 M2=$EXTCTL2
@@ -26,7 +26,7 @@ P901=( n DAY1  -999 )               # the earlist date-of-file among input files
 P902=( n NDAY_I  30 )               # number of days in one input file
 P903=( n MISSV  2.e20 )              # if no missing points, set 1.0
 P990=( s FID  pb )
-P991=( s FILE_I_HEAD  "/data15/HG2AMIP/L60CGW" )
+P991=( s FILE_I_HEAD  "/hippo0/HG2CMIP/L60CGW" )
 P992=( s FILE_I_FORM  XXXX/${P101[2]}a.XXXX_XXXXXXXX.nc  -999 )
 P993=( s FILE_I_XXXX  FID              FID  YYYY MM      -999 )
 P994=( s FILE_ALT  -999 )
@@ -52,7 +52,8 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   MM=$(( M ))  ;  if [ $M -lt 10 ] ; then MM="0$MM" ; fi
   P102[2]=$YYYY
   P103[2]=$MM
-  ODIR=/prime0/kyh/dat/L60CGW/fcoef_k/$YYYY
+#  ODIR=$DATD/AOL60CGW/fcoef_k/$YYYY
+  ODIR=/presto1/kyh/dat/AOL60CGW/fcoef_k/$YYYY
   P999[2]="${P201[2]}"
   [ "${P201[3]}" == "-999" ] || P999[2]="${P201[3]}${P201[2]}"
   P999[2]="$ODIR/${P101[2]}.fft_${P999[2]}_k.$YYYY.${MM}.nc"

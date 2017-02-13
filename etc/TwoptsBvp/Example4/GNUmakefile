@@ -1,11 +1,11 @@
-FC = gfortran
+FC = ifort
 RM = /bin/rm
 #
-MAINEXE := ExampleMain.x
+MAINEXE := DTWPBVPBL.x
 MAINSRC := $(shell echo $(MAINEXE:.x=.F90))
 MAINOBJ := $(shell echo $(MAINEXE:.x=.o))
 #
-F90SRCS := Base.F90 InvLaplace.F90
+F90SRCS := Base.F90 BVPShared.F90 BVPExtern.F90 BVPL.F90
 F90OBJS := $(shell echo $(F90SRCS:.F90=.o))
 F90MODS := $(shell echo $(F90SRCS:.F90=.mod) | tr A-Z a-z)
 #
@@ -18,5 +18,9 @@ $(MAINOBJ): $(MAINSRC) $(F90OBJS)
 	$(FC) -I./ -c $<
 Base.o: Base.F90
 	$(FC) -I./ -c $<
-InvLaplace.o: InvLaplace.F90 Base.o
+BVPShared.o: BVPShared.F90 Base.o
+	$(FC) -I./ -c $<
+BVPExtern.o: BVPExtern.F90 BVPShared.o Base.o
+	$(FC) -I./ -c $<
+BVPL.o: BVPL.F90 BVPExtern.o BVPShared.o Base.o
 	$(FC) -I./ -c $<
