@@ -1,0 +1,31 @@
+
+;---------label bar-----------------------------
+   colors = (/,,,,/)
+   labels = (/"","","",""/)
+   label = create "lab" labelBarClass wks
+     "lbOrientation" : "horizontal"
+     "lbBoxCount" : 5
+     "lbFillColors" : colors
+     "lbMonoFillPattern" : True
+     "lbLabelsOn" : True
+     "lbLabelStrings" : labels
+     "lbAutoManage" : False
+     "lbLabelFont" : 21
+     "lbLabelFontHeightF" : 0.015
+     "lbLabelPosition" : "Bottom" ;"Right"
+     "lbLabelAlignment" : "InteriorEdges" ;"BoxCenters" ; "ExternalEdges"
+     "lbLabelAngleF" : 0.
+     "lbPerimOn" : False
+     "lbTitleString" : "Log:B:10:N:(PSD)"
+     "lbTitlePosition" : "Right" ;"Top"
+     "lbTitleDirection" : "Across"
+     "lbTitleFont" : 22
+     "lbTitleFontHeightF" : 0.015
+     "vpXF" : 0.35
+     "vpYF" : 0.30
+     "vpWidthF" : 0.35
+     "vpHeightF" : 0.08
+   end create
+
+   draw(label)
+;-------------------------------------------------

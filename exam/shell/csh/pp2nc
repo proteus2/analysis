@@ -1,0 +1,263 @@
+#! /bin/tcsh
+
+# use "/data3/kyh/exam/shell/convsh/conv" with /data6/kyh/model/ExUM7.4/exec/convsh
+
+set date = 20100107
+set tt   = 12
+
+@ fcst_itv = 2
+
+set t_edge = ( 0 24 48 72 96 120 )
+
+
+@ wind = 0
+@ pt   = 0
+@ q    = 0
+@ prho = 0
+@ sfc  = 1
+@ wind_p = 0
+@ zth_p  = 0
+
+@ ussp = 0
+@ gwdo = 0
+@ bldo = 0
+@ gwdc = 0
+
+@ t_start = 0  ;  @ t_end = 60
+
+@ npiece = ${#t_edge} - 1
+
+#-----------------------------------------------------------------------
+
+set t_all
+@ cnt = ${t_start}
+while ( $cnt <= ${t_end} )
+  set t_all = ( $t_all $cnt )
+  @ cnt++
+end
+
+set ttt_edge
+foreach edges ( $t_edge )
+  if ( $edges < 10 ) then
+    set ttt_edge = ( $ttt_edge 00$edges )
+  else if ( $edges < 100 ) then
+    set ttt_edge = ( $ttt_edge 0$edges )
+  else
+    set ttt_edge = ( $ttt_edge $edges )
+  endif
+end
+
+
+
+# u, v, w on model lev.
+if ( $wind ) then
+set var    = ( u v w )
+set fldlst = ( 1 2 6 )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp0.${date}${tt} -f ${ff} -t ${tlst} \
+         -o std.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# pot. temp on model lev.
+if ( $pt ) then
+set var    = ( pt )
+set fldlst = ( 3 )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp0.${date}${tt} -f ${ff} -t ${tlst} \
+         -o std.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# specific humidity on model lev.
+if ( $q ) then
+set var    = ( q )
+set fldlst = ( 4 )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp0.${date}${tt} -f ${ff} -t ${tlst} \
+         -o std.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# pot. temp on model lev.
+if ( $prho ) then
+set var    = ( p rhor2 )
+set fldlst = ( 8 7     )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp0.${date}${tt} -f ${ff} -t ${tlst} \
+         -o std.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# SLP, sfc p snd sfc T
+if ( $sfc ) then
+set var    = ( p_sl p t )
+set fldlst = ( 0    9 5 )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp0.${date}${tt} -f ${ff} -t ${tlst} \
+         -o sfc.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# wind on p lev.
+if ( $wind_p ) then
+set var    = ( u_p v_p w_p )
+set fldlst = ( 1   2   0   )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp1.${date}${tt} -f ${ff} -t ${tlst} \
+         -o std.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# wind on p lev.
+if ( $zth_p ) then
+set var    = ( gph_p t_p rh_p)
+set fldlst = ( 3     4   5   )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp1.${date}${tt} -f ${ff} -t ${tlst} \
+         -o std.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# Fu, Fv by USSP on model lev.
+if ( $ussp ) then
+set var    = ( fu fv )
+set fldlst = ( 0  1 )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp2.${date}${tt} -f ${ff} -t ${tlst} \
+         -o ussp.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# Fu, Fv by GWDO on model lev.
+if ( $gwdo ) then
+set var    = ( fu fv )
+set fldlst = ( 0  1 )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp3.${date}${tt} -f ${ff} -t ${tlst} \
+         -o gwdo.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# Fu, Fv by BLDO on model lev.
+if ( $bldo ) then
+set var    = ( fu fv )
+set fldlst = ( 0  1 )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp4.${date}${tt} -f ${ff} -t ${tlst} \
+         -o bldo.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+# Fu, Fv by GWDC on model lev.
+if ( $gwdc ) then
+set var    = ( fu fv )
+set fldlst = ( 0  1 )
+@ cnt = 1
+while ( $cnt <= $npiece )
+  @ t1 = $t_edge[$cnt] / $fcst_itv + 1  ;  @ cnt++
+  @ t2 = $t_edge[$cnt] / $fcst_itv + 1
+  set tlst = ( $t_all[$t1-$t2] )
+
+  @ iv = 0
+  foreach ff ( $fldlst )
+    @ iv++
+    conv -i qwqu${tt}.pp5.${date}${tt} -f ${ff} -t ${tlst} \
+         -o gwdc.$var[$iv].${date}${tt}+$ttt_edge[$cnt].nc
+  end
+end
+endif
+
+
+exit 0
+

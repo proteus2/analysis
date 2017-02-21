@@ -1,0 +1,59 @@
+#! /bin/tcsh
+
+# use "/data3/kyh/exam/shell/convsh/conv" with /data6/kyh/model/ExUM7.4/exec/convsh
+
+@ d1 = 1
+@ d2 = 31
+set etl = "p"
+
+set vtl = "a"
+set var = "std"
+set ff = ( 0 1 2 3 4 5 )
+
+set yyyymm = "201001"
+set tt = "00"
+
+              # 120 = 5 h 12 min, actually ( and ignored )
+set ttt = ( 120 123 126 129 132 135 138 141 144 \
+                147 150 153 156 159 162 165 168 \
+                171 174 177 180 183 186 189 192 \
+                195 198 201 204 207 210 213 216 \
+                219 222 225 228 231 234 237 240 )
+
+if ( "$etl" == "b" || "$etl" == "p" )  set exp = "ctl"
+if ( "$etl" == "d" || "$etl" == "q" )  set exp = "gwdc"
+
+set exp2 = `echo $exp | tr '[a-z]' '[A-Z]'`
+
+@ date = $d1
+while ( $date <= $d2 )
+
+set dd = "$date"
+if ( $date < 10 )  set dd = "0$date"
+set t10 = $yyyymm$dd$tt
+set fdir = uamg$etl/$t10
+set fdir2 = $exp2/$yyyymm/$t10
+if ( ! -d $fdir2 )  mkdir -p $fdir2
+
+#-----------------------------------------------------------------------
+
+@ st = 0
+@ it = 1
+while ( $it < $#ttt )
+  @ it2 = $it + 1
+  conv -i $fdir/uamg${etl}a_p${vtl}* -f $ff[*] -t $it \
+       -o $fdir2/$exp.$var.$t10+$ttt[$it2].nc
+  @ st = $st + $status
+  @ it++
+end
+
+#if ( $st == 0 )  rm -f $fdir/uamg${etl}a_p${vtl}*
+
+#-----------------------------------------------------------------------
+
+@ date++
+
+end
+
+exit 0
+

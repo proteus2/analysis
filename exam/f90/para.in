@@ -1,0 +1,57 @@
+! SET PARAMETERS
+
+
+&PARA_EQN   !:::::::::::::::::::::::::::
+
+opt_method = 3       ,
+
+alpha      = 100.    ,   ! [m^2/s]
+
+lx         = 1.e3    ,   ! [m]
+nx         = 11      ,
+
+dt         = 1.      ,   ! [s]
+t_end      = 100.    ,   ! [s]
+
+/
+
+&PARA_IO   !::::::::::::::::::::::::::::
+
+file_in  = 'init_field.in' ,
+
+opt_dump = 2               ,
+
+file_out = 'dump.out'      ,
+
+dt_dump  = 50.             ,   ! [s]
+
+/
+
+!=======================================================================
+!
+!  opt_method -  OPTION FOR DIFFERENCING METHOD TO SOLVE EQN.
+!                1 : forward scheme
+!                2 : backward scheme
+!                3 : Crank-Nicolson scheme
+!
+!  alpha      -  DIFFUSION COEFFICIENT. [m^2/s]
+!
+!  lx, nx     -  LENGTH [m] AND GRID NUMBER OF THE DOMAIN.
+!
+!  dt         -  TIME STEP FOR INTEGRATION. [s]
+!
+!  t_end      -  TIME TO BYE. [s]
+!  
+!  file_in    -  NAME OF THE FILE CONTAINING THE INITIAL FIELD.
+!
+!  opt_dump   -  OPTION FOR OUTPUT DUMP.
+!                1 : in the screen
+!                2 : in the file
+!
+!  file_out   -  OUTPUT FILE NAME.
+!                (used only for opt_dump = 2.)
+!
+!  dt_dump    -  TIME INTERVAL FOR DUMP.
+!
+!=======================================================================
+

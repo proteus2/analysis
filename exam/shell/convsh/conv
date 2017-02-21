@@ -1,0 +1,101 @@
+#!/data6/kyh/model/ExUM7.4/exec/convsh
+
+#  Convsh script conv2nc.tcl
+#
+#  Convert input files into single Netcdf file.
+#  All input files must contain the same fields and have 
+#  identical dimensions except for the time dimension.
+#  For example to convert UM output files into a Netcdf file 
+#  use the following command:
+#
+#      conv2nc.tcl -i xaavaa.pc* -o xaava.nc
+ 
+#  Write out Netcdf file
+set outformat netcdf
+
+#  Automatically work out input file type
+set filetype 0
+
+#  Convert all fields in input files to Netcdf
+#set fieldlist -1
+
+#  Get command line arguments:
+#      -i input files (can be more than one file)
+#      -o output file (single file only)
+
+set i false
+foreach arg $argv {
+   switch -glob -- $arg {
+      -i      {set i true}
+      -*      {set i false}
+      default {
+         if {$i} {
+            set infile [lappend infile $arg]
+         }
+      }
+   }
+}
+
+set o false
+set f false
+foreach arg $argv {
+   switch -glob -- $arg {
+      -o      {set o true ; set f false}
+      -f      {set f true}
+      -*      {set f false}
+      default {
+         if {$o} {
+            set outfile [lappend outfile $arg] ; set o false
+         } elseif {$f} {
+            lappend fieldlist $arg
+         }
+      }
+   }
+}
+
+set t false
+set t_tag false
+foreach arg $argv {
+   switch -glob -- $arg {
+      -t      {set t true}
+      -*      {set t false}
+      default {
+         if {$t} {
+            set t_tag true
+            lappend dimlist $arg
+         }
+      }
+   }
+}
+
+if {! [info exists infile]} {
+   puts "input file name must be given"
+   exit
+}
+
+if {[info exists outfile]} {
+   if {[llength $outfile] > 1} {
+      set outfile [lindex $outfile 0]
+      puts "Only one output file can be specified, using $outfile"
+   }
+} else {
+   puts "output file name must be given"
+   exit
+}
+
+#  Read in each of the input files
+
+foreach file $infile {
+   readfile $filetype $file
+}
+
+if {$t_tag} {
+  foreach fl $fieldlist {
+    setdim 4 $fl "$dimlist"
+  }
+}
+
+#  Write out all input fields to a single Netcdf file
+
+writefile $outformat $outfile $fieldlist
+

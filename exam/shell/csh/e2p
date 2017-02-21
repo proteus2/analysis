@@ -1,0 +1,28 @@
+#!/bin/csh -f
+
+@ n_arg = $#argv
+
+if ($n_arg == 0) then
+  echo "Arguments needed."
+  exit 0
+endif
+
+@ cnt = 1
+foreach arg ( $argv )
+
+  @ len  = `expr length $arg` - 3
+  set tail = `expr substr $arg $len 4`
+
+  if ($tail == '.eps') then
+    @ len--
+    set arg = `expr substr $arg 1 $len`
+  endif
+  echo $arg.eps
+
+  convert -density 150 $arg.eps $arg.png
+
+  @ cnt++
+
+end
+
+exit 0

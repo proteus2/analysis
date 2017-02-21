@@ -1,0 +1,31 @@
+#! /bin/tcsh
+
+set files = ( dufu_t.ncl fu-dif-st_t.ncl fu-st_t.ncl ufu-adif_t.ncl ufu_t.ncl )
+
+@ lat1 = $argv[1]
+@ lat2 = $argv[2]
+@ p0   = $argv[3]
+
+foreach ff ( $files )
+
+  set str1 = "`grep 'lat1 = ' $ff`"
+  set str2 = "`grep 'lat2 = ' $ff`"
+  set str3 = "`grep 'p0   = ' $ff`"
+
+  sed -e "s|$str1| lat1 = $lat1|" -i $ff
+  sed -e "s|$str2| lat2 = $lat2|" -i $ff
+  sed -e "s|$str3| p0   = $p0|"   -i $ff
+
+end
+
+if ( $#argv == 4 ) then
+  if ( $argv[4] == 1 ) then
+    foreach ff ( $files )
+      ncl < $ff
+    end
+  endif
+endif
+
+
+exit 0
+

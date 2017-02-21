@@ -235,7 +235,8 @@ print(max(vsp))
 
  ; K, IG / MRG, IG
  do n=0, no10
-   dispc(0,n,nk10/2+1:) = two_pi/1.e3*oi(n,nk10/2+1:)/(nbv*k(nk10/2+1:))
+;   dispc(0,n,nk10/2+1:) = two_pi/1.e3*oi(n,nk10/2+1:)/(nbv*k(nk10/2+1:))
+   dispc(0,n,nk10/2+1:) = o(n)/k(nk10/2+1:)
    dispc(3,n,:) = two_pi/1.e3*oi(n,:)^2/  \
         (nbv*beta*(1.5+sqrt(1.5*1.5+okbi(n,:)*(1.+okbi(n,:)))))
    dispc(1,n,:) = two_pi/1.e3*oi(n,:)^2/(nbv*beta*(1.+okbi(n,:)))
@@ -296,7 +297,7 @@ print(max(vsp))
    end if
  end do
 
- lzs = (/2.,5.,15./)
+ lzs = (/2,5,15/)
  ldsh = (/0,16,14/)
 
 ;--------------------------------------- ctr
@@ -326,10 +327,14 @@ do ig=0, nfig-1
  iv = 0
 
  ctr1 = cnshadeplot(wks,kwn,ome,vsp(ip,ig,iv,:,:)/(10.^fact(iv)),cnlev(iv,:),cnfil,"")
-; cnaddline(ctr1,wks,kwn,ome,vsp(0,ig,iv,:,:),cnlev(iv,:),0,"D",0,"T",1,"C",1)
 ; cnaddline(ctr1,wks,kwn,ome,vspd(ig,iv,:,:),(/-100,-50,-30,-10,0,10,30,50,100/),1,"D",(/0,0,1/),"T",1.2,"C",(/1,0,1/))
- if (ig .lt. 2) then
-   cnaddline(ctr1,wks,kwn2,ome2,dispc(ig,:,:),lzs,0,"D",ldsh(0),"T",1.2,"C",1)
+ if (ig .eq. 0) then
+   cnaddline(ctr1,wks,kwn2,ome2,dispc(0,:,:),(/5,15,30/),1,"D",ldsh(0),"T",1.2,"C",1)
+;   cnaddline(ctr1,wks,kwn,ome,vspd(ig,iv,:,:),(/-100,-50,-30,-10,0,10,30,50,100/),1,"D",(/0,0,1/),"T",1.2,"C",(/1,0,1/))
+ end if
+ if (ig .eq. 1) then
+   cnaddline(ctr1,wks,kwn2,ome2,dispc(ig,:,:),lzs,1,"D",ldsh(1),"T",1.2,"C",1)
+;   cnaddline(ctr1,wks,kwn,ome,vspd(ig,iv,:,:),(/-100,-50,-30,-10,0,10,30,50,100/),1,"D",(/0,0,1/),"T",1.2,"C",(/1,0,1/))
  end if
  setvalues ctr1
   "cnFillMode" : "RasterFill"
