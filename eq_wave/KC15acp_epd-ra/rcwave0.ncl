@@ -35,7 +35,7 @@ begin
  nv = dimsizes(varname)
  nw = 4
 
- fdir  = "$DATD/L60CGW/fcoef_ko-wav4"
+ fdir  = "$DATD/L60CGW-t/fcoef_ko-wav4"
  fname = fdir+"/"+yy+"/uan"+expname+".fft_var4_ko."+yy+"."+mm+".nc"
 print(fname+"")
 
@@ -49,7 +49,7 @@ print(fname+"")
  nx = nk*2
  noa = dimsizes(f0->$(f0->$s_v0$!2)$)
 
- f1 = addfile("$DATD/L60CGW/xm/xm.uan"+expname+"a.pj_"+yy+mm+".nc","r")
+ f1 = addfile("$DATD/L60CGW-t/xm/xm.uan"+expname+"a.pj_"+yy+mm+".nc","r")
  rhob = f1->rho(0,{z0*1.e3},{-lat0:lat0})
  ub   = f1->u  (0,{z0*1.e3},{-lat0:lat0})
 print(ub)

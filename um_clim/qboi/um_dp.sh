@@ -1,6 +1,8 @@
 #! /bin/bash
 # import : TMPDIR
 
+expname=L60CGW
+expcode=uanuj
 EXTCTL1=1        ### CONTROLLED FOR SPLITTING - 1
 EXTCTL2=12       ### CONTROLLED FOR SPLITTING - 2
 YYYY1=1979
@@ -8,7 +10,7 @@ YYYY2=2006
 M1=$EXTCTL1
 M2=$EXTCTL2
 #== Parameter 1 - CASE ===========================
-P101=( s EXPNAME  uanuj )
+P101=( s EXPNAME  $expcode )
 P104=( n HH  00  8 ) # should be 0 # starting time [UTC] and frequency [/day]
 P105=( n REFDATE  1941  12  1 )
 P106=( n OPT_30D  1 )
@@ -18,7 +20,7 @@ P901=( n DAY1  1 )                 # the earlist date-of-file among input files
 P902=( n NDAY_I  3 )               # number of days in one input file
 P903=( n MISSV  1.e32 )            # if no missing points, set 1.0
 P990=( s FID  pc )
-P991=( s FILE_I_HEAD  "/hippo0/HG2AMIP/L60CGW" )
+P991=( s FILE_I_HEAD  "/hippo0/HG2AMIP/$expname" )
 P992=( s FILE_I_FORM  XXXX/${P101[2]}a.XXXX_XXXXXXXXXXXX00.nc  -999 )
 P993=( s FILE_I_XXXX  FID              FID  YYYY MM  DD        -999 )
 P994=( s VAR_I_NAME  p )
@@ -43,7 +45,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   MM=$(( M ))  ;  if [ $M -lt 10 ] ; then MM="0$MM" ; fi
   P102[2]=$YYYY
   P103[2]=$MM
-  ODIR=/data18/kyh/dat/L60CGW/dp/$YYYY
+  ODIR=/data18/kyh/dat/$expname/dp/$YYYY
   P999[2]="$ODIR/${P101[2]}.dp_yzt.$YYYY.${MM}.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 #  [ -e ${P999[2]} ] && mv ${P999[2]} $ODIR/old.${P101[2]}.tem_yzt.$YYYY.${MM}.nc

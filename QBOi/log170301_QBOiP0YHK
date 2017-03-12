@@ -1,0 +1,164 @@
+; IDL Version 8.2 (linux x86_64 m64)
+; Date: Wed Mar  1 15:59:03 2017
+ 
+;
+; Ozone plots
+sparcoz_grab,filename,/verbose,$
+lono=long,lato=lat,levo=zlev,timeo=time,intervals=month,ozoneo=ozone,nameso=name
+;; File contains the following variables: 
+;   0 longitude
+;   1 latitude
+;   2 hybrid_ht
+;   3 t
+;   4 O3
+;; 
+;; Variable Dimensions: 
+;   0 longitude, LEN =            1
+;   1 latitude, LEN =          145
+;   2 hybrid_ht, LEN =           85
+;   3 t, LEN =           12(Unlimited dim) 
+;; 
+;; Variables: 
+;longitude (FLOAT ) Dimension Ids = [ 0 
+;]
+;;   Attribute: units= degrees_east
+;;   Attribute: point_spacing= even
+;latitude (FLOAT ) Dimension Ids = [ 1 
+;]
+;;   Attribute: units= degrees_north
+;;   Attribute: point_spacing= even
+;hybrid_ht (FLOAT ) Dimension Ids = [ 2 
+;]
+;;   Attribute: units= m
+;;   Attribute: positive= up
+;t (FLOAT ) Dimension Ids = [ 3 
+;]
+;;   Attribute: units= days since 0000-01-01 00:00:00
+;;   Attribute: calendar= 360_day
+;;   Attribute: time_origin= 01-JAN-0000:00:00:00
+;O3 (FLOAT ) Dimension Ids = [ 0 1 2 3 
+;]
+;;   Attribute: source= Climatology from S.Osprey rebuild of SPARC(II):
+;;   Attribute: name= O3
+;;   Attribute: title= Ozone mass mixing ratio
+;;   Attribute: long_name= O3, SPARC Ozone
+;;   Attribute: units= kg kg^-1
+;
+; ------------------------------
+; Check plot of zonal mean ozone
+; ------------------------------
+nhorizres=[96]
+zmozone=reform(ozone)
+ozodims=size(zmozone,/dimens)
+ozoneljan=ppmv*reform(zmozone[*,*,0])
+ozonelapr=ppmv*reform(zmozone[*,*,3])
+ozoneljul=ppmv*reform(zmozone[*,*,6])
+ozoneloct=ppmv*reform(zmozone[*,*,9])
+;
+; UM value of Ratio Molar Mass of Water to Dry Air
+epsiloz=48./28.
+ppmv=1.0E+06/epsiloz
+unimv=' ppm (vol) '
+coz=[0.,(0.01*[findgen(10)+1.]),(0.2*[findgen(50)+1.])]
+loz1=findgen(11)
+cloz1=replicate(1,size(loz1,/N_elements))
+lozd=[0.1,0.2,0.4]
+clozd=replicate(1,size(lozd,/N_elements))
+minoz=0.0
+zrange=[0.,90.0]
+tozone='N'+strtrim(string(nhorizres[0]),2)+'-L'+strtrim(string(ozodims[1]),2)+' Climatological Ozone (ppmv)'
+;
+mydevice= !D.NAME
+set_plot, 'PS'
+!p.multi=[0,2,2]
+!P.font = 0 
+device, /helvetica, /bold  
+device, /landscape
+device,/color
+; loadct,39
+; loadct,40
+loadct,10
+;
+contour,ozoneljan,lat2,0.001*zlev2,/cell_fill,levels=coz,min_value=minoz,Ymargin=[6,4],$
+ytitle='Height / km', ycharsize = 1.1, yrange=zrange,/ystyle,yticks=9,$
+xtitle='Latitude / Degrees', xcharsize = 1.1, xrange=[-90.,90.],/xstyle,xticks=6,$
+title='Jan '+tozone,charsize=1.,background=255
+contour,ozoneljan,lat2,0.001*zlev2,/overplot,levels=loz1,/noerase,min_value=minoz,$
+c_labels=cloz1
+contour,ozoneljan,lat2,0.001*zlev2,/overplot,levels=lozd,/noerase,min_value=minoz,$
+c_labels=clozd,c_linesty=5
+;
+contour,ozonelapr,lat2,0.001*zlev2,/cell_fill,levels=coz,min_value=minoz,Ymargin=[6,4],$
+ytitle='Height / km', ycharsize = 1.1, yrange=zrange,/ystyle,yticks=9,$
+xtitle='Latitude / Degrees', xcharsize = 1.1, xrange=[-90.,90.],/xstyle,xticks=6,$
+title='Apr '+tozone,charsize=1.,background=255
+contour,ozonelapr,lat2,0.001*zlev2,/overplot,levels=loz1,/noerase,min_value=minoz,$
+c_labels=cloz1
+contour,ozonelapr,lat2,0.001*zlev2,/overplot,levels=lozd,/noerase,min_value=minoz,$
+c_labels=clozd,c_linesty=5
+;
+contour,ozoneljul,lat2,0.001*zlev2,/cell_fill,levels=coz,min_value=minoz,Ymargin=[6,4],$
+ytitle='Height / km', ycharsize = 1.1, yrange=zrange,/ystyle,yticks=9,$
+xtitle='Latitude / Degrees', xcharsize = 1.1, xrange=[-90.,90.],/xstyle,xticks=6,$
+title='Jul '+tozone,charsize=1.,background=255
+contour,ozoneljul,lat2,0.001*zlev2,/overplot,levels=loz1,/noerase,min_value=minoz,$
+c_labels=cloz1
+contour,ozoneljul,lat2,0.001*zlev2,/overplot,levels=lozd,/noerase,min_value=minoz,$
+c_labels=clozd,c_linesty=5
+;
+contour,ozoneloct,lat2,0.001*zlev2,/cell_fill,levels=coz,min_value=minoz,Ymargin=[6,4],$
+ytitle='Height / km', ycharsize = 1.1, yrange=zrange,/ystyle,yticks=9,$
+xtitle='Latitude / Degrees', xcharsize = 1.1, xrange=[-90.,90.],/xstyle,xticks=6,$
+title='Oct '+tozone,charsize=1.,background=255
+contour,ozoneloct,lat2,0.001*zlev2,/overplot,levels=loz1,/noerase,min_value=minoz,$
+c_labels=cloz1
+contour,ozoneloct,lat2,0.001*zlev2,/overplot,levels=lozd,/noerase,min_value=minoz,$
+c_labels=clozd,c_linesty=5
+;
+device, /close_file
+set_plot, mydevice
+;
+; -----------------------------------------
+; Figure style 2009JD013340-p01 (fig:ozpro)
+; -----------------------------------------
+waveon
+;
+eqzone=[-5.,5.]
+mlan=where(lat ge eqzone[0],nmlan)
+mlap=where(lat[mlan] le eqzone[1],nmeqz)
+meqz=mlan[mlap]
+;
+; UM value of Ratio Molar Mass of Water to Dry Air
+epsiloz=(48.*0.62198/18.)
+ppmv=1.0E+06/epsiloz
+eqmozone=reform(rebin(zmozone[[meqz],*,*],[1,ozodims[1:2]]))
+mgo3sp=ppmv*reform(rebin(eqmozone,[ozodims[1],1]))
+;
+; titozspa='CMIP5 SPARC 1994-2005'
+titozspa='UMGA7 / UMGA7gws'
+ylim=[200.,350.]
+ylimma=[100.,250.]
+zlim=[0.,80.]
+vlim=[0.,12.]
+tito3=' Annual Equatorial (5S-5N) Ozone'
+hink=' Log-Pressure Altitude (km) '
+linid=[5,1,0]
+symid=[7,4,1]
+mzlo=where(zlev lt 80000.,nmzlo)
+;
+pr,d=printer,/ps,/portrait
+!p.multi=0
+restore_colours,'./pcsinb'
+refcol=[0.125,0.375,0.75,0.875]
+icol=refcol*!d.table_size
+;
+plot,xcharsiz=1.25,ycharsiz=1.25,xstyle=1,ystyle=1,Subtitle=' ',$
+YRANGE=zlim,XRANGE=vlim,Title=tito3,YType=0,$
+Ytitle=hink,Xtitle='ppm (vol)',[0.0,0.0],zlim,$
+xtype=0,Psym=0,linestyle=0,charsize=1.25,charthick=6.,symsiz=0.5,$
+thick=6.,XMargin=[10,3],YMargin=[4,4]
+oplot,mgo3sp[mzlo],0.001*zlev[mzlo],linestyle=linid[2],col=icol[1],Psym=-1*symid[2],thick=6.,YType=0
+oplot,[4.,5.5],[74.,74.],linestyle=linid[2],col=icol[1],Psym=-1*symid[2],thick=6.,YType=0
+xyouts,6.,74.,titozspa,charsize=1.25,charthick=6.,col=icol[1]
+prend,printer,/view,/keep
+;

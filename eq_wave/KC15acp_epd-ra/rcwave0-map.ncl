@@ -26,16 +26,18 @@ begin
  nk = 20
  no = 1*(2*ndays)  ; 1-day  ; cut-off period
 
- wks = cr_wks("fig/rcwave0",600,0)
+ wks = cr_wks("fig/rcwave0-map",600,0)
  gsn_define_colormap(wks,"StepSeq25")
  colindr = NhlNewColor(wks,1.0,0.0,0.0)
  colindb = NhlNewColor(wks,0.0,0.0,1.0)
+ colindg = NhlNewColor(wks,0.2,0.9,0.2)
+ colind0 = NhlNewColor(wks,0.4,0.4,0.4)
 
 ;--------------------------------------- read data
  nv = dimsizes(varname)
  nw = 4
 
- fdir  = "$DATD/L60CGW/fcoef_ko-wav4"
+ fdir  = "$DATD/L60CGW-t/fcoef_ko-wav4"
  fname = fdir+"/"+yy+"/uan"+expname+".fft_var4_ko."+yy+"."+mm+".nc"
 print(fname+"")
 
@@ -49,7 +51,7 @@ print(fname+"")
  nx = nk*2
  noa = dimsizes(f0->$(f0->$s_v0$!2)$)
 
- f1 = addfile("$DATD/L60CGW/xm/xm.uan"+expname+"a.pj_"+yy+mm+".nc","r")
+ f1 = addfile("$DATD/L60CGW-t/xm/xm.uan"+expname+"a.pj_"+yy+mm+".nc","r")
  rhob = f1->rho(0,{z0*1.e3},{-lat0:lat0})
  ub   = f1->u  (0,{z0*1.e3},{-lat0:lat0})
 print(ub)
@@ -139,10 +141,14 @@ print(ub)
 ;nn = 58
 print(nn)
 
+ lon = fspan(0,720.-(360./nx),nx*2) - 360.
+ lon!0 = "longitude"
+ lon&longitude = lon
+
  vv_xy(:,:,:,:nx-1) = vv2(:,:,nn,:,:)
  vv_xy(:,:,:,nx:  ) = vv2(:,:,nn,:,:)
-
- lon = fspan(0,720.-(360./nx),nx*2) - 360.
+ vv_xy!3 = "longitude"
+ vv_xy&longitude = lon
 
 ; tmp = vv2(:,2,:,:)
 ; do j=1, ny2-2
@@ -156,13 +162,13 @@ print(nn)
  cnfil = (/17,18,19,20,21,22,23,24,25,26,0,0,11,10,9,8,7,6,5,4,3,2/)
 ; cnfil = (/22,23,24,25,26,0,0,11,10,9,8,7/)
  cnlevh = ispan(-10,10,1)*0.5
- cnfac = (/1,0.25,1,0.25/)
+ cnfac = (/1.2,0.25,1.2,0.25/)
 
 ;--------------------------------------- contour
- wi = 45
- he = 25
- xf = 8 + (/0,1,0,1/)*52
- yf = 10 + (/0,0,1,1/)*30
+ wi = 90
+ he = 25 * 0.75
+ xf = 8 + (/0,0,0,0/)*52
+ yf = 10 + (/0,2,1,3/)*(he+3) + (/0,1,0,1/)*8
 
  mstr  = new(nw,string)
  xstr  = new(nw,string)
@@ -172,52 +178,75 @@ print(nn)
  mstr = "";"Rossby"
  xstr = (/"","","longitude (deg)","longitude (deg)"/)
  ystr = (/"latitude (deg)","","latitude (deg)",""/)
+ xstr = ""
+ ystr = ""
  lbtxt = "(K)"
 
 do il=0, nw-1
 
+ map = create "mp" mapPlotClass wks
+;  "mpProjection"     : "Mollweide" ;"Robinson"
+  "mpCenterLonF"     : 0.
+  "mpOutlineOn"      : True
+  "mpGridAndLimbOn"  : False
+  "mpPerimOn"        : True
+  "mpPerimDrawOrder" : "PostDraw"
+
+  "mpShapeMode"     : "FreeAspect"
+  "mpGeophysicalLineColor" : colindg ;"Orange4"
+  "mpGeophysicalLineThicknessF" : 2.5
+  "mpDataBaseVersion" : "Ncarg4_0"
+
+  "mpLimitMode"    : "LatLon"
+  "mpMinLonF"      : -180
+  "mpMaxLonF"      : 180
+  "mpMinLatF"      : -25
+  "mpMaxLatF"      : 25
+ end create
+ set_size_mp(map,xf(il),yf(il),wi,he)
+
 ; do iv=0, nv-1
 iv=3
    if (varname(iv) .eq. "theta") then
-     contour1 = cnshadeplot(wks,lon,lat,vv_xy(il,iv,:,:), \
+     contour1 = cnshadeplot(wks,lon({-180:180}),lat,vv_xy(il,iv,:,{-180:180}), \
                 cnlevh*cnfac(il),cnfil,lbtxt)
-;     cnaddline(contour1,wks,lon,lat,vv_xy(il,iv,:,:), \
+;     cnaddline(contour1,wks,lon({-180:180}),lat,vv_xy(il,iv,:,{-180:180}), \
 ;               cnlevh*cnfac(il),0,"D",0,"T",0.5,"C",(/colindr,1,colindb/))
    end if
 ; end do
 
 ; do iv=0, nv-1
 ;   if (varname(iv) .eq. "rhodz_dt") then
-;;     contour1 = cnshadeplot(wks,lon,lat,vv_xy(il,iv,:,:)*1.e3, \
+;;     contour1 = cnshadeplot(wks,lon({-180:180}),lat,vv_xy(il,iv,:,{-180:180})*1.e3, \
 ;;                cnlevh*cnfac(il),cnfil,lbtxt)
-;     cnaddline(contour1,wks,lon,lat,vv_xy(il,iv,:,:)*1.e3, \
+;     cnaddline(contour1,wks,lon({-180:180}),lat,vv_xy(il,iv,:,{-180:180})*1.e3, \
 ;               cnlevh*cnfac(il),0,"D",0,"T",0.5,"C",(/colindr,-1,colindb/))
 ;   end if
 ; end do
 
  setvalues contour1
-  "pmLabelBarOrthogonalPosF" : 0.15-0.05
+  "pmLabelBarOrthogonalPosF" : 0.15-0.12
   "pmLabelBarParallelPosF"   : 0.50;-0.40
   "pmLabelBarKeepAspect"     : False
   "pmLabelBarWidthF"         : 0.6
   "pmLabelBarHeightF"        : 0.08
-  "lbLabelFontHeightF" : 0.015
+  "lbLabelFontHeightF" : 0.012
   "lbTitlePosition"    : "Right"
   "lbTitleDirection"   : "Across"
-  "lbTitleOffsetF"     : 0.10-0.05
-  "lbTitleFontHeightF" : 0.020
+  "lbTitleOffsetF"     : 0.10-0.10
+  "lbTitleFontHeightF" : 0.014
  end setvalues
 
  set_size(contour1,xf(il),yf(il),wi,he)
  axis_range(contour1,-180/kc(0),180/kc(0),-25,25,False,False)
  axis_str(contour1,mstr(il),xstr(il),ystr(il))
 
- cnfinalize(contour1,wks)
+; cnfinalize(contour1,wks)
 
  vf = create "epf_vec" vectorFieldClass defaultapp
-  "vfDataArray" : vv_xy(il,0:1,::2,:)
-  "vfXArray"    : lon
-  "vfYArray"    : lat(::2)
+  "vfDataArray" : vv_xy(il,0:1,::4,{-180:180})
+  "vfXArray"    : lon({-180:180})
+  "vfYArray"    : lat(::4)
  end create
  ref = cnfac*2.
  vec1 = create "vector" vectorPlotClass wks
@@ -235,9 +264,15 @@ iv=3
  axis_range(vec1,-180/kc(0),180/kc(0),-25,25,False,False)
  axis_str(vec1,"","","")
 
- overlay(contour1,vec1)
- draw(contour1)
- NhlRemoveOverlay(contour1,vec1,False)
+; overlay(contour1,vec1)
+; draw(contour1)
+; NhlRemoveOverlay(contour1,vec1,False)
+
+ overlay(map,vec1)
+ NhlAddOverlay(map,contour1,map)
+ draw(map)
+ NhlRemoveOverlay(map,contour1,False)
+ NhlRemoveOverlay(map,vec1    ,False)
 
 end do
 
