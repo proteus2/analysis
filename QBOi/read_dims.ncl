@@ -19,7 +19,9 @@ begin
     do idim=0, ndim-1
       dimname = filev->$varname$!idim
       if ( str_lower(dimname) .eq. "lat" .or.  \
-           str_lower(dimname) .eq. "latitude" ) then
+           str_lower(dimname) .eq. "latitude" .or.  \
+           str_lower(dimname) .eq. "g0_lat_4" .or.  \
+           str_lower(dimname) .eq. "g0_lat_2" ) then
         tag = 1
         lat = filev->$dimname$
         break
@@ -73,6 +75,11 @@ begin
       lev@units = "hPa"
       lev@long_name = "pressure"
     end if
+    if (model .eq. "ERA-I-nr") then
+      lev = lev__ERA_I_nr
+      lev@units = "hPa"
+      lev@long_name = "pressure"
+    end if
   else
     tag = 0
     ndim = dimsizes( dimsizes( filev->$varname$ ) )
@@ -85,7 +92,8 @@ begin
            str_lower(dimname) .eq. "z" .or.  \
            str_lower(dimname) .eq. "eta" .or.  \
            str_lower(dimname) .eq. "ht" .or.  \
-           str_lower(dimname) .eq. "hybrid_ht" ) then
+           str_lower(dimname) .eq. "hybrid_ht" .or.  \
+           str_lower(dimname) .eq. "lv_ISBL1" ) then
         tag = 1
         lev = filev->$dimname$
         break
