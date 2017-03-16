@@ -21,7 +21,7 @@ begin
  lata = 5.
 
 
- wks = cr_wks("fig/u_init-"+mmi,600,0)
+ wks = cr_wks("fig/u_init-sel-"+mmi,600,0)
  colind = NhlNewColor(wks,0.6,0.6,0.6)
 
  nm = dimsizes(models)
@@ -91,7 +91,9 @@ do im=0, nm-1
        dlat2o = lat(j2+1) - lat(j2)
      end if
 
-     u = new((/nt,nz/),float)
+     u = new((/nt,nz/),float,1.e20)
+     u!1 = "zp"
+     u&zp = zp
 
    end if
 
@@ -113,6 +115,22 @@ do im=0, nm-1
    end if
 
    u(iyr,:) = u(iyr,:)/tofloat(sumdlat)
+
+   if (mmi .eq. "05") then
+     if ( any(u(iyr,{26:32}) .gt. -20.) ) then   ; 94, 96, 98, 03, 05, 07
+       u(iyr,:) = u@_FillValue
+     else
+       print(yr+"")
+     end if
+   end if
+   if (mmi .eq. "11") then
+;     if ( any(u(iyr,{16:20}) .gt. 0.) ) then   ; 94, 96, 01, 03, 05, 07
+     if ( any(u(iyr,{16:26}) .gt. 3.) ) then   ; 96, 98, 01, 03, 05, 07
+       u(iyr,:) = u@_FillValue
+     else
+       print(yr+"")
+     end if
+   end if
 
  end do  ; iyr
 

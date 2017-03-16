@@ -22,10 +22,6 @@ begin
  latb = 5.
 
 
-;#ncks -h -d t,$n1,$n2 $f0 -O zz.nc
-;#ncwa -h -a latitude -d t,$n1,$n2 -d latitude,-5.0,5.0 $f0 -O zz.nc
-;ncwa -h -a latitude -w $wgt  -d t,$n1,$n2 -d latitude,68,76 $f0 -O zz2.nc
-
  wks = cr_wks("fig/o3prof",600,0)
  colind = NhlNewColor(wks,0.6,0.6,0.6)
 
