@@ -69,7 +69,7 @@ function getlev_q(model:string, filev:file, varname:string)
 local lev, model, filev, varname, tag, ndim, idim, dimname
 ;-- body of getlev_q ---------------------------------------------------
 begin
-  if ( isdefined("lev__"+model) ) then
+  if ( isdefined("lev__"+str_sub_str(model,"-","_")) ) then
     if (model .eq. "MRI") then
       lev = lev__MRI
       lev@units = "hPa"
