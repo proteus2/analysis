@@ -10,7 +10,7 @@ axisfontratio = 1.0
 begin
 
 ;--------------------------------------- parameters
- fname0 = "dat/SPARC_1952_2009q_L60_yzt.nc"
+ fname0 = "dat/O3_Yonsei_SPARC_1952_2009q_L60_yzt.nc"
  y0 = 1940
  m0 = 11
 

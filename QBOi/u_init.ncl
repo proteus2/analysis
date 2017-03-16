@@ -3,10 +3,9 @@ xspace = 170  ; 83, 170  -  QJRMS
 yspace = 240  ; 240
 load "$UTIL/ncl/figsize.ncl"
 load "$UTIL/ncl/attribute.ncl"
-
 axisfontratio = 1.0
 
-load "dat/coord_6hr"
+load "read_dims.ncl"
 
 begin
 
@@ -18,6 +17,7 @@ begin
  mmi = "05"
  dd = "01"
  hh = "06"
+ lata = 5.
 
  nm = dimsizes(models)
 
@@ -45,45 +45,58 @@ do im=0, nm-1
 
    if (tag .eq. 0) then
      tag = 1
-     if ( isdefined("lat__"+models(im)) ) then
-       if (models(im) .eq. "MRI") then
-         lat = lat__MRI
-       end if
-     else
-       lat = f0->$f0->ua!2$
+
+     lat = getlat_q(models(im),f0,"ua")
+     lat_bnd1 = lat@bnd1
+     lat_bnd2 = lat@bnd2
+     dlat = lat_bnd2 - lat_bnd1
+
+     lev = getlev_q(models(im),f0,"ua")
+     pscale = 1.
+     levp = tofloat( lev )
+     if ( isatt(lev, "units") ) then
+     if (lev@units .eq. "Pa") then
+       pscale = 100.
      end if
-     if ( isdefined("lev__"+models(im)) ) then
-       if (models(im) .eq. "MRI") then
-         levp = lev__MRI
-       end if
+     end if
+     levp = levp/pscale
+
+     if (lat(0) .lt. lat(1)) then
+       j1 = min( ind( lat .ge. -lata ) )
+       j2 = max( ind( lat .le. lata  ) )
      else
-       levp = f0->$f0->ua!1$
+       j1 = min( ind( lat .le. lata  ) )
+       j2 = max( ind( lat .ge. -lata ) )
+     end if
+ 
+     if ( abs(lat(j1)) .ne. lata .or.  \
+          abs(lat(j2)) .ne. lata ) then
+       tag = 2
      end if
    end if
 
-   u = dim_avg( f0->ua(n1,:,:,:) )
+   u0 = dim_avg_Wrap( f0->ua(n1,:,:,:) )
+
+   u = dim_sum_Wrap( u0(:,j1:j2)*conform_dims(dimsizes(u0(:,j1:j2)),  \
+                                 dlat(j1:j2),1) )
+   if (tag .eq. 2) then
+print("U needs to be updated")
+   end if
 
  end do
 
-print(lat)
+print(lat_bnd1+"   "+lat_bnd2)
+
  delete( files )
+ delete( [/ u, u0 /] )
  delete( t )
- delete( u )
- delete( [/ lat , levp /] )
+ delete( [/ lat , lev, levp /] )
+ delete( [/ lat_bnd1, lat_bnd2, dlat /] )
 
 end do
 
 exit
 
- fname0 = "dat/SPARC_1952_2009q_L60_yzt.nc"
- y0 = 1940
- m0 = 11
-
- y1 = 1979
-; y2 = 2006
- y2 = 2008
-;y1=1994
-;y2=2005
  latb = 5.
 
 
