@@ -7,7 +7,7 @@ function getlat_q(model:string, filev:file, varname:string)
 local lat, model, filev, varname, tag, ndim, idim, dimname, ny
 ;-- body of getlat_q ---------------------------------------------------
 begin
-  if ( isdefined("lat__"+model) ) then
+  if ( isdefined("lat__"+str_sub_str(model,"-","_")) ) then
     if (model .eq. "MRI") then
       lat = lat__MRI
       lat@units = "degrees_north"
