@@ -32,10 +32,12 @@ fi
 
 # DIRECTORY  :::::::::::::::::::::::::::::::::::::
 dir_cmam="$dir_qboi/CCCma/CMAM"
+dir_miroc_a_ll="$dir_qboi/MIROC/MIROC-AGCM/MIROC-AGCM-LL"
 dir_miroc_e="$dir_qboi/MIROC/MIROC-ESM"
 dir_mri="$dir_qboi/MRI"
 #-------------------------------------------------
 dir_cmam="$dir_cmam/QBOiExp$expno$mon5i_s"
+dir_miroc_a_ll="$dir_miroc_a_ll/QBOiExp$expno"
 dir_miroc_e="$dir_miroc_e/QBOiExp$expno"
 dir_mri="$dir_mri/QBOiExp${expno}"
 if [ "$expno" = "5" ] ; then
@@ -45,6 +47,7 @@ elif [ "$expno" = "1" ] ; then
 fi
 #-------------------------------------------------
 dir_cmam="$dir_cmam/$timeint/atmos/$var/$ripcode"
+dir_miroc_a_ll="$dir_miroc_a_ll/$timeint/atmos/$var/${mon5i_s}${year5i}*$ripcode"
 dir_miroc_e="$dir_miroc_e/$timeint/atmos/$var/${mon5i_s}${year5i}*$ripcode"
 dir_mri="$dir_mri/atm$diminfo$timeint"
 #-------------------------------------------------
@@ -56,6 +59,7 @@ dimcode="$timeint"
 [ "$timeint" = "6hr" ] && dimcode="${dimcode}P?ev"
 #-------------------------------------------------
 files_cmam=( $dir_cmam/${var}_${dimcode}_CMAM_QBOiExp${expno}${mon5i_s}_${ripcode}_$year5i${mon5i}*.nc )
+files_miroc_a_ll=( $dir_miroc_a_ll/${var}_${dimcode}_MIROC-AGCM-LL_QBOiExp${expno}_${mon5i_s}${year5i}*${ripcode}_$year5i${mon5i}*.nc )
 files_miroc_e=( $dir_miroc_e/${var}_${dimcode}_MIROC-ESM_QBOiExp${expno}_${mon5i_s}${year5i}*${ripcode}_$year5i${mon5i}*.nc )
 if [ "$expno" = "5" ] ; then
   files_mri=( $dir_mri/mri_run-Fqboi04_QBOhindcast_${exp5i}01${ripcode:0:2}.atm$diminfo$timeint.*.nc )
@@ -65,7 +69,7 @@ fi
 #-------------------------------------------------
 
 st=0
-for ff in ${files_cmam[@]} ${files_miroc_e[@]} ${files_mri[@]} ; do
+for ff in ${files_cmam[@]} ${files_miroc_a_ll[@]} ${files_miroc_e[@]} ${files_mri[@]} ; do
   if [ ! -e $ff ] ; then
     echo "FILES DO NOT EXIST:  $ff"  ;  st=1
   fi
@@ -74,6 +78,7 @@ done
 
 for oo in  \
 start_CMAM ${#files_cmam[@]} ${files_cmam[@]}  \
+start_MIROC-AGCM-LL ${#files_miroc_a_ll[@]} ${files_miroc_a_ll[@]}  \
 start_MIROC-ESM ${#files_miroc_e[@]} ${files_miroc_e[@]}  \
 start_MRI ${#files_mri[@]} ${files_mri[@]}  \
 ; do

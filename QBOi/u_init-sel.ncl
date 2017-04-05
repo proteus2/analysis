@@ -19,6 +19,9 @@ begin
  dd = "01"
  hh = "06"
  lata = 5.
+ vnames = conform_dims(dimsizes(models),"ua",-1)
+ vnames = where(models .eq. "ERA-I-nr", "U_GDS0_HYBL", vnames)
+ vnames = where(models .eq. "ERA-I"   , "U_GDS0_ISBL", vnames)
 
 
  wks = cr_wks("fig/u_init-sel-"+mmi,600,0)
@@ -34,16 +37,28 @@ do im=0, nm-1
  do iyr=0, nt-1
    yr = y1 + iyr
 
-   sysout = systemfunc("env_qboi.sh 5 ua 6hr XYPT r1i1p1 "+yr+mmi)
+   if (models(im) .eq. "ERA-I-nr") then
+     file_r = "$HOME/portal/ERA-I-nr/6hourly/0.75deg/"+yr+"/"+mmi+"/"+  \
+          "era-int_f.u.anal."+hh+".ml."+yr+""+mmi+".nc"
+     f0 = addfile(file_r,"r")
+   else if (models(im) .eq. "ERA-I") then
+     file_r = "$HOME/portal/ERA-I/6hourly/1.5deg/"+yr+"/"+mmi+"/"+  \
+          "era-int.u.anal."+hh+".pl."+yr+""+mmi+".nc"
+     f0 = addfile(file_r,"r")
+   else
+     sysout = systemfunc("env_qboi.sh 5 "+vnames(im)+" 6hr XYPT r1i1p1 "+yr+mmi)
 
-   i0 = ind( sysout .eq. "start_"+models(im) ) + 2
-   nfile = stringtoint(sysout(i0-1))
-   files = sysout(i0:i0+nfile-1)
+     i0 = ind( sysout .eq. "start_"+models(im) ) + 2
+     nfile = stringtoint(sysout(i0-1))
+     files = sysout(i0:i0+nfile-1)
 
-   f0 = addfile(files(0),"r")
+     f0 = addfile(files(0),"r")
+   end if
+   end if
 
    ; time: n1
-   t = f0->$f0->ua!0$(0:4)
+   tname = f0->$vnames(im)$!0
+   t = f0->$tname$(0:4)
    date = cd_calendar(t,-3)
    n1 = ind( date+"" .eq. yr+mmi+dd+hh )
    if ( ismissing(n1) ) then
@@ -54,12 +69,12 @@ do im=0, nm-1
    if (iyr .eq. 0) then
      tag = 1
 
-     lat = getlat_q(models(im),f0,"ua")
+     lat = getlat_q(models(im),f0,vnames(im))
      lat_bnd1 = lat@bnd1
      lat_bnd2 = lat@bnd2
      dlat = abs(lat_bnd2 - lat_bnd1)
 
-     lev = getlev_q(models(im),f0,"ua")
+     lev = getlev_q(models(im),f0,vnames(im))
      pscale = 1.
      levp = tofloat( lev )
      if ( isatt(lev, "units") ) then
@@ -80,15 +95,15 @@ do im=0, nm-1
      end if
      dlat(j1) = dlat(j1)*0.5
      dlat(j2) = dlat(j2)*0.5
-     sumdlat = sum(dlat(j1:j2))
+     sumdlat = tofloat(sum(dlat(j1:j2)))
 
-     dlat1b = lata - abs(lat(j1))
-     dlat2b = lata - abs(lat(j2))
+     dlat1b = lata - tofloat(abs(lat(j1)))
+     dlat2b = lata - tofloat(abs(lat(j2)))
 
      if ( dlat1b .ne. 0. .or. dlat2b .ne. 0. ) then
        tag = 2
-       dlat1o = lat(j1) - lat(j1-1)
-       dlat2o = lat(j2+1) - lat(j2)
+       dlat1o = tofloat(lat(j1) - lat(j1-1))
+       dlat2o = tofloat(lat(j2+1) - lat(j2))
      end if
 
      u = new((/nt,nz/),float,1.e20)
@@ -97,7 +112,7 @@ do im=0, nm-1
 
    end if
 
-   u0 = dim_avg_Wrap( f0->ua(n1,:,:,:) )
+   u0 = dim_avg_Wrap( f0->$vnames(im)$(n1,:,:,:) )
 
    u(iyr,:) = tofloat( dim_sum(  \
        u0(:,j1:j2)*conform_dims(dimsizes(u0(:,j1:j2)),dlat(j1:j2),1) ) )
@@ -114,18 +129,28 @@ do im=0, nm-1
      u(iyr,:) = u(iyr,:) + tofloat(ub1*dlat1b + ub2*dlat2b)
    end if
 
-   u(iyr,:) = u(iyr,:)/tofloat(sumdlat)
+   u(iyr,:) = u(iyr,:)/sumdlat
 
    if (mmi .eq. "05") then
-     if ( any(u(iyr,{26:32}) .gt. -20.) ) then   ; 94, 96, 98, 03, 05, 07
+     ; 94, 96, 98, 03, 05, 07
+     if ( any(u(iyr,{26:32}) .gt. -20.) ) then
        u(iyr,:) = u@_FillValue
      else
        print(yr+"")
      end if
    end if
    if (mmi .eq. "11") then
-;     if ( any(u(iyr,{16:20}) .gt. 0.) ) then   ; 94, 96, 01, 03, 05, 07
-     if ( any(u(iyr,{16:26}) .gt. 3.) ) then   ; 96, 98, 01, 03, 05, 07
+     ; 96, 98, 01, 03, 05, 07
+     zc1 = 25.
+     zc2 = 32.
+     if (zp(0) .lt. zp(1)) then
+       uc1 = linint1(zp,u(iyr,:),False,zc1,0)
+       uc2 = linint1(zp,u(iyr,:),False,zc2,0)
+     else
+       uc1 = linint1(-zp,u(iyr,:),False,-zc1,0)
+       uc2 = linint1(-zp,u(iyr,:),False,-zc2,0)
+     end if
+     if ( .not. ( uc1 .lt. 0. .and. uc2 .gt. 0. ) ) then
        u(iyr,:) = u@_FillValue
      else
        print(yr+"")
@@ -181,7 +206,9 @@ do im=0, nm-1
  end if
 
 
- delete( [/ sysout, files /] )
+ if ( isdefined("sysout") ) then
+   delete( [/ sysout, files /] )
+ end if
  delete( [/ u, u0, ub1, ub2 /] )
  delete( t )
  delete( [/ lat, lev, levp, zp /] )
