@@ -6,21 +6,22 @@ load "$UTIL/ncl/attribute.ncl"
 axisfontratio = 1.0
 
 load "read_dims.ncl"
-load "lat_intg.ncl"
 
 begin
 
 ;--------------------------------------- parameters
- models = (/"ERA-I-nr","MRI","CMAM"/)  ; ,"MIROC-ESM"/)
-; models = (/"ERA-I-nr","MRI","CMAM","ERA-I"/)
+; models = (/"ERA-I-nr","MRI","CMAM","MIROC-ESM","ERA-I"/)
+ models = (/"ERA-I-nr","MRI","CMAM"/)
 ; yrs = (/1998,2003/)
- yrs = 2003  ;  96 / 98 / 01 / 03 / 05 / 07
+ yrs = 1994  ;  96 / 98 / 01 / 03 / 05 / 07
+; yrs = 2001  ;  96 / 98 / 01 / 03 / 05 / 07
 ; mmi = "05"
  mmi = "11"
- dd = "03"
+ dd = "01"
  hh = "00"
- lata = 10.
- vnheads = (/"u","uw"/)
+ latb = 15.
+ zp1 = 22.0  ;24.5  ; 30.2 hPa
+ vnheads = (/"uw","u","v"/)
  nv = dimsizes(vnheads)
  vnames = conform_dims((/dimsizes(models),nv/),vnheads+"a",1)
  do iv=0, nv-1
@@ -30,9 +31,9 @@ begin
                         str_upper(vnheads(iv))+"_GDS0_ISBL", vnames(:,iv))
  end do
  vfname_ra = where(vnheads .eq. "w", "ome", vnheads)
- 
 
- wks = cr_wks("fig/uw-s_xz2-"+yrs+mmi+dd+hh,600,0)
+
+ wks = cr_wks("fig/uw-v_xy-"+yrs+mmi,600,0)
  gsn_define_colormap(wks,"StepSeq25")
  colind = NhlNewColor(wks,0.6,0.6,0.6)
 
@@ -58,6 +59,9 @@ do im=0, nm-1
             "era-int."+vfname_ra(iv)+".anal."+hh+".pl."+yr+""+mmi+".nc"
        f0 = addfile(file_r,"r")
      else
+if (isdefined("sysout")) then  ; until the whole data comes
+delete(sysout)
+end if
        sysout = systemfunc("env_qboi.sh 5 "+vnames(im,iv)+" 6hr XYPT r1i1p1 "+yr+mmi)
 
        i0 = ind( sysout .eq. "start_"+models(im) ) + 2
@@ -130,14 +134,17 @@ do im=0, nm-1
      nx = dimsizes(lon0)
 
      lat0 = getlat_q(models(im),f0,vnames(im,iv))
-     lat_bnd1 = lat0@bnd1
-     lat_bnd2 = lat0@bnd2
      ny = dimsizes(lat0)
 
-     lon = lon0
-     lat = lat0
-     deg2rad = 0.01745329
-     coslat = cos(lat*deg2rad)
+     if (models(im) .eq. "ERA-I-nr") then
+       lon = lon0(::2)
+       lat = lat0(::2)
+       nx = dimsizes(lon)
+       ny = dimsizes(lat)
+     else
+       lon = lon0
+       lat = lat0
+     end if
 
      if ( iv .gt. 0 ) then
        lev2 = lev
@@ -160,46 +167,51 @@ do im=0, nm-1
      levp = levp/pscale
      nz = dimsizes(levp)
      zp = 7.*log(1.e3/levp)
-print(models(im)+"  "+tofloat(lat(1)-lat(0)))
+     k1 = minind( abs(zp - zp1) )
+print(models(im)+"  "+zp(k1)+"  "+tofloat(lat(1)-lat(0)))
 
      if (iv .eq. 0) then
-       u = new((/nv,nt,nz,nx/),float)
+       u = new((/nv,nt,ny,nx/),float)
      end if
 
      if (vnheads(iv) .eq. "uw") then
-       uw_u0 = new((/nt,nz,ny,nx/),float)
-       uw_w0 = new((/nt,nz,ny,nx/),float)
+       uw_u0 = new((/nt,ny,nx/),float)
+       uw_w0 = new((/nt,ny,nx/),float)
      end if
 
    end if
 
    if (vnheads(iv) .ne. "uw") then
 
-     u0 = f0->$vnames(im,iv)$(n1,:,:,:)
+     if (models(im) .eq. "ERA-I-nr") then
+       u0 = f0->$vnames(im,iv)$(n1,k1,::2,::2)
+     else
+       u0 = f0->$vnames(im,iv)$(n1,k1,:,:)
+     end if
 
      if (vnheads(iv) .eq. "w") then
        if ( models(im) .eq. "ERA-I-nr" .or. models(im) .eq. "ERA-I" ) then
-         u0 = u0*conform_dims(dimsizes(u0),(-7.e3/(levp*100.)),0)
+         u0 = u0*(-7.e3/(levp(k1)*100.))
        end if
        u0 = u0*1.e3  ; [mm/s]
      end if
 
-     u(iv,iyr,:,:) = lat_intg(lat,lat_bnd1,lat_bnd2,(/-lata,lata/),u0,1,  \
-                     coslat)
-
-     sumdlat = u@sumdlat
-
-     u(iv,iyr,:,:) = u(iv,iyr,:,:)/sumdlat
+     u(iv,iyr,:,:) = u0
 
    end if
 
    if (vnheads(iv) .eq. "uw") then
 
-     uw_u0(iyr,:,:,:) = f0->$vnames(im,iv)$(n1,:,:,:)
-     uw_w0(iyr,:,:,:) = f_w->$vname_w$(n1,:,:,:)
+     if (models(im) .eq. "ERA-I-nr") then
+       uw_u0(iyr,:,:) = f0->$vnames(im,iv)$(n1,k1,::2,::2)
+       uw_w0(iyr,:,:) = f_w->$vname_w$(n1,k1,::2,::2)
+     else
+       uw_u0(iyr,:,:) = f0->$vnames(im,iv)$(n1,k1,:,:)
+       uw_w0(iyr,:,:) = f_w->$vname_w$(n1,k1,:,:)
+     end if
 
      if ( models(im) .eq. "ERA-I-nr" .or. models(im) .eq. "ERA-I" ) then
-       uw_w0(iyr,:,:,:) = uw_w0(iyr,:,:,:)*conform_dims((/nz,ny,nx/),(-7.e3/(levp*100.)),0)
+       uw_w0(iyr,:,:) = uw_w0(iyr,:,:)*(-7.e3/(levp(k1)*100.))
      end if
 
      u(iv,iyr,:,:) = 0.
@@ -212,59 +224,66 @@ print(models(im)+"  "+tofloat(lat(1)-lat(0)))
 ;--------------------------------------- calculation
  u = u - conform_dims(dimsizes(u),dim_avg(u),(/0,1,2/))
 
- nw = 10
+ wn0 = 1
+ wn9 = 8
+ nxo = 240
+ lono = ispan(0,nxo,1)*(360./tofloat(nxo))
+ if (lon(0) .ne. 0.) then
+   print("Care needed for lon0 /= 0")
+   exit
+ end if
 
- ul = new((/nv,nt,nz,nx/),float)
+ ul = new((/nv,nt,ny,nxo+1/),float)
  ul = 0.
  twopi = 6.2831853
  fc = ezfftf(u)
- do ik=0, nw-1
+ do ik=wn0-1, wn9-1
    ul = ul + ( conform_dims(dimsizes(ul),fc(0,:,:,:,ik),(/0,1,2/))*  \
                conform_dims(dimsizes(ul),  \
-                  cos(ispan(0,nx-1,1)*(ik+1)/tofloat(nx)*twopi),3) +  \
+                  cos(ispan(0,nxo,1)*(ik+1)/tofloat(nxo)*twopi),3) +  \
                conform_dims(dimsizes(ul),fc(1,:,:,:,ik),(/0,1,2/))*  \
                conform_dims(dimsizes(ul),  \
-                  sin(ispan(0,nx-1,1)*(ik+1)/tofloat(nx)*twopi),3) )
+                  sin(ispan(0,nxo,1)*(ik+1)/tofloat(nxo)*twopi),3) )
  end do
 
  do iv=0, nv-1
+   if (vnheads(iv) .ne. "uw") then
+     if (vnheads(iv) .ne. "v") then
+       ul(iv,:,:,:) = 0.5*(ul(iv,:,:,:) + ul(iv,:,ny-1:0,:))
+     else
+       ul(iv,:,:,:) = 0.5*(ul(iv,:,:,:) - ul(iv,:,ny-1:0,:))
+     end if
+   end if
+
    if (vnheads(iv) .eq. "uw") then
-     uw_u0 = uw_u0 - conform_dims(dimsizes(uw_u0),dim_avg(uw_u0),(/0,1,2/))
-     uw_w0 = uw_w0 - conform_dims(dimsizes(uw_w0),dim_avg(uw_w0),(/0,1,2/))
+     uw_u0 = uw_u0 - conform_dims(dimsizes(uw_u0),dim_avg(uw_u0),(/0,1/))
+     uw_w0 = uw_w0 - conform_dims(dimsizes(uw_w0),dim_avg(uw_w0),(/0,1/))
 
-     uw_u0 = 0.5*(uw_u0 + uw_u0(:,:,ny-1:0,:))
-     uw_w0 = 0.5*(uw_w0 + uw_w0(:,:,ny-1:0,:))
+     uw_u0 = 0.5*(uw_u0 + uw_u0(:,ny-1:0,:))
+     uw_w0 = 0.5*(uw_w0 + uw_w0(:,ny-1:0,:))
 
-     uwl0 = new((/nt,nz,ny,nx/),float)
+     uwl0 = new((/nt,ny,nxo+1/),float)
      uwl0 = 0.
      fc_u = ezfftf(uw_u0)
      fc_w = ezfftf(uw_w0)
-     do ik=0, nw-1
+     do ik=wn0-1, wn9-1
        uwl0 = uwl0 + (  \
-             ( conform_dims(dimsizes(uwl0),fc_u(0,:,:,:,ik),(/0,1,2/))*  \
+             ( conform_dims(dimsizes(uwl0),fc_u(0,:,:,ik),(/0,1/))*  \
                conform_dims(dimsizes(uwl0),  \
-                  cos(ispan(0,nx-1,1)*(ik+1)/tofloat(nx)*twopi),3) +  \
-               conform_dims(dimsizes(uwl0),fc_u(1,:,:,:,ik),(/0,1,2/))*  \
+                  cos(ispan(0,nxo,1)*(ik+1)/tofloat(nxo)*twopi),2) +  \
+               conform_dims(dimsizes(uwl0),fc_u(1,:,:,ik),(/0,1/))*  \
                conform_dims(dimsizes(uwl0),  \
-                  sin(ispan(0,nx-1,1)*(ik+1)/tofloat(nx)*twopi),3) )*   \
-             ( conform_dims(dimsizes(uwl0),fc_w(0,:,:,:,ik),(/0,1,2/))*  \
+                  sin(ispan(0,nxo,1)*(ik+1)/tofloat(nxo)*twopi),2) )*   \
+             ( conform_dims(dimsizes(uwl0),fc_w(0,:,:,ik),(/0,1/))*  \
                conform_dims(dimsizes(uwl0),  \
-                  cos(ispan(0,nx-1,1)*(ik+1)/tofloat(nx)*twopi),3) +  \
-               conform_dims(dimsizes(uwl0),fc_w(1,:,:,:,ik),(/0,1,2/))*  \
+                  cos(ispan(0,nxo,1)*(ik+1)/tofloat(nxo)*twopi),2) +  \
+               conform_dims(dimsizes(uwl0),fc_w(1,:,:,ik),(/0,1/))*  \
                conform_dims(dimsizes(uwl0),  \
-                  sin(ispan(0,nx-1,1)*(ik+1)/tofloat(nx)*twopi),3) ) )
+                  sin(ispan(0,nxo,1)*(ik+1)/tofloat(nxo)*twopi),2) ) )
      end do
-
-     uwl = lat_intg(lat,lat_bnd1,lat_bnd2,(/-lata,lata/),uwl0,2,  \
-                    coslat)
-
-     sumdlat_uw = uwl@sumdlat
-
-     uwl = uwl/sumdlat_uw
-
-     uwl = uwl*conform_dims(dimsizes(uwl),levp/1.e3,1)
-
-     ul(iv,:,:,:) = uwl*1.e3  ; [mPa]
+     ul(iv,:,:,:) = uwl0
+     ul(iv,:,:,:) = ul(iv,:,:,:)*(levp(k1)/1.e3)
+     ul(iv,:,:,:) = ul(iv,:,:,:)*1.e3  ; [mPa]
    end if
  end do
 
@@ -279,7 +298,8 @@ print(models(im)+"  "+tofloat(lat(1)-lat(0)))
    else if (vnheads(iv) .eq. "w") then
      cnlev(iv,:) = cnlev(iv,:)*1.5
    else if (vnheads(iv) .eq. "uw") then
-     cnlev(iv,:) = cnlev(iv,:)*0.1
+;     cnlev(iv,:) = cnlev(iv,:)*0.1
+     cnlev(iv,:) = cnlev(iv,:)*0.2
    end if
    end if
    end if
@@ -290,7 +310,7 @@ print(models(im)+"  "+tofloat(lat(1)-lat(0)))
 
 ;--------------------------------------- contour1
  wi = 120
- he = 45
+ he = 30
  xf = 10 + ispan(0,7,1)*(wi+10)*0
  yf = 10 + ispan(0,7,1)*(he+8)
 
@@ -303,9 +323,9 @@ print(models(im)+"  "+tofloat(lat(1)-lat(0)))
  do iv=1, nv-1
    mstr = mstr+", "+where(vnheads(iv) .eq. "t", "T", vnheads(iv))+"'"
  end do
- mstr = mstr+" at "+hh+" UTC "+dd+" "+mmis+" "+yrs(0)
+ mstr = mstr+" at "+zp1+" km, initial time (1 "+mmis+" "+yrs(0)+")"
  xstr = "lon [deg]"
- ystr = "z [km]"
+ ystr = "lat [deg]"
  if (im .ne. 0) then
    mstr = ""
  end if
@@ -325,14 +345,14 @@ print(models(im)+"  "+tofloat(lat(1)-lat(0)))
 ;do ipl=0, nt-1
 ipl = im
 
- iv = 1
- contour1 = cnshadeplot(wks,lon,zp,ul(iv,0,:,:),cnlev(iv,:),cnfil,lbopt(iv))
  iv = 0
- cnaddline(contour1,wks,lon,zp,ul(iv,0,:,:),cnlev(iv,:),0,  \
-           "D",(/0,0,5/),"T",ltck(iv,:),"C",(/1,-1,1/))
+ contour1 = cnshadeplot(wks,lono,lat,ul(iv,0,:,:),cnlev(iv,:),cnfil,lbopt(iv))
+; iv = 1
+; cnaddline(contour1,wks,lono,lat,ul(iv,0,:,:),cnlev(iv,:),0,  \
+;           "D",(/0,0,5/),"T",ltck(iv,:),"C",(/1,-1,1/))
 
  set_size(contour1,xf(ipl),yf(ipl),wi,he)
- axis_range(contour1,0,360,16,34,False,False)
+ axis_range(contour1,0,360,-latb,latb,False,False)
  axis_str(contour1,mstr,xstr,ystr)
  setvalues contour1
   "tmXBMode" : "Explicit"
@@ -363,6 +383,29 @@ ipl = im
 
  cnfinalize(contour1,wks)
 
+ vf = create "epf_vec" vectorFieldClass defaultapp
+  "vfDataArray" : ul(1:2,0,::2,::6)
+  "vfXArray"    : lono(::6)
+  "vfYArray"    : lat(::2)
+ end create
+ ref = 10. ;/(ir+1)
+ vec1 = create "vector" vectorPlotClass wks
+  "vcVectorFieldData" : vf
+  "vcRefMagnitudeF" : ref
+  "vcRefLengthF"    : 0.05
+  "vcRefAnnoOn"     : False
+;  "vcLineArrowThicknessF" :  thc(nn)
+;  "vcLineArrowColor"      :  col(nn)
+;  "vcRefAnnoString1" : ref*tmpc(nn)
+  "vcRefAnnoString2On" : False
+;  "vcRefAnnoParallelPosF" :  1. - nn*0.1
+ end create
+ set_size(vec1,xf(ipl),yf(ipl),wi,he)
+ axis_range(vec1,0,360,-latb,latb,False,False)
+ axis_str(vec1,"","","")
+
+ overlay(contour1,vec1)
+
  draw(contour1)
 
 ;end do  ; ipl
@@ -382,17 +425,18 @@ ipl = im
  if ( isdefined("sysout_u") ) then
    delete( [/ sysout_u, files_u /] )
  end if
+ if ( isdefined("sysout_w") ) then
+   delete( [/ sysout_w, files_w /] )
+ end if
  delete( [/ u, u0, ul /] )
  delete( [/ fc /] )
  delete( [/ t, date /] )
  delete( [/ lon0, lat0, lon, lat, lev, levp, zp /] )
- delete( [/ lat_bnd1, lat_bnd2 /] )
- delete( coslat )
  if ( isdefined("lev2") ) then
    delete( lev2 )
  end if
  if ( any( vnheads .eq. "uw" ) ) then
-   delete( [/ uw_u0, uw_w0, uwl0, uwl, fc_u, fc_w /] )
+   delete( [/ uw_u0, uw_w0, uwl0, fc_u, fc_w /] )
  end if
 
 end do  ; im

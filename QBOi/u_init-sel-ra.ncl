@@ -14,8 +14,8 @@ begin
 ; models = (/"CMAM","MRI"/)
  y1 = 1993
  y2 = 2007
- mmi = "05"
-; mmi = "11"
+; mmi = "05"
+ mmi = "11"
  dd = "01"
  hh = "00"
  lata = 5.
@@ -110,6 +110,8 @@ do im=0, nm-1
      u!1 = "zp"
      u&zp = zp
 
+     lcol = new(nt,integer)
+
    end if
 
    u0 = dim_avg_Wrap( f0->$vnames(im)$(n1,:,:,:) )
@@ -130,18 +132,29 @@ do im=0, nm-1
    end if
 
    u(iyr,:) = u(iyr,:)/sumdlat
+   lcol(iyr) = 1
 
    if (mmi .eq. "05") then
-     ; 94, 96, 98, 03, 05, 07
-     if ( any(u(iyr,{26:32}) .gt. -20.) ) then
-       u(iyr,:) = u@_FillValue
-     else
+;;     if ( all(u(iyr,{26:32}) .lt. -20.) ) then
+;;       ; 94, 96, 98, 03, 05, 07
+     if ( all(u(iyr,{27:32}) .lt. -20.) ) then
+       ; 94, 96, 98, 00, 03, 05, 07
+       lcol(iyr) = 2
        print(yr+"")
+     else if ( all(u(iyr,{24:30}) .gt. 0.) ) then
+       lcol(iyr) = 4
+     else
+       lcol(iyr) = 1
+;       u(iyr,:) = u@_FillValue
+     end if
      end if
    end if
    if (mmi .eq. "11") then
-     ; 96, 98, 01, 03, 05, 07
-     zc1 = 25.
+;;     ; 96, 98, 01, 03, 05, 07
+;;     zc1 = 25.
+;;     zc2 = 32.
+     ; 94, 96, 98, 01, 03, 05, 07
+     zc1 = 23.
      zc2 = 32.
      if (zp(0) .lt. zp(1)) then
        uc1 = linint1(zp,u(iyr,:),False,zc1,0)
@@ -150,10 +163,15 @@ do im=0, nm-1
        uc1 = linint1(-zp,u(iyr,:),False,-zc1,0)
        uc2 = linint1(-zp,u(iyr,:),False,-zc2,0)
      end if
-     if ( .not. ( uc1 .lt. 0. .and. uc2 .gt. 0. ) ) then
-       u(iyr,:) = u@_FillValue
-     else
+     if ( uc1 .lt. 0. .and. uc2 .gt. 0. ) then
+       lcol(iyr) = 4
        print(yr+"")
+     else if ( uc1 .lt. 0. .and. uc2 .lt. 0. ) then
+       lcol(iyr) = 1
+     else
+       lcol(iyr) = 2
+;       u(iyr,:) = u@_FillValue
+     end if
      end if
    end if
 
@@ -162,7 +180,6 @@ do im=0, nm-1
 ;print(lat_bnd1+"   "+lat_bnd2)
 
 ;--------------------------------------- cn level
- lcol = (/2,3,4,5,6/)*0 + 1
  ltck = 0.8
 
 ;--------------------------------------- plot
@@ -181,8 +198,9 @@ do im=0, nm-1
  ystr = "z [km]"
  
 
- plot1 = xylineplot(wks,u,zp,"D",0,"T",ltck,"C",lcol(im))
- xyaddmarker(plot1,1,"S",0.8,"T",0.6,"C",1)
+ plot1 = xylineplot(wks,u,zp,"D",0,"T",ltck,"C",lcol)
+ xyaddmarker(plot1,1,"S",1.0,"T",1.0,"C",1)
+ xyaddline(plot1,0,zp,"D",0,"T",0.5,"C",colind)
 
  set_size(plot1,xf,yf,wi,he)
  axis_range(plot1,-45,25,16,42,False,False)
@@ -198,6 +216,29 @@ do im=0, nm-1
  draw(plot1)
 
  delete(plot1)
+
+ ps = (/100,85,70,50,40,30,20,15,10,7,5,3,2,1/)
+ zs = 7.0*log(1000./ps)
+ plotx = xylineplot(wks,(/-1,0,1/),(/-1,0,1/),"D",0,"T",0.001,"C",1)
+ set_size(plotx,xf(0)+wi+4,yf,1,he)
+ axis_range(plotx,-999,999,16,42,False,False)
+ axis_str(plotx,"","","p (hPa)")
+ setvalues plotx
+  "tmXBOn" : False
+  "tmXTOn" : False
+  "tmYLOn" : False
+  "tmYROn" : True
+  "tmXBBorderOn" : False
+  "tmXTBorderOn" : False
+  "tmYLBorderOn" : False
+  "tiYAxisSide" : "Right"
+  "tiYAxisAngleF" : 270
+  "tmYRLabelsOn" : True
+  "tmYLMode" : "Explicit"
+  "tmYLValues" : zs
+  "tmYLLabels" : ps
+ end setvalues
+ draw(plotx)
 
 ; if (im .eq. 0) then
 ;   lg = lgplot(wks,models,"D",0,"T",ltck,"C",lcol(:nm-1),2)
