@@ -262,7 +262,7 @@ print(models(im)+"  "+tofloat(lat(1)-lat(0)))
 
      uwl = uwl/sumdlat_uw
 
-     uwl = uwl*conform_dims(dimsizes(uwl),exp(-zp/7.),1)
+     uwl = uwl*conform_dims(dimsizes(uwl),levp/1.e3,1)
 
      ul(iv,:,:,:) = uwl*1.e3  ; [mPa]
    end if

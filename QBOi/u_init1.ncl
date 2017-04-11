@@ -10,12 +10,12 @@ load "read_dims.ncl"
 begin
 
 ;--------------------------------------- parameters
- models = (/"ERA-I-nr","CMAM","MIROC-ESM","MRI"/)
+ models = (/"ERA-I-nr","MRI","CMAM","MIROC-AGCM-LL","MIROC-ESM"/)
 ; models = (/"CMAM","MRI"/)
  y1 = 1993
  y2 = 2007
- mmi = "05"
-; mmi = "11"
+; mmi = "05"
+ mmi = "11"
  dd = "01"
  hh = "00"
  lata = 5.
@@ -61,7 +61,7 @@ do im=0, nm-1
    t = f0->$tname$(0:4)
    date = cd_calendar(t,-3)
    n1 = ind( date+"" .eq. yr+mmi+dd+hh )
-if (models(im) .ne. "MIROC-ESM") then
+if ( models(im) .ne. "MIROC-ESM" .and. models(im) .ne. "MIROC-AGCM-LL" ) then
    if ( ismissing(n1) ) then
      print(" MISSING: "+models(im)+" for "+(yr+mmi+dd+hh))
      exit
@@ -138,7 +138,7 @@ end if
 ;print(lat_bnd1+"   "+lat_bnd2)
 
 ;--------------------------------------- cn level
- lcol = (/1,2,3,4,5,6/)
+ lcol = (/1,2,3,6,4,7/)
  ltck = 0.8
 
 ;--------------------------------------- plot
