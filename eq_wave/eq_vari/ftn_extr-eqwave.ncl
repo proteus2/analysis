@@ -124,14 +124,11 @@ begin
    if ( wav_name_1(iw) .eq. "T" ) then
      do iv=0, nv-1
        tmp = f2->$var_name(iv)$(:,iw_t_dm,{p},{-lat:lat})
+       if ( wav_name_9(iw) .ne. "1" ) then
+         tmp = tmp + f2->$var_name(iv)$(:,iw_t_sm,{p},{-lat:lat})
+       end if
        var5d(iv,iw,:,:,:) = (/ tmp /)
      end do
-     if ( wav_name_9(iw) .ne. "1" ) then
-       do iv=0, nv-1
-         tmp = f2->$var_name(iv)$(:,iw_t_sm,{p},{-lat:lat})
-         var5d(iv,iw,:,:,:) = var5d(iv,iw,:,:,:) + (/ tmp /)
-       end do
-     end if
    end if
 
    if ( .not. isdefined("tmp") ) then
@@ -153,6 +150,8 @@ begin
  if (nz .ne. 1) then
    var!(dimsizes(dimsizes(var))-2) = "p"
    var&p = ps
+ else
+   var@p = ps
  end if
  if (nv .ne. 1) then
    var!0 = "var"

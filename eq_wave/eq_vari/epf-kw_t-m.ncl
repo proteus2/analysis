@@ -14,7 +14,7 @@ begin
  dirname = "ERA-I-nr"
 
  lat0 = 25.
- lat0avg = 10
+ lat0avg = 15
  p0    = 96.  ; 54, 66, 80, 96
  p0u0  = 23   ; 22, 23, 24, 25
  p0u = (/23,25/)
