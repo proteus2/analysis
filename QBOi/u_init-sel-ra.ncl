@@ -3,14 +3,14 @@ xspace = 170  ; 83, 170  -  QJRMS
 yspace = 240  ; 240
 load "$UTIL/ncl/figsize.ncl"
 load "$UTIL/ncl/attribute.ncl"
-axisfontratio = 0.9
+axisfontratio = 1.0
 
 load "read_dims.ncl"
 
 begin
 
 ;--------------------------------------- parameters
- models = (/"ERA-I-nr","CMAM","MIROC-ESM","MRI"/)
+ models = (/"ERA-I-nr"/)
 ; models = (/"CMAM","MRI"/)
  y1 = 1993
  y2 = 2007
@@ -22,9 +22,9 @@ begin
  vnames = conform_dims(dimsizes(models),"ua",-1)
  vnames = where(models .eq. "ERA-I-nr", "U_GDS0_HYBL", vnames)
  vnames = where(models .eq. "ERA-I"   , "U_GDS0_ISBL", vnames)
- 
 
- wks = cr_wks("fig/u_init1-"+mmi,600,0)
+
+ wks = cr_wks("fig/u_init-sel-ra-"+mmi,600,0)
  colind = NhlNewColor(wks,0.6,0.6,0.6)
 
  nm = dimsizes(models)
@@ -61,14 +61,10 @@ do im=0, nm-1
    t = f0->$tname$(0:4)
    date = cd_calendar(t,-3)
    n1 = ind( date+"" .eq. yr+mmi+dd+hh )
-if (models(im) .ne. "MIROC-ESM") then
    if ( ismissing(n1) ) then
      print(" MISSING: "+models(im)+" for "+(yr+mmi+dd+hh))
      exit
    end if
-else
-   n1 = 0
-end if
 
    if (iyr .eq. 0) then
      tag = 1
@@ -110,7 +106,9 @@ end if
        dlat2o = tofloat(lat(j2+1) - lat(j2))
      end if
 
-     u = new((/nt,nz/),float)
+     u = new((/nt,nz/),float,1.e20)
+     u!1 = "zp"
+     u&zp = zp
 
    end if
 
@@ -133,49 +131,62 @@ end if
 
    u(iyr,:) = u(iyr,:)/sumdlat
 
+   if (mmi .eq. "05") then
+     ; 94, 96, 98, 03, 05, 07
+     if ( any(u(iyr,{26:32}) .gt. -20.) ) then
+       u(iyr,:) = u@_FillValue
+     else
+       print(yr+"")
+     end if
+   end if
+   if (mmi .eq. "11") then
+     ; 96, 98, 01, 03, 05, 07
+     zc1 = 25.
+     zc2 = 32.
+     if (zp(0) .lt. zp(1)) then
+       uc1 = linint1(zp,u(iyr,:),False,zc1,0)
+       uc2 = linint1(zp,u(iyr,:),False,zc2,0)
+     else
+       uc1 = linint1(-zp,u(iyr,:),False,-zc1,0)
+       uc2 = linint1(-zp,u(iyr,:),False,-zc2,0)
+     end if
+     if ( .not. ( uc1 .lt. 0. .and. uc2 .gt. 0. ) ) then
+       u(iyr,:) = u@_FillValue
+     else
+       print(yr+"")
+     end if
+   end if
+
  end do  ; iyr
 
 ;print(lat_bnd1+"   "+lat_bnd2)
 
 ;--------------------------------------- cn level
- lcol = (/1,2,3,4,5,6/)
+ lcol = (/2,3,4,5,6/)*0 + 1
  ltck = 0.8
 
 ;--------------------------------------- plot
- wi = 24
- he = 24
- xf = 10 + (/0,1,2,3,4,0,1,2,3,4,0,1,2,3,4/)*(wi+5)
- yf = 10 + (/0,0,0,0,0,1,1,1,1,1,2,2,2,2,2/)*(he+5)
-
-do iyr=0, nt-1
- yr = y1 + iyr
+ wi = 50
+ he = 50
+ xf = 20
+ yf = 10
 
  if (mmi .eq. "11") then
    mmis = "Nov"
  else
    mmis = "May"
  end if
- mstr = "1 "+mmis+" "+yr
+ mstr = "Zonal wind at initial times (1 "+mmis+")"
  xstr = "U [m s:S:-1:N:]"
  ystr = "z [km]"
- if (xf(iyr) .ne. xf(0)) then
-   ystr = ""
- end if
- if (yf(iyr) .ne. yf(nt-1)) then
-   xstr = ""
- end if
  
 
- plot1 = xylineplot(wks,u(iyr,:),zp,"D",0,"T",ltck,"C",lcol(im))
- xyaddmarker(plot1,1,"S",1.2,"T",0.6,"C",1)
- if (im .eq. 0) then
-   xyaddline(plot1,0,zp,"D",0,"T",0.5,"C",colind)
- end if
+ plot1 = xylineplot(wks,u,zp,"D",0,"T",ltck,"C",lcol(im))
+ xyaddmarker(plot1,1,"S",0.8,"T",0.6,"C",1)
 
- set_size(plot1,xf(iyr),yf(iyr),wi,he)
+ set_size(plot1,xf,yf,wi,he)
  axis_range(plot1,-45,25,16,42,False,False)
- axis_str(plot1,"",xstr,ystr)
- dr_txt(wks,mstr,xf(iyr)+7,yf(iyr)+he-2,21,5,0.) 
+ axis_str(plot1,mstr,xstr,ystr)
  if (im .ne. 0) then
    setvalues plot1
     "tiMainOn"  : False
@@ -186,17 +197,13 @@ do iyr=0, nt-1
 
  draw(plot1)
 
-end do
-
  delete(plot1)
 
- if (im .eq. 0) then
-   lgstr = models
-   lgstr = where(models .eq. "ERA-I-nr", "ERA-I (ml)", lgstr)
-   lg = lgplot(wks,lgstr,"D",0,"T",ltck,"C",lcol(:nm-1),2)
-   set_size_lg(lg,xf(0),yf(nt-1)+he+10,wi*0.5,3.5*nm)
-   draw(lg)
- end if
+; if (im .eq. 0) then
+;   lg = lgplot(wks,models,"D",0,"T",ltck,"C",lcol(:nm-1),2)
+;   set_size_lg(lg,xf,yf+he-3.5*nm,wi*0.25,3.5*nm)
+;   draw(lg)
+; end if
 
 
  if ( isdefined("sysout") ) then
