@@ -1,21 +1,15 @@
 SUBROUTINE propdiss(  &
-    nx, ny, nz, nz_wet, ncol,                  &
-    nphi, nc, c_max, phi_dir,               &
-    hscale, tscale, cfactor, lt, ah,         &
-    mstar, p_wm, s_wm, t_wm, beta_wm,                                   &
-        u,v,theta,exner_tlev,rho,rho_tlev,             &
-        eta_tlev,r_tlev,sec_theta_latitude,             &
-        scheat,schmax,kscbas,ksctop,igwdc,jgwdc,                        &
+    nx, ny, nz, ncol,                  &
+    nphi, nc, phi_dir, c_phase, dc,     &
+    igwp, jgwp, u_tlev, v_tlev, nbv_tlev, rho, rho_tlev, lat, r_tlev,    &
+    kcta, mfs_ct,                         &
 ! diagnostics
-        drag_u_grd, drag_v_grd, l_drag_u_on,l_drag_v_on,          &
-        mflx_east,mflx_west,                                    &
-        mflx_north,mflx_south,                                  &
-        l_mflx_u_on,l_mflx_v_on,                   &
-        mflx_e_ctop,mflx_w_ctop,                                &
-        mflx_n_ctop,mflx_s_ctop,                                &
-        l_mflx_u_ctop_on,l_mflx_v_ctop_on,                          &
-        diag_spec,l_spec_on                                          &
-     &  )
+    l_drag_u_on, l_drag_v_on, drag_u, drag_v,                            &
+    l_mflx_u_on, l_mflx_v_on,                                            &
+    mflx_east, mflx_west, mflx_north, mflx_south,                        &
+    l_mflx_u_ctop_on, l_mflx_v_ctop_on,                                  &
+    mflx_e_ctop, mflx_w_ctop, mflx_n_ctop, mflx_s_ctop,                  &
+    l_spec_on, diag_spec)
 
 !
 ! PURPOSE:  To calculate the convective gravity wave drag
@@ -32,175 +26,73 @@ SUBROUTINE propdiss(  &
 !
 
   USE subr_common
+  USE param_gwp
 
-      implicit none
+  implicit none
 
-!
 ! SUBROUTINE ARGUMENTS
-!
-!   model dimensions
+
+! spatial dimensions
  
-      integer, intent(in) ::                                            &
-     &  nx, ny, nz, nz_wet                                              &
-     &, ncol               ! number of columns GWDC is calculated at.
+  integer, intent(in) ::  nx, ny, nz, ncol
 
-!   model switches
+! spectrum parameters
 
-      logical, intent(in) ::                                            &
-     &  l_drag_u_on                                                  &
-     &, l_drag_v_on                                                  &
-     &, l_mflx_u_on                                                &
-     &, l_mflx_v_on                                               &
-     &, l_mflx_u_ctop_on                                              &
-     &, l_mflx_v_ctop_on
+  integer                , intent(in) ::  nphi, nc
+  real, dimension(nphi)  , intent(in) ::  phi_dir
+  real, dimension(-nc:nc), intent(in) ::  c_phase
+  real                   , intent(in) ::  dc
 
-!   GWDC parameters
+! data arrays
 
-      integer, intent(in) ::                                            &
-     &  nphi                                                            &
-     &, nc
+  integer, dimension(ncol), intent(in) ::  igwp, jgwp, kcta
+  real, dimension(ncol,nz), intent(in) ::  u_tlev, v_tlev, nbv_tlev,     &
+                                           rho, rho_tlev, r_tlev
+  real, dimension(ncol)   , intent(in) ::  lat
 
-      real, intent(in) ::                                               &
-     &  c_max                                                           &
-     &, hscale                                                          &
-     &, tscale                                                          &
-     &, cfactor                                                         &
-     &, lt                                                              &
-     &, ah                                                              &
-     &, mstar                                                           &
-     &, p_wm                                                            &
-     &, s_wm                                                            &
-     &, t_wm                                                            &
-     &, beta_wm                                                         &
-     &, phi_dir(nphi)
+  real, dimension(-nc:nc,ncol,nphi), intent(in) ::  mfs_ct
 
-!   data arrays
+! switches
 
-      real, intent(in) ::                                               &
-     &  u(nx, ny, nz)         &
-     &, v(nx, ny, nz)        &
-                           ! primary u, v field
-     &, theta(nx, ny, nz)     &
-                           ! primary theta field
-     &, exner_tlev(nx, ny, nz)                  &
-                           ! exner ftn field
-     &, rho(nx, ny, nz)                               &
-                           ! rho field
-     &, rho_tlev(nx, ny, nz-1)                       &
-                           ! rho on theta levels
-     &, scheat(nx, ny, nz_wet)                            &
-     &, schmax(nx, ny)
+  logical, intent(in) ::  l_drag_u_on, l_drag_v_on,                      &
+                          l_mflx_u_on, l_mflx_v_on,                      &
+                          l_mflx_u_ctop_on, l_mflx_v_ctop_on, l_spec_on
 
-      integer, intent(in) ::                                            &
-     &  igwdc(ncol)                                                     &
-     &, jgwdc(ncol)                                                     &
-     &, kscbas(nx, ny)                                        &
-     &, ksctop(nx, ny)
+! output variables
 
-!   coordinate arrays
+  real, dimension(nx,ny,nz), intent(out) ::  drag_u, drag_v,             &
+                                             mflx_east, mflx_west,       &
+                                             mflx_north, mflx_south 
+  real, dimension(nx,ny)   , intent(out) ::  mflx_e_ctop, mflx_w_ctop,   &
+                                             mflx_n_ctop, mflx_s_ctop
 
-      real, intent(in) ::                                               &
-     &  eta_tlev(0:nz)                                      &
-     &, r_tlev(nx,ny, 0:nz)                  &
-                           ! r on theta levels
-     &, sec_theta_latitude(nx,ny)
+  real, dimension(nx,ny,nz,-nc:nc,nphi*2), intent(out) ::  diag_spec
 
-!   output variables
-
-      real, intent(out) ::                                            &
-     &  drag_u_grd(nx, ny, nz)                            &
-     &, drag_v_grd(nx, ny, nz)
-
-!   diagnostic variables
-
-      real, intent(inout) ::                                            &
-     &  mflx_east  (nx, ny, nz)                       &
-     &, mflx_west  (nx, ny, nz)                       &
-     &, mflx_north (nx, ny, nz)                       &
-     &, mflx_south (nx, ny, nz)                       &
-     &, mflx_e_ctop(nx, ny)                               &
-     &, mflx_w_ctop(nx, ny)                               &
-     &, mflx_n_ctop(nx, ny)                               &
-     &, mflx_s_ctop(nx, ny)                               &
-     &, diag_spec      (nx, ny, nz, (nc*2+1)*3)
-
-!      Real, Parameter :: g = 9.80665
-      Real, Parameter :: two_omega = 2.*7.292116E-5
-
-      Real, Parameter :: pi = 3.14159265358979323846
-      Real, Parameter :: deg2rad = pi/180.0
-
-!
 ! LOCAL VARIABLES
-!
-!   data arrays
 
-      real ::                                                           &
-     &  ut_col        (ncol, 0:nz)                                  &
-     &, vt_col        (ncol, 0:nz)                                  &
-     &, rho_col       (ncol, nz)                                    &
-     &, rho_tlev_col (ncol, nz)                                    &
-     &, nbv_tlev     (ncol, nz)                                    &
-     &, f2            (ncol)                                            &
-     &, ub_tlev      (ncol, 0:nz, nphi)                            &
-     &, c_phase       (-nc:nc)                                          &
-     &, c_int         (-nc:nc)
+! data arrays
 
-      real ::                                                           &
-     &  mfs_ct(-nc:nc, ncol, nphi)                                      &
-     &, mf_east (ncol, nz)                                          &
-     &, mf_north(ncol, nz)                                          &
-     &, drag_u  (ncol, nz)                                          &
-     &, drag_v  (ncol, nz)                                          &
-     &, fact_s  (ncol, nz)                                          &
-     &, mf_pos(nz)                                                  &
-     &, mf_neg(nz)                                                  &
-     &, mfsp  (-nc:nc)                                                  &
-     &, mfsp_s(-nc:nc)                                                  &
-     &, mfct_pos                                                        &
-     &, mfct_neg
+  real                          ::  mfct_pos, mfct_neg
+  real, dimension(ncol)         ::  f2
+  real, dimension(nphi)         ::  phi_rad, cosphi, sinphi
+  real, dimension(-nc:nc)       ::  c_intr, mfsp, mfsp_s
+  real, dimension(nz)           ::  mf_pos, mf_neg
+  real, dimension(ncol,nz)      ::  mf_x, mf_y, fact_s
+  real, dimension(ncol,nz,nphi) ::  ub_tlev
 
-      integer ::                                                        &
-     &  kcta(ncol)                                                      &
-     &, ic_cl(ncol, nphi)
+! work arrays
 
-      real ::                                                           &
-     &  dc                                                              &
-     &, cosphi(nphi)                                                    &
-     &, sinphi(nphi)
+  real    ::  tmp, b0, w0, ome_min, pm1, c2mp
+  integer ::  tmpi, ipos, ineg
+  integer ::  i,j,k,l,ic,iphi   ! loop counters
 
-      real ::                                                           &
-     &  b0                                                              &
-     &, w0                                                              &
-     &, ome_min
+! parameters and constants
 
-      logical ::                                                        &
-     &  l_mflx_on                                                     &
-     &, l_mflx_on2                                                    &
-     &, l_spec_on
+!  real, parameter ::  g = 9.80665
+  real, parameter ::  two_omega = 2.*7.292116E-5
+  real, parameter ::  beta_eq = 2.3e-11
 
-!   coordinate arrays
-
-      real ::                                                           &
-     &  r_tlev_col(ncol, nz)
-
-!   work arrays
-
-      real ::  tmp, pm1, c2mp
-
-      integer ::  temi, ipos, ineg
-
-      integer ::  i,j,k,l,ic,iphi   ! loop counters
-
-!   parameters and constants
-
-      real, parameter ::                                                &
-     &  n2bv_min = 1.e-6                                                &
-     &, beta_eq  = 2.3e-11
-!
-! EXTERNAL ROUTINES
-!
-      external ::  gw_ctop
+  include 'c_math.inc'
 
   if (ncol < 1)  RETURN
 
@@ -208,60 +100,30 @@ SUBROUTINE propdiss(  &
 !  1-1. INTERPOLATE WINDS TO THETA-GRID AND GATHER AT GWDC ARRAY.
 !------------------------------------------------------------------
 
-! lat_col
-! ut_col, vt_col
-! r_tlev_col
-! rho_col
-! rho_tlev_col
-! nbv_tlev
-! dc
-! c_phase
-! sec_theta_latitude_col
-! kcta
+  call get_wm_hg2cgwp
+
+  mflx_east (:,:,:) = 0.
+  mflx_west (:,:,:) = 0.
+  mflx_north(:,:,:) = 0.
+  mflx_south(:,:,:) = 0.
+
+  diag_spec(:,:,:,:,:) = 0.
 
 !------------------------------------------------------------------
 !  1-3. PREPARE SOME VARIABLES USED IN GWDC CALCULATIONS.
 !------------------------------------------------------------------
 
-  cosphi(:) = cos(phi_dir(:)*deg2rad)
-  sinphi(:) = sin(phi_dir(:)*deg2rad)
+  phi_rad(:) = phi_dir(:)*deg2rad
+  cosphi(:) = cos(phi_rad(:))
+  sinphi(:) = sin(phi_rad(:))
 
-  f2(:) = (two_omega*two_omega)*sin(lat_col(:)*deg2rad)**2
+  f2(:) = (two_omega*two_omega)*sin(lat(:)*deg2rad)**2
 
-  call basic_u_phi(ut_col,vt_col,phi_dir, ub_tlev)
-
-  do iphi=1, nphi
-  do l=1, ncol
-    ub_ct(l,iphi) = ub_tlev(l,kcta(l),iphi)
-  enddo
-  enddo
-  call ind_c_critlayer(c_phase,-nc,ub_ct, ic_cl)
-
-!------------------------------------------------------------------
-!  2. CALCULATE THE CLOUD-TOP MOMENTUM FLUX SPECTRUM
-!------------------------------------------------------------------
-
-      call gw_ctop(nx,ny,ny,nz,nz_wet,             &
-     &   ncol,nphi,nc,hscale,tscale,cfactor,lt,ah,igwdc,jgwdc,          &
-     &   eta_tlev,                                              &
-     &   ut_col ,vt_col ,rho_tlev_col ,r_tlev_col ,nbv_tlev,         &
-     &   heat_col ,heatmax,ub_tlev,c_phase,c_m05dc,kcb,kct,            &
-     &   t_tlev,cosphi,sinphi,dc,                                      &
-     &   kcta,mfs_ct,ic_cl,diag_znwcq_col                              &
-     &   )
+  call basic_u_phi(u_tlev,v_tlev,phi_dir, ub_tlev)
 
 !------------------------------------------------------------------
 !  3. OPTAIN MOMENTUM FLUX PROFILES
 !------------------------------------------------------------------
-!  kcta,mfs_ct
-
-  l_mflx_on = l_mflx_u_on .or. l_mflx_v_on .or.      &
-              l_mflx_u_ctop_on .or. l_mflx_v_ctop_on
-
-  l_mflx_on2 = l_mflx_u_on .or. l_mflx_v_on
-
-  mf_east (:,:) = 0.0
-  mf_north(:,:) = 0.0
 
   ! for calculating saturated spectrum
   tmp  = beta_wm/(sqrt(2.0)*pi)
@@ -269,262 +131,160 @@ SUBROUTINE propdiss(  &
   c2mp = 2.0 - p_wm
   do k=1, nz
   do l=1, ncol
-    ome_min = sqrt(max(f2(l), nbv_tlev(l,k)*beta_eq/mstar))
+    ome_min = sqrt(max(f2(l), nbv_tlev(l,k)*beta_eq/mstar_wm))
     b0 = pm1*ome_min**pm1/(1.0-(ome_min/nbv_tlev(l,k))**pm1)
 !    if (p_wm == 1.0)  b0 = 1.0/log(nbv_tlev(l,k)/ome_min)
     w0 = (nbv_tlev(l,k)**c2mp-ome_min**c2mp)/c2mp
-    fact_s(l,k) = abs(tmp*b0*w0*rho_tlev_col(l,k))
+    fact_s(l,k) = abs(tmp*b0*w0*rho_tlev(l,k))
   enddo
   enddo
 
-      do iphi=1, nphi
-      do l=1, ncol
+  mf_x(:,:) = 0.
+  mf_y(:,:) = 0.
 
-        i = igwdc(l)
-        j = jgwdc(l)
 
-        do ic=-nc, nc
-          mfsp(ic) = mfs_ct(ic,l,iphi)*dc
-        enddo
-        c_int(:) = c_phase(:) - ub_tlev(l,kcta(l),iphi)
+  L_PHI:  DO iphi=1, nphi
+  L_COL:  DO l=1, ncol
 
-        ineg = ic_cl(l,iphi) - 1
-        ipos = ic_cl(l,iphi) + 1
+  i = igwp(l)
+  j = jgwp(l)
 
-        ! diagnostics - unfiltered cloud-top momentum flux
-        ! saved at mflx_xxxx(:,:,1)
-        if ( l_mflx_on2 ) then
+  mfsp(:) = mfs_ct(:,l,iphi)*dc
+  c_intr(:) = c_phase(:) - ub_tlev(l,kcta(l),iphi)
 
-          mfct_neg = 0.0
-          mfct_pos = 0.0
+  tmpi = minloc(abs(c_intr),1) - (nc+1)
 
-          do ic=-nc, ineg    ! for components having negative MF
-            mfct_neg = mfct_neg + mfsp(ic)
-          enddo
-          do ic=ipos, nc     ! for components having positive MF
-            mfct_pos = mfct_pos + mfsp(ic)
-          enddo
+  ineg = tmpi - 1
+  ipos = tmpi + 1
 
-          if ( l_mflx_u_on ) then
-            if (cosphi(iphi) > 0.0) then
-              mflx_east(i,j,1) = mflx_east(i,j,1) +             &
-     &                               mfct_pos*cosphi(iphi)
-            else
-              mflx_east(i,j,1) = mflx_east(i,j,1) +             &
-     &                               mfct_neg*cosphi(iphi)
-            end if
-            if (cosphi(iphi) > 0.0) then
-              mflx_west(i,j,1) = mflx_west(i,j,1) +             &
-     &                               mfct_neg*cosphi(iphi)
-            else
-              mflx_west(i,j,1) = mflx_west(i,j,1) +             &
-     &                               mfct_pos*cosphi(iphi)
-            end if
-          end if
-          if ( l_mflx_v_on ) then
-            mflx_north(i,j,1) =             &
-     &                 mflx_north(i,j,1) + mfct_pos*sinphi(iphi)
-            mflx_south(i,j,1) =             &
-     &                 mflx_south(i,j,1) + mfct_neg*sinphi(iphi)
-          end if
+  ! diagnostics - unfiltered cloud-top momentum flux
+  ! saved at mflx_xxxx(:,:,1)
 
-        end if  ! l_mflx_on2
+  mfct_neg = sum(mfsp(-nc:ineg))
+  mfct_pos = sum(mfsp(ipos:nc))
+
+  if ( l_mflx_u_on ) then
+    if (cosphi(iphi) > 0.) then
+      mflx_east(i,j,1) = mflx_east(i,j,1) + mfct_pos*cosphi(iphi)
+      mflx_west(i,j,1) = mflx_west(i,j,1) + mfct_neg*cosphi(iphi)
+    else
+      mflx_east(i,j,1) = mflx_east(i,j,1) + mfct_neg*cosphi(iphi)
+      mflx_west(i,j,1) = mflx_west(i,j,1) + mfct_pos*cosphi(iphi)
+    end if
+  end if
+  if ( l_mflx_v_on ) then
+    mflx_north(i,j,1) = mflx_north(i,j,1) + mfct_pos*sinphi(iphi)
+    mflx_south(i,j,1) = mflx_south(i,j,1) + mfct_neg*sinphi(iphi)
+  end if
 
 !yhspec+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-        ! diagnostics - unfiltered cloud-top momentum flux spectrum
-        ! saved at diag_spec(:,:,1)
-        ! valid only for phi = [0,90] or [45,135]
-        if ( l_spec_on .and. cosphi(iphi) /= 0.0 ) then
-          if (cosphi(iphi) > 0.0) then
-            do ic=ipos+(nc+1), nc+(nc+1)
-              diag_spec(i,j,1,ic) =                                     &
-     &           diag_spec(i,j,1,ic) + mfsp(ic-nc-1)
-            enddo
-            do ic=-nc+(nc*3+2), ineg+(nc*3+2)
-              diag_spec(i,j,1,ic) =                                     &
-     &           diag_spec(i,j,1,ic) + mfsp(ic-nc*3-2)
-            enddo
-          else
-            do ic=-ineg+(nc+1), nc+(nc+1)
-              diag_spec(i,j,1,ic) =                                     &
-     &           diag_spec(i,j,1,ic) - mfsp(nc+1-ic)
-            enddo
-            do ic=-nc+(nc*3+2), -ipos+(nc*3+2)
-              diag_spec(i,j,1,ic) =                                     &
-     &           diag_spec(i,j,1,ic) - mfsp(nc*3+2-ic)
-            enddo
-          end if
-        end if
-!yhspec- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-        ! momentum flux profiles
-        mf_neg(:) = 0.0
-        mf_pos(:) = 0.0
-
-        do k=kcta(l), nz
-
-          ! calculate the saturation spectrum using Warner and
-          ! McIntyre's method but as a function of phase speed,
-          ! and apply the saturation condition
-
-          do ic=-nc, ineg    ! for components having negative MF
-            mfsp_s(ic) = fact_s(l,k)*c_int(ic)/nbv_tlev(l,k)*dc
-            mfsp(ic) = max(mfsp_s(ic), mfsp(ic))
-            mf_neg(k) = mf_neg(k) + mfsp(ic)
-          enddo
-
-          do ic=ipos, nc     ! for components having positive MF
-            mfsp_s(ic) = fact_s(l,k)*c_int(ic)/nbv_tlev(l,k)*dc
-            mfsp(ic) = min(mfsp_s(ic), mfsp(ic))
-            mf_pos(k) = mf_pos(k) + mfsp(ic)
-          enddo
-
-          ! calculate eastward and northward MF
-          tmp = mf_pos(k) + mf_neg(k)
-          mf_east (l,k) = mf_east (l,k) + tmp*cosphi(iphi)
-          mf_north(l,k) = mf_north(l,k) + tmp*sinphi(iphi)
-
-!yhspec+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-        ! valid only for phi = [0,90] or [45,135]
-        if ( l_spec_on .and. cosphi(iphi) /= 0.0 ) then
-
-          if (k == kcta(l)) then
-            if (cosphi(iphi) > 0.0) then
-              do ic=ipos+(nc+1), nc+(nc+1)
-                diag_spec(i,j,2,ic) =                                   &
-     &             diag_spec(i,j,2,ic) + mfsp(ic-nc-1)
-              enddo
-              do ic=-nc+(nc*3+2), ineg+(nc*3+2)
-                diag_spec(i,j,2,ic) =                                   &
-     &             diag_spec(i,j,2,ic) + mfsp(ic-nc*3-2)
-              enddo
-            else
-              do ic=-ineg+(nc+1), nc+(nc+1)
-                diag_spec(i,j,2,ic) =                                   &
-     &             diag_spec(i,j,2,ic) - mfsp(nc+1-ic)
-              enddo
-              do ic=-nc+(nc*3+2), -ipos+(nc*3+2)
-                diag_spec(i,j,2,ic) =                                   &
-     &             diag_spec(i,j,2,ic) - mfsp(nc*3+2-ic)
-              enddo
-            end if
-          end if  ! k == kcta(l)
-
-          if (cosphi(iphi) > 0.0) then
-            do ic=ipos+(nc+1), nc+(nc+1)
-              diag_spec(i,j,k,ic) =                                     &
-     &           diag_spec(i,j,k,ic) + mfsp(ic-nc-1)
-            enddo
-            do ic=-nc+(nc*3+2), ineg+(nc*3+2)
-              diag_spec(i,j,k,ic) =                                     &
-     &           diag_spec(i,j,k,ic) + mfsp(ic-nc*3-2)
-            enddo
-          else
-            do ic=-ineg+(nc+1), nc+(nc+1)
-              diag_spec(i,j,k,ic) =                                     &
-     &           diag_spec(i,j,k,ic) - mfsp(nc+1-ic)
-            enddo
-            do ic=-nc+(nc*3+2), -ipos+(nc*3+2)
-              diag_spec(i,j,k,ic) =                                     &
-     &           diag_spec(i,j,k,ic) - mfsp(nc*3+2-ic)
-            enddo
-          end if
-
-        end if  ! l_spec_on .and. cosphi(iphi) /= 0.0
-!yhspec- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-          ! check the critical levels between k and k+1 levels,
-          ! and prepare the next-level calculations
-          if (k /= nz) then
-
-            c_int(:) = c_phase(:) - ub_tlev(l,k+1,iphi)
-
-            temi = ineg
-            do ic=temi, -nc, -1
-              if ( c_int(ic) >= 0.0 ) then
-                mfsp(ic) = 0.0
-                ineg = ic - 1
-              else
-                EXIT
-              end if
-            enddo
-
-            temi = ipos
-            do ic=temi, nc
-              if ( c_int(ic) <= 0.0 ) then
-                mfsp(ic) = 0.0
-                ipos = ic + 1
-              else
-                EXIT
-              end if
-            enddo
-
-          end if  ! k /= nz
-
-        enddo  ! k
-
-        ! diagnostics
-        if ( l_mflx_on ) then
-
-          if ( l_mflx_u_on ) then
-            if (cosphi(iphi) > 0.0) then
-              mflx_east(i,j,:) = mflx_east(i,j,:) +             &
-     &                               mf_pos(:)*cosphi(iphi)
-            else
-              mflx_east(i,j,:) = mflx_east(i,j,:) +             &
-     &                               mf_neg(:)*cosphi(iphi)
-            end if
-            if (cosphi(iphi) > 0.0) then
-              mflx_west(i,j,:) = mflx_west(i,j,:) +             &
-     &                               mf_neg(:)*cosphi(iphi)
-            else
-              mflx_west(i,j,:) = mflx_west(i,j,:) +             &
-     &                               mf_pos(:)*cosphi(iphi)
-            end if
-          end if
-          if ( l_mflx_v_on ) then
-            mflx_north(i,j,:) =             &
-     &                 mflx_north(i,j,:) + mf_pos(:)*sinphi(iphi)
-            mflx_south(i,j,:) =             &
-     &                 mflx_south(i,j,:) + mf_neg(:)*sinphi(iphi)
-          end if
-
-          k = kcta(l)
-          if ( l_mflx_u_ctop_on ) then
-            if (cosphi(iphi) > 0.0) then
-              mflx_e_ctop(i,j) = mflx_e_ctop(i,j) +             &
-     &                               mf_pos(k)*cosphi(iphi)
-            else
-              mflx_e_ctop(i,j) = mflx_e_ctop(i,j) +             &
-     &                               mf_neg(k)*cosphi(iphi)
-            end if
-            if (cosphi(iphi) > 0.0) then
-              mflx_w_ctop(i,j) = mflx_w_ctop(i,j) +             &
-     &                               mf_neg(k)*cosphi(iphi)
-            else
-              mflx_w_ctop(i,j) = mflx_w_ctop(i,j) +             &
-     &                               mf_pos(k)*cosphi(iphi)
-            end if
-          end if
-          if ( l_mflx_v_ctop_on ) then
-            mflx_n_ctop(i,j) =             &
-     &                 mflx_n_ctop(i,j) + mf_pos(k)*sinphi(iphi)
-            mflx_s_ctop(i,j) =             &
-     &                 mflx_s_ctop(i,j) + mf_neg(k)*sinphi(iphi)
-          end if
-
-        end if  ! l_mflx_on
-
-      enddo  ! l
-      enddo  ! iphi
-
-!yhspec+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+  ! diagnostics - unfiltered cloud-top momentum flux spectrum
+  ! saved at diag_spec(:,:,1,:,:)
   if ( l_spec_on ) then
-    ! valid only for phi = [0,90] or [45,135]
-    tmp = abs(cosphi(1))
-    diag_spec(:,:,:,:) = diag_spec(:,:,:,:)*tmp
+    diag_spec(i,j,1,ipos:nc,iphi) = mfsp(ipos:nc)
+    diag_spec(i,j,1,-ineg:nc,nphi+iphi) = -mfsp(ineg:-nc:-1)
   end if
 !yhspec- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+  ! momentum flux profiles
+  mf_neg(:) = 0.
+  mf_pos(:) = 0.
+
+  do k=kcta(l), nz
+
+    ! calculate the saturation spectrum using Warner and
+    ! McIntyre's method but as a function of phase speed,
+    ! and apply the saturation condition
+
+    ! for components having negative MF
+    mfsp_s(-nc:ineg) = fact_s(l,k)*c_intr(-nc:ineg)/nbv_tlev(l,k)*dc
+    do ic=-nc, ineg
+      mfsp(ic) = max(mfsp_s(ic), mfsp(ic))
+    enddo
+    mf_neg(k) = sum(mfsp(-nc:ineg))
+
+    ! for components having positive MF
+    mfsp_s(ipos:nc) = fact_s(l,k)*c_intr(ipos:nc)/nbv_tlev(l,k)*dc
+    do ic=ipos, nc
+      mfsp(ic) = min(mfsp_s(ic), mfsp(ic))
+    enddo
+    mf_pos(k) = sum(mfsp(ipos:nc))
+
+    ! calculate zonal and meridional MF
+    tmp = mf_pos(k) + mf_neg(k)
+    mf_x(l,k) = mf_x(l,k) + tmp*cosphi(iphi)
+    mf_y(l,k) = mf_y(l,k) + tmp*sinphi(iphi)
+
+!yhspec+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    if ( l_spec_on ) then
+      if (k == kcta(l)) then
+        diag_spec(i,j,2,ipos:nc,iphi) = mfsp(ipos:nc)
+        diag_spec(i,j,2,-ineg:nc,nphi+iphi) = -mfsp(ineg:-nc:-1)
+      end if
+      diag_spec(i,j,k,ipos:nc,iphi) = mfsp(ipos:nc)
+      diag_spec(i,j,k,-ineg:nc,nphi+iphi) = -mfsp(ineg:-nc:-1)
+    end if
+!yhspec- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    ! check the critical levels between k and k+1 levels,
+    ! and prepare the next-level calculations
+    if (k /= nz) then
+
+      ! update c_intr for the next level
+      c_intr(:) = c_phase(:) - ub_tlev(l,k+1,iphi)
+
+      ! update mfsp, ipos, ineg
+      tmpi = ineg
+      do ic=tmpi, -nc, -1
+        if (c_intr(ic) < 0.)  EXIT
+        mfsp(ic) = 0.
+        ineg = ic - 1
+      enddo
+      tmpi = ipos
+      do ic=tmpi, nc
+        if (c_intr(ic) > 0.)  EXIT
+        mfsp(ic) = 0.
+        ipos = ic + 1
+      enddo
+
+    end if  ! k /= nz
+
+  enddo  ! k
+
+  ! diagnostics
+  if ( l_mflx_u_on ) then
+    if (cosphi(iphi) > 0.) then
+      mflx_east(i,j,3:) = mflx_east(i,j,3:) + mf_pos(3:)*cosphi(iphi)
+      mflx_west(i,j,3:) = mflx_west(i,j,3:) + mf_neg(3:)*cosphi(iphi)
+    else
+      mflx_east(i,j,3:) = mflx_east(i,j,3:) + mf_neg(3:)*cosphi(iphi)
+      mflx_west(i,j,3:) = mflx_west(i,j,3:) + mf_pos(3:)*cosphi(iphi)
+    end if
+  end if
+  if ( l_mflx_v_on ) then
+    mflx_north(i,j,3:) = mflx_north(i,j,3:) + mf_pos(3:)*sinphi(iphi)
+    mflx_south(i,j,3:) = mflx_south(i,j,3:) + mf_neg(3:)*sinphi(iphi)
+  end if
+
+  if ( l_mflx_u_ctop_on .or. l_mflx_v_ctop_on ) then
+    k = kcta(l)
+    if ( l_mflx_u_ctop_on ) then
+      if (cosphi(iphi) > 0.) then
+        mflx_e_ctop(i,j) = mflx_e_ctop(i,j) + mf_pos(k)*cosphi(iphi)
+        mflx_w_ctop(i,j) = mflx_w_ctop(i,j) + mf_neg(k)*cosphi(iphi)
+      else
+        mflx_e_ctop(i,j) = mflx_e_ctop(i,j) + mf_neg(k)*cosphi(iphi)
+        mflx_w_ctop(i,j) = mflx_w_ctop(i,j) + mf_pos(k)*cosphi(iphi)
+      end if
+    end if
+    if ( l_mflx_v_ctop_on ) then
+      mflx_n_ctop(i,j) = mflx_n_ctop(i,j) + mf_pos(k)*sinphi(iphi)
+      mflx_s_ctop(i,j) = mflx_s_ctop(i,j) + mf_neg(k)*sinphi(iphi)
+    end if
+  end if
+
+  ENDDO  L_COL
+  ENDDO  L_PHI
 
 !------------------------------------------------------------------
 !  4. CALCULATE CONVECTIVE GRAVITY WAVE DRAG
@@ -532,30 +292,25 @@ SUBROUTINE propdiss(  &
 
   if ( l_drag_u_on .or. l_drag_v_on ) then
 
-    drag_u_grd(:,:,:) = 0.0
-    drag_v_grd(:,:,:) = 0.0
+    drag_u(:,:,:) = 0.
+    drag_v(:,:,:) = 0.
 
     do l=1, ncol
-      i = igwdc(l)
-      j = jgwdc(l)
+      i = igwp(l)
+      j = jgwp(l)
       do k=kcta(l)+1, nz
-        tmp = 1.0/rho_col(l,k)/(r_tlev_col(l,k)-r_tlev_col(l,k-1))
-        drag_u_grd(i,j,k) = -(mf_east (l,k)-mf_east (l,k-1))*tmp
-        drag_v_grd(i,j,k) = -(mf_north(l,k)-mf_north(l,k-1))*tmp
+        tmp = 1.0/rho(l,k)/(r_tlev(l,k) - r_tlev(l,k-1))
+        drag_u(i,j,k) = (mf_x(l,k-1) - mf_x(l,k))*tmp
+        drag_v(i,j,k) = (mf_y(l,k-1) - mf_y(l,k))*tmp
       enddo
-    enddo
-
-    do l=1, ncol
-      i = igwdc(l)
-      j = jgwdc(l)
       k = kcta(l)
-      tmp = 1.0/rho_col(l,k)/(r_tlev_col(l,k)-r_tlev_col(l,k-1))
-      drag_u_grd(i,j,k) = -(mf_east (l,k)-mf_east (l,nz))*tmp
-      drag_v_grd(i,j,k) = -(mf_north(l,k)-mf_north(l,nz))*tmp
+      tmp = 1.0/rho(l,k)/(r_tlev(l,k) - r_tlev(l,k-1))
+      drag_u(i,j,k) = (mf_x(l,nz) - mf_x(l,k))*tmp
+      drag_v(i,j,k) = (mf_y(l,nz) - mf_y(l,k))*tmp
+      ! as the outward flux of momentum at the model top is allowed,
+      ! drags below the cloud top must be reduced for the momentum
+      ! budget of the model (i.e., mf(nz)*tmp)
     enddo
-    ! as the outward flux of momentum at the model top is allowed,
-    ! drags below the cloud top must be reduced for the momentum
-    ! budget of the model (i.e., mf(nz)*tmp)
 
   end if
 
