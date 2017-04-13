@@ -75,7 +75,7 @@ SUBROUTINE propdiss(  &
   real                          ::  mfct_pos, mfct_neg
   real, dimension(ncol)         ::  f2
   real, dimension(nphi)         ::  phi_rad, cosphi, sinphi
-  real, dimension(-nc:nc)       ::  c_intr, mfsp, mfsp_s
+  real, dimension(-nc:nc)       ::  c_intr
   real, dimension(ncol,nz,nphi) ::  ub_tlev
 
 ! work arrays
@@ -134,7 +134,6 @@ SUBROUTINE propdiss(  &
   L_PHI:  DO iphi=1, nphi
   L_COL:  DO l=1, ncol
 
-  mfsp(:) = mfs_ct(:,l,iphi)*dc
   c_intr(:) = c_phase(:) - ub_tlev(l,kcta(l),iphi)
 
   tmpi = minloc(abs(c_intr),1) - (nc+1)
@@ -142,8 +141,8 @@ SUBROUTINE propdiss(  &
   ineg = tmpi - 1
   ipos = tmpi + 1
 
-  mfct_neg = sum(mfsp(-nc:ineg))
-  mfct_pos = sum(mfsp(ipos:nc))
+  mfct_neg = sum(mfs_ct(-nc:ineg,l,iphi))
+  mfct_pos = sum(mfs_ct(ipos:nc ,l,iphi))
 
   ! diagnostics - unfiltered cloud-top momentum flux
   if ( l_mflx_u_on ) then
@@ -158,12 +157,6 @@ SUBROUTINE propdiss(  &
   if ( l_mflx_v_on ) then
     mflx_north(l) = mflx_north(l) + mfct_pos*sinphi(iphi)
     mflx_south(l) = mflx_south(l) + mfct_neg*sinphi(iphi)
-  end if
-
-  ! diagnostics - unfiltered cloud-top momentum flux spectrum
-  if ( l_spec_on ) then
-    diag_spec(l,ipos:nc,iphi) = mfs_ct(ipos:nc,l,iphi)
-    diag_spec(l,-ineg:nc,nphi+iphi) = -mfs_ct(ineg:-nc:-1,l,iphi)
   end if
 
   ENDDO  L_COL

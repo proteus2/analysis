@@ -21,6 +21,8 @@ MODULE param_gwp
   real   , public ::  dc
 
   real, dimension(:), allocatable, public ::  phi_deg, c_phase
+  real, dimension(:), allocatable, public ::  cosphi, sinphi
+  real, dimension(:), allocatable, public ::  c_m05dc
 
   real, private, parameter :: pi = 3.14159265358979323846
 
@@ -48,6 +50,25 @@ MODULE param_gwp
 
 CONTAINS
 
+
+SUBROUTINE set_spec_param
+
+  integer ::  ic
+
+  allocate( c_phase(-nc:nc) )
+  do ic=-nc, nc
+    c_phase(ic) = float(ic)*dc
+  enddo
+
+  allocate( c_m05dc(-nc:nc+1) )
+  c_m05dc(-nc:nc) = c_phase(:) - 0.5*dc
+  c_m05dc(nc+1) = c_phase(nc) + 0.5*dc
+
+  allocate( cosphi(nphi), sinphi(nphi) )
+  cosphi(:) = cos(phi_deg(:)*(pi/180.))
+  sinphi(:) = sin(phi_deg(:)*(pi/180.))
+
+END subroutine set_spec_param
 
 SUBROUTINE get_wm_default
 

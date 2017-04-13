@@ -3,13 +3,11 @@
 !
 !  subroutine gw_ctop to calculate cloud-top GW momentum flux spectrum
 !
-      SUBROUTINE gw_ctop(row_length,rows,nrows,levels,wet_levels,       &
-     &   ncol,nphi,nc,hscale,tscale,cfactor,lt,ah,igwdc,jgwdc,          &
+      SUBROUTINE gw_ctop(row_length,rows,nrows,levels,wet_levels,ncol,  &
      &   eta_theta_levels,                                              &
      &   ut_gwdc,vt_gwdc,rho_thlev_gwdc,r_thlev_gwdc,nbv_thlev,         &
-     &   heat_gwdc,heatmax,ub_thlev,c_phase,c_m05dc,kcb,kct,            &
-     &   t_thlev,cosphi,sinphi,dc,                                      &
-     &   kcta_thlev,mfs_ct,ic_cl,diag_znwcq                             &
+     &   heat_gwdc,heatmax,ub_thlev,kcb,kct,                            &
+     &   t_thlev,kcta_thlev,mfs_ct,diag_znwcq                           &
      &   )
 
 !
@@ -30,20 +28,8 @@
 !
 ! HISTORY:
 !
-!     Date    Comment
-!   --------  -------
-!   22/04/03  First written.                                  I.-S. Song
-!   15/04/05  Bugs on AIX (IBM) are fixed.                    I.-S. Song
-!   16/05/09  Reconstruction of the code for the UM.           Y.-H. Kim
-!   27/05/10  Modification in the estimation of moving velocities of
-!             convective cells based on Choi and Chun (2011, JAS).
-!                                                              Y.-H. Kim
-!
-! CODE DESCRIPTION:
-!
-!   Language: FORTRAN 77 + CRAY extensions
-!   This code is written to UMDP3 programming standards.
-!
+
+  USE param_gwp
 
       implicit none
 
@@ -65,19 +51,6 @@
                            ! number of wet model levels
      &, ncol               ! number of columns GWDC is calculated at.
 
-!   GWDC parameters
-
-      integer, intent(in) ::                                            &
-     &  nphi                                                            &
-     &, nc
-
-      real, intent(in) ::                                               &
-     &  hscale                                                          &
-     &, tscale                                                          &
-     &, cfactor                                                         &
-     &, lt                                                              &
-     &, ah
-
 !   data arrays
 
       real, intent(in) ::                                               &
@@ -89,20 +62,11 @@
      &, t_thlev   (ncol, wet_levels)                                    &
      &, heat_gwdc (ncol, wet_levels)                                    &
      &, heatmax(ncol)                                                   &
-     &, ub_thlev(ncol, 0:levels, nphi)                                  &
-     &, c_phase(-nc:nc)                                                 &
-     &, c_m05dc(-nc:nc+1)
+     &, ub_thlev(ncol, 0:levels, nphi)
 
       integer, intent(in) ::                                            &
-     &  igwdc(ncol)                                                     &
-     &, jgwdc(ncol)                                                     &
-     &, kcb(ncol)                                                       &
+     &  kcb(ncol)                                                       &
      &, kct(ncol) 
-
-      real, intent(in) ::                                               &
-     &  dc                                                              &
-     &, cosphi(nphi)                                                    &
-     &, sinphi(nphi)
 
 !   coordinate arrays
 

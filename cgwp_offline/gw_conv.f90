@@ -145,7 +145,6 @@ SUBROUTINE gw_conv(  &
      &, t_tlev       (ncol, nz_wet)                                &
      &, heat_col      (ncol, nz_wet)                                &
      &, heatmax       (ncol)                                            &
-     &, f2            (ncol)                                            &
      &, ub_tlev      (ncol, 0:nz, nphi)                            &
      &, c_phase       (-nc:nc)                                          &
      &, c_m05dc       (-nc:nc+1)                                        &
@@ -169,8 +168,7 @@ SUBROUTINE gw_conv(  &
       integer ::                                                        &
      &  kcb (ncol)                                                      &
      &, kct (ncol)                                                      &
-     &, kcta(ncol)                                                      &
-     &, ic_cl(ncol, nphi)
+     &, kcta(ncol)
 
       real ::                                                           &
      &  dc                                                              &
@@ -287,18 +285,11 @@ SUBROUTINE gw_conv(  &
         heatmax(l) = schmax(i,j)
         kcb    (l) = kscbas(i,j)
         kct    (l) = ksctop(i,j)
-        f2(l) = two_omega*two_omega*                                    &
-     &          (1.0-(1.0/sec_theta_latitude(i,j))**2)
       enddo
 
 !------------------------------------------------------------------
 !  1-3. PREPARE SOME VARIABLES USED IN GWDC CALCULATIONS.
 !------------------------------------------------------------------
-
-      do iphi=1, nphi
-        cosphi(iphi) = cos(phi_dir(iphi)*pi_over_180)
-        sinphi(iphi) = sin(phi_dir(iphi)*pi_over_180)
-      enddo
 
       do iphi=1, nphi
       do k=0, nz
@@ -309,339 +300,17 @@ SUBROUTINE gw_conv(  &
       enddo
       enddo
 
-      dc = c_max/float(nc)
-
-      do ic=-nc, nc
-        c_phase(ic) = dc*float(ic)
-      enddo
-
-      do ic=-nc, nc
-        c_m05dc(ic) = c_phase(ic) - 0.5*dc
-      enddo
-      c_m05dc(nc+1) = c_phase(nc) + 0.5*dc
-
 !------------------------------------------------------------------
 !  2. CALCULATE THE CLOUD-TOP MOMENTUM FLUX SPECTRUM
 !------------------------------------------------------------------
 
-      call gw_ctop(nx,ny,ny,nz,nz_wet,             &
-     &   ncol,nphi,nc,hscale,tscale,cfactor,lt,ah,igwdc,jgwdc,          &
+      call gw_ctop(nx,ny,ny,nz,nz_wet,ncol,         &
      &   eta_tlev,                                              &
      &   ut_col ,vt_col ,rho_tlev_col ,r_tlev_col ,nbv_tlev,         &
-     &   heat_col ,heatmax,ub_tlev,c_phase,c_m05dc,kcb,kct,            &
-     &   t_tlev,cosphi,sinphi,dc,                                      &
-     &   kcta,mfs_ct,ic_cl,diag_znwcq_col                              &
+     &   heat_col ,heatmax,ub_tlev,kcb,kct,             &
+     &   t_tlev,                                                       &
+     &   kcta,mfs_ct,diag_znwcq_col                              &
      &   )
-
-!------------------------------------------------------------------
-!  3. OPTAIN MOMENTUM FLUX PROFILES
-!------------------------------------------------------------------
-
-      l_mflx_on = l_mflx_u_on .or. l_mflx_v_on .or.      &
-     &           l_mflx_u_ctop_on .or. l_mflx_v_ctop_on
-
-      l_mflx_on2 = l_mflx_u_on .or. l_mflx_v_on
-
-      mf_east (:,:) = 0.0
-      mf_north(:,:) = 0.0
-
-      ! for calculating saturated spectrum
-      tmp  = beta_wm/(sqrt(2.0)*pi)
-      pm1  = p_wm - 1.0
-      c2mp = 2.0 - p_wm
-      do k=1, nz
-      do l=1, ncol
-        ome_min = sqrt(max(f2(l), nbv_tlev(l,k)*beta_eq/mstar))
-        b0 = pm1*ome_min**pm1/(1.0-(ome_min/nbv_tlev(l,k))**pm1)
-!        if (p_wm == 1.0)  b0 = 1.0/log(nbv_tlev(l,k)/ome_min)
-        w0 = (nbv_tlev(l,k)**c2mp-ome_min**c2mp)/c2mp
-        fact_s(l,k) = abs(tmp*b0*w0*rho_tlev_col (l,k))
-      enddo
-      enddo
-
-      do iphi=1, nphi
-      do l=1, ncol
-
-        i = igwdc(l)
-        j = jgwdc(l)
-
-        do ic=-nc, nc
-          mfsp(ic) = mfs_ct(ic,l,iphi)*dc
-        enddo
-        c_int(:) = c_phase(:) - ub_tlev(l,kcta(l),iphi)
-
-        ineg = ic_cl(l,iphi) - 1
-        ipos = ic_cl(l,iphi) + 1
-
-        ! diagnostics - unfiltered cloud-top momentum flux
-        ! saved at mflx_xxxx(:,:,1)
-        if ( l_mflx_on2 ) then
-
-          mfct_neg = 0.0
-          mfct_pos = 0.0
-
-          do ic=-nc, ineg    ! for components having negative MF
-            mfct_neg = mfct_neg + mfsp(ic)
-          enddo
-          do ic=ipos, nc     ! for components having positive MF
-            mfct_pos = mfct_pos + mfsp(ic)
-          enddo
-
-          if ( l_mflx_u_on ) then
-            if (cosphi(iphi) > 0.0) then
-              mflx_east(i,j,1) = mflx_east(i,j,1) +             &
-     &                               mfct_pos*cosphi(iphi)
-            else
-              mflx_east(i,j,1) = mflx_east(i,j,1) +             &
-     &                               mfct_neg*cosphi(iphi)
-            end if
-            if (cosphi(iphi) > 0.0) then
-              mflx_west(i,j,1) = mflx_west(i,j,1) +             &
-     &                               mfct_neg*cosphi(iphi)
-            else
-              mflx_west(i,j,1) = mflx_west(i,j,1) +             &
-     &                               mfct_pos*cosphi(iphi)
-            end if
-          end if
-          if ( l_mflx_v_on ) then
-            mflx_north(i,j,1) =             &
-     &                 mflx_north(i,j,1) + mfct_pos*sinphi(iphi)
-            mflx_south(i,j,1) =             &
-     &                 mflx_south(i,j,1) + mfct_neg*sinphi(iphi)
-          end if
-
-        end if  ! l_mflx_on2
-
-!yhspec+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-        ! diagnostics - unfiltered cloud-top momentum flux spectrum
-        ! saved at diag_spec(:,:,1)
-        ! valid only for phi = [0,90] or [45,135]
-        if ( l_spec_on .and. cosphi(iphi) /= 0.0 ) then
-          if (cosphi(iphi) > 0.0) then
-            do ic=ipos+(nc+1), nc+(nc+1)
-              diag_spec(i,j,1,ic) =                                     &
-     &           diag_spec(i,j,1,ic) + mfsp(ic-nc-1)
-            enddo
-            do ic=-nc+(nc*3+2), ineg+(nc*3+2)
-              diag_spec(i,j,1,ic) =                                     &
-     &           diag_spec(i,j,1,ic) + mfsp(ic-nc*3-2)
-            enddo
-          else
-            do ic=-ineg+(nc+1), nc+(nc+1)
-              diag_spec(i,j,1,ic) =                                     &
-     &           diag_spec(i,j,1,ic) - mfsp(nc+1-ic)
-            enddo
-            do ic=-nc+(nc*3+2), -ipos+(nc*3+2)
-              diag_spec(i,j,1,ic) =                                     &
-     &           diag_spec(i,j,1,ic) - mfsp(nc*3+2-ic)
-            enddo
-          end if
-        end if
-!yhspec- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-        ! momentum flux profiles
-        mf_neg(:) = 0.0
-        mf_pos(:) = 0.0
-
-        do k=kcta(l), nz
-
-          ! calculate the saturation spectrum using Warner and
-          ! McIntyre's method but as a function of phase speed,
-          ! and apply the saturation condition
-
-          do ic=-nc, ineg    ! for components having negative MF
-            mfsp_s(ic) = fact_s(l,k)*c_int(ic)/nbv_tlev(l,k)*dc
-            mfsp(ic) = max(mfsp_s(ic), mfsp(ic))
-            mf_neg(k) = mf_neg(k) + mfsp(ic)
-          enddo
-
-          do ic=ipos, nc     ! for components having positive MF
-            mfsp_s(ic) = fact_s(l,k)*c_int(ic)/nbv_tlev(l,k)*dc
-            mfsp(ic) = min(mfsp_s(ic), mfsp(ic))
-            mf_pos(k) = mf_pos(k) + mfsp(ic)
-          enddo
-
-          ! calculate eastward and northward MF
-          tmp = mf_pos(k) + mf_neg(k)
-          mf_east (l,k) = mf_east (l,k) + tmp*cosphi(iphi)
-          mf_north(l,k) = mf_north(l,k) + tmp*sinphi(iphi)
-
-!yhspec+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-        ! valid only for phi = [0,90] or [45,135]
-        if ( l_spec_on .and. cosphi(iphi) /= 0.0 ) then
-
-          if (k == kcta(l)) then
-            if (cosphi(iphi) > 0.0) then
-              do ic=ipos+(nc+1), nc+(nc+1)
-                diag_spec(i,j,2,ic) =                                   &
-     &             diag_spec(i,j,2,ic) + mfsp(ic-nc-1)
-              enddo
-              do ic=-nc+(nc*3+2), ineg+(nc*3+2)
-                diag_spec(i,j,2,ic) =                                   &
-     &             diag_spec(i,j,2,ic) + mfsp(ic-nc*3-2)
-              enddo
-            else
-              do ic=-ineg+(nc+1), nc+(nc+1)
-                diag_spec(i,j,2,ic) =                                   &
-     &             diag_spec(i,j,2,ic) - mfsp(nc+1-ic)
-              enddo
-              do ic=-nc+(nc*3+2), -ipos+(nc*3+2)
-                diag_spec(i,j,2,ic) =                                   &
-     &             diag_spec(i,j,2,ic) - mfsp(nc*3+2-ic)
-              enddo
-            end if
-          end if  ! k == kcta(l)
-
-          if (cosphi(iphi) > 0.0) then
-            do ic=ipos+(nc+1), nc+(nc+1)
-              diag_spec(i,j,k,ic) =                                     &
-     &           diag_spec(i,j,k,ic) + mfsp(ic-nc-1)
-            enddo
-            do ic=-nc+(nc*3+2), ineg+(nc*3+2)
-              diag_spec(i,j,k,ic) =                                     &
-     &           diag_spec(i,j,k,ic) + mfsp(ic-nc*3-2)
-            enddo
-          else
-            do ic=-ineg+(nc+1), nc+(nc+1)
-              diag_spec(i,j,k,ic) =                                     &
-     &           diag_spec(i,j,k,ic) - mfsp(nc+1-ic)
-            enddo
-            do ic=-nc+(nc*3+2), -ipos+(nc*3+2)
-              diag_spec(i,j,k,ic) =                                     &
-     &           diag_spec(i,j,k,ic) - mfsp(nc*3+2-ic)
-            enddo
-          end if
-
-        end if  ! l_spec_on .and. cosphi(iphi) /= 0.0
-!yhspec- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-          ! check the critical levels between k and k+1 levels,
-          ! and prepare the next-level calculations
-          if (k /= nz) then
-
-            c_int(:) = c_phase(:) - ub_tlev(l,k+1,iphi)
-
-            temi = ineg
-            do ic=temi, -nc, -1
-              if ( c_int(ic) >= 0.0 ) then
-                mfsp(ic) = 0.0
-                ineg = ic - 1
-              else
-                EXIT
-              end if
-            enddo
-
-            temi = ipos
-            do ic=temi, nc
-              if ( c_int(ic) <= 0.0 ) then
-                mfsp(ic) = 0.0
-                ipos = ic + 1
-              else
-                EXIT
-              end if
-            enddo
-
-          end if  ! k /= nz
-
-        enddo  ! k
-
-        ! diagnostics
-        if ( l_mflx_on ) then
-
-          if ( l_mflx_u_on ) then
-            if (cosphi(iphi) > 0.0) then
-              mflx_east(i,j,:) = mflx_east(i,j,:) +             &
-     &                               mf_pos(:)*cosphi(iphi)
-            else
-              mflx_east(i,j,:) = mflx_east(i,j,:) +             &
-     &                               mf_neg(:)*cosphi(iphi)
-            end if
-            if (cosphi(iphi) > 0.0) then
-              mflx_west(i,j,:) = mflx_west(i,j,:) +             &
-     &                               mf_neg(:)*cosphi(iphi)
-            else
-              mflx_west(i,j,:) = mflx_west(i,j,:) +             &
-     &                               mf_pos(:)*cosphi(iphi)
-            end if
-          end if
-          if ( l_mflx_v_on ) then
-            mflx_north(i,j,:) =             &
-     &                 mflx_north(i,j,:) + mf_pos(:)*sinphi(iphi)
-            mflx_south(i,j,:) =             &
-     &                 mflx_south(i,j,:) + mf_neg(:)*sinphi(iphi)
-          end if
-
-          k = kcta(l)
-          if ( l_mflx_u_ctop_on ) then
-            if (cosphi(iphi) > 0.0) then
-              mflx_e_ctop(i,j) = mflx_e_ctop(i,j) +             &
-     &                               mf_pos(k)*cosphi(iphi)
-            else
-              mflx_e_ctop(i,j) = mflx_e_ctop(i,j) +             &
-     &                               mf_neg(k)*cosphi(iphi)
-            end if
-            if (cosphi(iphi) > 0.0) then
-              mflx_w_ctop(i,j) = mflx_w_ctop(i,j) +             &
-     &                               mf_neg(k)*cosphi(iphi)
-            else
-              mflx_w_ctop(i,j) = mflx_w_ctop(i,j) +             &
-     &                               mf_pos(k)*cosphi(iphi)
-            end if
-          end if
-          if ( l_mflx_v_ctop_on ) then
-            mflx_n_ctop(i,j) =             &
-     &                 mflx_n_ctop(i,j) + mf_pos(k)*sinphi(iphi)
-            mflx_s_ctop(i,j) =             &
-     &                 mflx_s_ctop(i,j) + mf_neg(k)*sinphi(iphi)
-          end if
-
-        end if  ! l_mflx_on
-
-      enddo  ! l
-      enddo  ! iphi
-
-!yhspec+ :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-  if ( l_spec_on ) then
-    ! valid only for phi = [0,90] or [45,135]
-    tmp = abs(cosphi(1))
-    diag_spec(:,:,:,:) = diag_spec(:,:,:,:)*tmp
-  end if
-!yhspec- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-!------------------------------------------------------------------
-!  4. CALCULATE CONVECTIVE GRAVITY WAVE DRAG
-!------------------------------------------------------------------
-
-  if ( l_drag_u_on .or. l_drag_v_on ) then
-
-    drag_u_grd(:,:,:) = 0.0
-    drag_v_grd(:,:,:) = 0.0
-
-    do l=1, ncol
-      i = igwdc(l)
-      j = jgwdc(l)
-      do k=kcta(l)+1, nz
-        tmp = 1.0/rho_col(l,k)/(r_tlev_col(l,k)-r_tlev_col(l,k-1))
-        drag_u_grd(i,j,k) = -(mf_east (l,k)-mf_east (l,k-1))*tmp
-        drag_v_grd(i,j,k) = -(mf_north(l,k)-mf_north(l,k-1))*tmp
-      enddo
-    enddo
-
-    do l=1, ncol
-      i = igwdc(l)
-      j = jgwdc(l)
-      k = kcta(l)
-      tmp = 1.0/rho_col(l,k)/(r_tlev_col(l,k)-r_tlev_col(l,k-1))
-      drag_u_grd(i,j,k) = -(mf_east (l,k)-mf_east (l,nz))*tmp
-      drag_v_grd(i,j,k) = -(mf_north(l,k)-mf_north(l,nz))*tmp
-    enddo
-    ! as the outward flux of momentum at the model top is allowed,
-    ! drags below the cloud top must be reduced for the momentum
-    ! budget of the model (i.e., mf(nz)*tmp)
-
-  end if
-
-  ! other diagnostics
 
   if ( l_znwcq_on ) then
     diag_znwcq(:,:,:) = 1.e20
