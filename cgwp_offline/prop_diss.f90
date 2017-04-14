@@ -340,10 +340,10 @@ SUBROUTINE mflux_ewns_ctop(ncol,nz,kcta)
       k = kcta(l)
       if (cosphi(iphi) > 0.) then
         mflx_ct_east(l) = mflx_ct_east(l) + mf_pos(l,k,iphi)*cosphi(iphi)
-        mflx_ct_west(l) = mflx_ct_west(l) - mf_neg(l,k,iphi)*cosphi(iphi)
+        mflx_ct_west(l) = mflx_ct_west(l) + mf_neg(l,k,iphi)*cosphi(iphi)
       else
         mflx_ct_east(l) = mflx_ct_east(l) + mf_neg(l,k,iphi)*cosphi(iphi)
-        mflx_ct_west(l) = mflx_ct_west(l) - mf_pos(l,k,iphi)*cosphi(iphi)
+        mflx_ct_west(l) = mflx_ct_west(l) + mf_pos(l,k,iphi)*cosphi(iphi)
       end if
     enddo
     enddo
@@ -361,7 +361,7 @@ SUBROUTINE mflux_ewns_ctop(ncol,nz,kcta)
     do l=1, ncol
       k = kcta(l)
       mflx_ct_north(l) = sum(mf_pos(l,k,:)*sinphi(:))
-      mflx_ct_south(l) = sum(mf_neg(l,k,:)*sinphi(:))*(-1.)
+      mflx_ct_south(l) = sum(mf_neg(l,k,:)*sinphi(:))
     enddo
     mflx_ct_south(:) = mflx_ct_south(:)*(-1.)
 
