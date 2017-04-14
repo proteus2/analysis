@@ -1,7 +1,7 @@
 #
 FC = $(FC_DBG) # -mcmodel=medium -shared-intel
 EXEC_ALL := test
-MOD_DEP_N := param_gwp switch_dump m_common
+MOD_DEP_N := param_gwp switch_dump m_common netio
 MOD_N := prop_diss
 SUB_N := 
 INCL_c_math := prop_diss
