@@ -4,16 +4,14 @@
 expname=L60CGW
 expcode=uanuj
 EXTCTL1=1        ### CONTROLLED FOR SPLITTING - 1
-EXTCTL2=1        ### CONTROLLED FOR SPLITTING - 2
-#EXTCTL2=12       ### CONTROLLED FOR SPLITTING - 2
+EXTCTL2=12       ### CONTROLLED FOR SPLITTING - 2
 YYYY1=1979
-YYYY2=1979
-#YYYY2=2006
+YYYY2=2006
 M1=$EXTCTL1
 M2=$EXTCTL2
 #== Parameter 1 - CASE ===========================
 P101=( s EXPNAME  $expcode )
-P104=( n HH  03  8 ) # should be 0 # starting time [UTC] and frequency [/day]
+P104=( n HH  00  8 ) # should be 0 # starting time [UTC] and frequency [/day]
 P105=( n REFDATE  1941  12  1 )
 P106=( n OPT_30D  1 )
 #== Parameter 2 ==================================

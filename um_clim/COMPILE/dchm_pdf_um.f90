@@ -63,6 +63,7 @@ PROGRAM DCHM_PDF
   ! problem found in the data for 00 UTC 1 each month
   if ( date == 1 .and. hour == 0 ) then
     hour = hour + 24/nhour
+    i_time = i_time - 1
     CYCLE
   end if
 
