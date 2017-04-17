@@ -21,19 +21,21 @@ P106=( n OPT_30D  1 )
 P901=( n DAY1  1 )                 # the earlist date-of-file among input files
 P902=( n NDAY_I  3 )               # number of days in one input file
 P903=( n MISSV  1.e32 )            # if no missing points, set 1.0
-P990=( s FID  pb )
+P990=( s FID  pc )
 P991=( s FILE_I_HEAD  "/hippo0/HG2AMIP/$expname" )
-#P992=( s FILE_I_FORM  XXXX/${P101[2]}a.XXXX_XXXXXXXXXXXX00.nc  -999 )
-#P993=( s FILE_I_XXXX  FID              FID  YYYY MM  DD        -999 )
-P992=( s FILE_I_FORM  XXXX/${P101[2]}a.XXXX_XXXXXXXXX.nc  -999 )
-P993=( s FILE_I_XXXX  FID              FID  YYYY MM       -999 )
-P994=( s VAR_I_NAME  precip_dc )
+P992=( s FILE_I_FORM  XXXX/${P101[2]}a.XXXX_XXXXXXXXXXXX00.nc  -999 )
+P993=( s FILE_I_XXXX  FID              FID  YYYY MM  DD        -999 )
+P994=( s VAR_I_NAME  dch_max )
+#P990=( s FID  pb )
+#P992=( s FILE_I_FORM  XXXX/${P101[2]}a.XXXX_XXXXXXXXX.nc  -999 )
+#P993=( s FILE_I_XXXX  FID              FID  YYYY MM       -999 )
+#P994=( s VAR_I_NAME  precip_dc )
 P999=( s FILE_O  '' )
 #=================================================
 P102=( n YYYY  '' )
 P103=( n MM  ''  1 )               # starting month and number of months per year
 
-F_SOURCE='precip_pdf_um'
+F_SOURCE='dchm_pdf_um'
 F_NAMELIST="$TMPDIR/namelist/namelist.$F_SOURCE-$$"
 F_LOG="log/log.$F_SOURCE-$$"
 
@@ -49,7 +51,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   MM=$(( M ))  ;  if [ $M -lt 10 ] ; then MM="0$MM" ; fi
   P102[2]=$YYYY
   P103[2]=$MM
-  ODIR=/data18/kyh/dat/$expname/precip_pdf/$YYYY
+  ODIR=$DATD/$expname/precip_pdf/$YYYY
   P999[2]="$ODIR/${P101[2]}.precip_pdf.$YYYY.${MM}.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 #  [ -e ${P999[2]} ] && mv ${P999[2]} $ODIR/old.${P101[2]}.precip_pdf.$YYYY.${MM}.nc

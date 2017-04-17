@@ -1,4 +1,4 @@
-PROGRAM PRECIP_PDF
+PROGRAM DCHM_PDF
 
   use hadgem
   use netio
@@ -12,14 +12,12 @@ PROGRAM PRECIP_PDF
   namelist /FILEIO/ DAY1, NDAY_I, MISSV, FID, FILE_I_HEAD, FILE_I_FORM,  &
                     FILE_I_XXXX, VAR_I_NAME, FILE_O
 
-  integer ::  imon, ihour, i_time
+  integer ::  imon, ihour, i_time, npop, npdfx
   integer ::  j,k
-  real    ::  wgt
   character(len=32), dimension(nv) ::  ovarname
 
-  real, dimension(:,:)  , allocatable ::  prcp
-  real, dimension(:,:,:), allocatable ::  var3d
-  real, dimension(:,:)  , allocatable ::  p_zm, dp2_zm
+  real, dimension(:,:,:), allocatable ::  varx
+  real, dimension(:,:,:), allocatable ::  var3d, var3d2, var3d3
 
   type(vset), dimension(nv) ::  set
 
@@ -38,10 +36,9 @@ PROGRAM PRECIP_PDF
 
   call initialize
 
-  var3d(:,:,:) = 0.
   i_time = 0
 
-  L_MON:  DO imon=1, nmon+1
+  L_MON:  DO imon=1, nmon
   !---------------------------------------------------------------------
   if (opt_30d == 0)  ndate = get_ndate()
 
@@ -66,25 +63,8 @@ PROGRAM PRECIP_PDF
   ! get variable
   call get_1var
 
-  ! calculate zonal mean
-!  p_zm(:,:) = sum(p3d, dim=1)/float(nx)
-!  do k=1, nz
-!  do j=1, ny
-!    p3d(:,j,k) = p3d(:,j,k) - p_zm(j,k)
-!  enddo
-!  enddo
-!  dp2_zm(:,:) = sum(p3d(:,:,:)*p3d(:,:,:), dim=1)/float(nx)
-
-  wgt = 1.
-  if ( i_time == 1 .or. imon == nmon+1 )  wgt = 0.5
-
-  var3d(:,:,1) = var3d(:,:,1) + p_zm(:,:)*(1.e-2*wgt)            ! [hPa]
-  var3d(:,:,2) = var3d(:,:,2) + dp2_zm(:,:)*(1.e-4*wgt)          ! [hPa^2]
-  var3d(:,:,3) = var3d(:,:,3) + p_zm(:,:)*p_zm(:,:)*(1.e-4*wgt)  ! [hPa^2]
-
   hour = hour + 24/nhour
 
-  if (imon == nmon+1)  EXIT L_MON
   !---------------------------------------------------------------------
   ENDDO  L_HOUR
 
@@ -100,21 +80,11 @@ PROGRAM PRECIP_PDF
 
   nt = i_time - 1
 
-  deallocate( prcp, p_zm, dp2_zm )
-
-  var3d(:,:,3) = var3d(:,:,2) + var3d(:,:,3)
-
-  ! calculate time mean
-  var3d(:,:,1:3) = var3d(:,:,1:3)/float(nt)
-
-  ! additional diagnostics
-  var3d(:,:,4) = sqrt(var3d(:,:,3)/(var3d(:,:,1)*var3d(:,:,1)) - 1.)
-
-  ! TOTAL_VAR = avg_yt(p2_m) - [avg_yt(p_m)]^2
+  deallocate( varx )
 
 
-  nd1a = NY
-  nd2a = NZ
+  nd1a = NPOP
+  nd2a = NPDFX
   nd3a = 1
   nd4a = 1
 
@@ -159,9 +129,9 @@ PROGRAM PRECIP_PDF
   end if
   call getdim(file_i(iv_i),var_i_name(iv_i))
 
-  allocate( var3d(ny,nz,nv) )
-  var3d(:,:,:) = 0.
-  allocate( prcp(nx,ny), p_zm(ny,nz), dp2_zm(ny,nz) )
+  allocate( var3d(npop,npdfx,nv), var3d2(npop,npdfx,nv), var3d3(npop,npdfx,nv) )
+  var3d(:,:,:) = 0.  ;  var3d2(:,:,:) = 0.  ;  var3d3(:,:,:) = 0.
+  allocate( varx(nx,ny,1) )
 
   ovarname = (/'p_m   ','dp2_m','p2_m','sd_loc'/)
 
@@ -173,7 +143,7 @@ PROGRAM PRECIP_PDF
 
   ! read var.
   print*, trim(file_i(1))
-  iv_i = 1  ;  prcp(:,:) = get_ivar3d()
+  iv_i = 1  ;  varx(:,:,:) = get_ivar3d()
   print*, 'time index :', it_i(1)
 
   END subroutine get_1var
@@ -196,7 +166,7 @@ PROGRAM PRECIP_PDF
 
   SUBROUTINE finalize
 
-  deallocate( var3d )
+  deallocate( var3d, var3d2, var3d3 )
   deallocate( lon, lat, ht, ht_th )
   do iv=1, nv
     deallocate( set(iv)%axis1, set(iv)%axis2, set(iv)%axis3,             &
@@ -207,5 +177,5 @@ PROGRAM PRECIP_PDF
   END subroutine finalize
 
 
-END program PRECIP_PDF
+END program DCHM_PDF
 
