@@ -68,7 +68,7 @@ PROGRAM DCHM_PDF
   end if
 
   ! get variable
-  call get_1var
+  call get_vars
 
   if (ncol == 0) then
     hour = hour + 24/nhour
@@ -208,7 +208,7 @@ PROGRAM DCHM_PDF
 
   END subroutine initialize
 
-  SUBROUTINE get_1var
+  SUBROUTINE get_vars
 
   ex0 = .TRUE.
   do iv_i=1, 4  ! for get_ifilename
@@ -252,7 +252,7 @@ PROGRAM DCHM_PDF
   ncol = l
   if (ncol /= 0)  varx(:ncol) = log10(varx(:ncol))
 
-  END subroutine get_1var
+  END subroutine get_vars
 
   SUBROUTINE setdim
 
@@ -290,7 +290,7 @@ PROGRAM DCHM_PDF
 
   deallocate( var_m, npop, pdfx )
   deallocate( lon, lat, ht, ht_th )
-  do iv=1, nv
+  do iv=1, nv+1
     deallocate( set(iv)%axis1, set(iv)%axis2, set(iv)%axis3,             &
                 set(iv)%axis4 )
     deallocate( set(iv)%var_out )
