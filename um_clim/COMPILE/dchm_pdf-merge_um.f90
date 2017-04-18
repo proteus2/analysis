@@ -6,6 +6,7 @@ PROGRAM DCHM_PDF_MERGE
   implicit none
 
   integer, parameter ::  nstat = 3
+  ! 1: mean  /  2: mean of square  /  3: variance
 
   integer ::  yyyy2(2)
 
@@ -58,9 +59,6 @@ PROGRAM DCHM_PDF_MERGE
     var_m2(:,iv,1) = var_m2(:,iv,1) + var_m(:,iv,1)*npop(:)
     var_m2(:,iv,2) = var_m2(:,iv,2) + var_m(:,iv,2)*npop(:)
   enddo
-
-!    var_m(ib,:,1) = var_m(ib,:,1) + vars(l,:)
-!    var_m(ib,:,2) = var_m(ib,:,2) + vars(l,:)*vars(l,:)
 
   mon = mon + 1
   if (mon == 13) then

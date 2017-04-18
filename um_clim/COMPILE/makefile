@@ -1,7 +1,7 @@
 #
 #FC = $(FC_DBG)
 
-EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um sepa_recon_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um sepa_epf sepa_recon_varsa wavedcp_var sepa_epfsa sepa_epfsa1 sepa_epfsa2 sepa_epfsa_c sepa_epfsa_fc2 dp_um qboi_vintp_z2p_um qboi_dyn_um streamftn-rcirc_um dchm_pdf_um dchm_pdf-merge_um
+EXEC_ALL := v_intp w-cont_um tem_z_um tem_z_cp_um epf_z_um fft_x_um fft_x-wgt_um fft_t2_um fft_t2i_um sepa_recon_var epf_z_fc2_um epf_z_cp_fc2_um epfsa0_z_fc2_um epfsa1_z_fc2_um epfsa0_z_cp_fc2_um epfsa1_z_cp_fc2_um sepa_epf sepa_recon_varsa wavedcp_var sepa_epfsa sepa_epfsa1 sepa_epfsa2 sepa_epfsa_c sepa_epfsa_fc2 dp_um qboi_vintp_z2p_um qboi_dyn_um streamftn-rcirc_um dchm_pdf_um dchm_pdf-merge_um dchm-midlev_pdf_um
 MOD_DEP_N := nrtype nr nrutil m_hadgem netio
 MOD_N := fft tem epf
 SUB_N := spline splint tridag_ser locate svdcmp-sq svbksb pythag fdcoef

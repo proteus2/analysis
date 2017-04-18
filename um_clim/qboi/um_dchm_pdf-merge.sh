@@ -5,8 +5,7 @@ expname=L60CGW
 expcode=uanuj
 #== Parameter 1 - CASE ===========================
 P101=( s EXPNAME  $expcode )
-#P102=( n YYYY2  1979  2006 )
-P102=( n YYYY2  2000  2006 )
+P102=( n YYYY2  1979  2006 )
 P103=( n MM  1  12 )               # starting month and number of months per year
 #== Parameter 2 ==================================
 #== Parameter 9 - I/O ============================
