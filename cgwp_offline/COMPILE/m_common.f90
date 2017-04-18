@@ -1,8 +1,120 @@
 MODULE subr_common
 
+  use netio,  ONLY: vset
+
   implicit none
 
+  type(vset), dimension(:), allocatable ::  set
+
+  interface defset
+    module procedure defset1d, defset2d, defset3d, defset4d
+  end interface
+
 CONTAINS
+
+
+SUBROUTINE defset1d(ivl,varname,vout,axis,ndim,axis1)
+
+  character(len=*)     , intent(in) ::  varname, axis(4)
+  real   , dimension(:), intent(in) ::  vout
+  integer, dimension(4), intent(in) ::  ndim
+  real   , dimension(:), intent(in) ::  axis1
+
+  integer, intent(inout) ::  ivl
+
+  call setdim0(ivl,varname,axis,ndim)
+
+  set(ivl)%axis1(:) = axis1(:)
+
+  allocate( set(ivl)%var_out(ndim(1),ndim(2),ndim(3),ndim(4)) )
+  set(ivl)%var_out(:,1,1,1) = vout(:)
+
+END subroutine defset1d
+
+SUBROUTINE defset2d(ivl,varname,vout,axis,ndim,axis1,axis2)
+
+  character(len=*)       , intent(in) ::  varname, axis(4)
+  real   , dimension(:,:), intent(in) ::  vout
+  integer, dimension(4)  , intent(in) ::  ndim
+  real   , dimension(:)  , intent(in) ::  axis1, axis2
+
+  integer, intent(inout) ::  ivl
+
+  call setdim0(ivl,varname,axis,ndim)
+
+  set(ivl)%axis1(:) = axis1(:)
+  set(ivl)%axis2(:) = axis2(:)
+
+  allocate( set(ivl)%var_out(ndim(1),ndim(2),ndim(3),ndim(4)) )
+  set(ivl)%var_out(:,:,1,1) = vout(:,:)
+
+END subroutine defset2d
+
+subroutine defset3d(ivl,varname,vout,axis,ndim,axis1,axis2,axis3)
+
+  character(len=*)         , intent(in) ::  varname, axis(4)
+  real   , dimension(:,:,:), intent(in) ::  vout
+  integer, dimension(4)    , intent(in) ::  ndim
+  real   , dimension(:)    , intent(in) ::  axis1, axis2, axis3
+
+  integer, intent(inout) ::  ivl
+
+  call setdim0(ivl,varname,axis,ndim)
+
+  set(ivl)%axis1(:) = axis1(:)
+  set(ivl)%axis2(:) = axis2(:)
+  set(ivl)%axis3(:) = axis3(:)
+
+  allocate( set(ivl)%var_out(ndim(1),ndim(2),ndim(3),ndim(4)) )
+  set(ivl)%var_out(:,:,:,1) = vout(:,:,:)
+
+end subroutine defset3d
+
+subroutine defset4d(ivl,varname,vout,axis,ndim,axis1,axis2,axis3,axis4)
+
+  character(len=*)           , intent(in) ::  varname, axis(4)
+  real   , dimension(:,:,:,:), intent(in) ::  vout
+  integer, dimension(4)      , intent(in) ::  ndim
+  real   , dimension(:)      , intent(in) ::  axis1, axis2, axis3, axis4
+
+  integer, intent(inout) ::  ivl
+
+  call setdim0(ivl,varname,axis,ndim)
+
+  set(ivl)%axis1(:) = axis1(:)
+  set(ivl)%axis2(:) = axis2(:)
+  set(ivl)%axis3(:) = axis3(:)
+  set(ivl)%axis4(:) = axis4(:)
+
+  allocate( set(ivl)%var_out(ndim(1),ndim(2),ndim(3),ndim(4)) )
+  set(ivl)%var_out(:,:,:,:) = vout(:,:,:,:)
+
+end subroutine defset4d
+
+
+SUBROUTINE setdim0(ivl,varname,axis,ndim)
+
+  character(len=*)     , intent(in) ::  varname, axis(4)
+  integer, dimension(4), intent(in) ::  ndim
+
+  integer, intent(inout) ::  ivl
+
+  ivl = ivl + 1
+
+  set(ivl)%vname = trim(varname)
+
+  set(ivl)%axis(:) = axis(:)
+  set(ivl)%nd  (:) = ndim(:)
+  allocate( set(ivl)%axis1(ndim(1)) )
+  allocate( set(ivl)%axis2(ndim(2)) )
+  allocate( set(ivl)%axis3(ndim(3)) )
+  allocate( set(ivl)%axis4(ndim(4)) )
+  set(ivl)%axis1(:) = -999.
+  set(ivl)%axis2(:) = -999.
+  set(ivl)%axis3(:) = -999.
+  set(ivl)%axis4(:) = -999.
+
+END subroutine setdim0
 
 
 SUBROUTINE column_to_grid3d(icol,jcol,vari,chkdim, varo)

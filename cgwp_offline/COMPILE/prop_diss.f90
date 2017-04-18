@@ -40,7 +40,6 @@ SUBROUTINE propdiss(  &
 
   USE param_gwp
   USE switch_dump,  ONLY: l_spec_o, l_spec_ctop_o
-  USE subr_common
 
   implicit none
 
@@ -57,21 +56,18 @@ SUBROUTINE propdiss(  &
 
 ! LOCAL VARIABLES
 
-! data arrays
-
+  ! data arrays
   real, dimension(ncol)    ::  f2
   real, dimension(nz)      ::  ub_flev
   real, dimension(-nc:nc)  ::  c_intr, mfsp, mfsp_s
   real, dimension(ncol,nz) ::  fact_s
 
-! work arrays
-
+  ! work arrays
   real    ::  tmp, b0, w0, ome_min, pm1, c2mp
   integer ::  tmpi, ipos, ineg
   integer ::  k,l,ic,iphi   ! loop counters
 
-! parameters and constants
-
+  ! parameters and constants
 !  real, parameter ::  g = 9.80665
   real, parameter ::  two_omega = 2.*7.292116E-5
   real, parameter ::  beta_eq = 2.3e-11
@@ -86,12 +82,12 @@ SUBROUTINE propdiss(  &
 
   if ( l_spec_o ) then
     if ( allocated(diag_spec) )  deallocate( diag_spec )
-    allocate( diag_spec(ncol,nz,-nc:nc,nphi*2) )
+    allocate( diag_spec(-nc:nc,nphi*2,nz,ncol) )
     diag_spec(:,:,:,:) = 0.
   end if
   if ( l_spec_ctop_o ) then
     if ( allocated(diag_spec_ctop) )  deallocate( diag_spec_ctop )
-    allocate( diag_spec_ctop(ncol,-nc:nc,nphi*2) )
+    allocate( diag_spec_ctop(-nc:nc,nphi*2,ncol) )
     diag_spec_ctop(:,:,:) = 0.
   end if
 
@@ -149,12 +145,12 @@ SUBROUTINE propdiss(  &
     mf_neg(l,k,iphi) = sum(mfsp(-nc:ineg))*dc
 
     if ( l_spec_o ) then
-      diag_spec(l,k,ipos:nc,iphi) = mfsp(ipos:nc)
-      diag_spec(l,k,-ineg:nc,nphi+iphi) = -mfsp(ineg:-nc:-1)
+      diag_spec(ipos:nc,iphi,k,l) = mfsp(ipos:nc)
+      diag_spec(-ineg:nc,nphi+iphi,k,l) = -mfsp(ineg:-nc:-1)
     end if
     if ( l_spec_ctop_o .and. k == kcta(l) ) then
-      diag_spec_ctop(l,ipos:nc,iphi) = mfsp(ipos:nc)
-      diag_spec_ctop(l,-ineg:nc,nphi+iphi) = -mfsp(ineg:-nc:-1)
+      diag_spec_ctop(ipos:nc,iphi,l) = mfsp(ipos:nc)
+      diag_spec_ctop(-ineg:nc,nphi+iphi,l) = -mfsp(ineg:-nc:-1)
     end if
 
     ! check the critical levels between k and k+1 levels,

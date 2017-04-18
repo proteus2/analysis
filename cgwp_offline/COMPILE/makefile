@@ -1,10 +1,10 @@
 #
 FC = $(FC_DBG) # -mcmodel=medium -shared-intel
 EXEC_ALL := test
-MOD_DEP_N := param_gwp switch_dump m_common netio
-MOD_N := prop_diss
+MOD_DEP_N := param_gwp switch_dump netio m_common
+MOD_N := mflx-cldtop prop_diss
 SUB_N := 
-INCL_c_math := prop_diss
+INCL_c_math := mflx-cldtop prop_diss
 
 NCINC := $(filter-out -g,$(shell nc-config --fflags))
 NCLIB := $(shell nc-config --flibs)
@@ -44,9 +44,9 @@ $(EXEC_FULL):	$(EXEC_D)/%:	%.f90 $(LIB_D)/$(LIB_SUBS) $(INCL_F)
 $(LIB_D)/$(LIB_SUBS):	$(ALL_SUB_F) $(INCL_F_SUB)
 		mkdir -p $(LIB_D)
 		cp $? $(LIB_D)/
-		( cd $(LIB_D) ; $(FC) -c $? $(NCINC) )
-		( cd $(LIB_D) ; ar -rv $(notdir $@ ) $(?:.f90=.o) )
-		( cd $(LIB_D) ; rm -f $? $(?:.f90=.o) )
+		( cd $(LIB_D) ; $(FC) -c $(ALL_SUB_F) $(NCINC) )
+		( cd $(LIB_D) ; ar -rv $(notdir $@ ) $(ALL_SUB_O) )
+		( cd $(LIB_D) ; rm -f $(ALL_SUB_F) $(ALL_SUB_O) )
 
 # clean
 

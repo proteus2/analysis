@@ -20,7 +20,7 @@ MODULE param_gwp
   integer, public ::  nc, nphi
   real   , public ::  dc
 
-  real, dimension(:), allocatable, public ::  phi_deg, c_phase
+  real, dimension(:), allocatable, public ::  phi_deg, c_phase, phi_deg2
   real, dimension(:), allocatable, public ::  cosphi, sinphi
   real, dimension(:), allocatable, public ::  c_m05dc
 
@@ -67,6 +67,10 @@ SUBROUTINE set_spec_param
   allocate( cosphi(nphi), sinphi(nphi) )
   cosphi(:) = cos(phi_deg(:)*(pi/180.))
   sinphi(:) = sin(phi_deg(:)*(pi/180.))
+
+  allocate( phi_deg2(nphi*2) )
+  phi_deg2(:nphi  ) = phi_deg(:)
+  phi_deg2(nphi+1:) = phi_deg(:) + 180.
 
 END subroutine set_spec_param
 
