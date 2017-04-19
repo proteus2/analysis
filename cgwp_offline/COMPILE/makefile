@@ -1,10 +1,11 @@
 #
 FC = $(FC_DBG) # -mcmodel=medium -shared-intel
+
 EXEC_ALL := test
 MOD_DEP_N := param_gwp switch_dump netio m_common
-MOD_N := mflx-cldtop prop_diss
+MOD_N := mflx-ctop_sc05 prop_diss
 SUB_N := 
-INCL_c_math := mflx-cldtop prop_diss
+INCL_c_math := prop_diss test
 
 NCINC := $(filter-out -g,$(shell nc-config --fflags))
 NCLIB := $(shell nc-config --flibs)

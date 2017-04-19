@@ -22,7 +22,7 @@ CONTAINS
 
 SUBROUTINE propdiss(  &
     ncol, nz,      &
-    u_flev, v_flev, nbv_flev, rho_flev, lat,                 &
+    u_flev, v_flev, nbv_flev, rho_flev, f_cor,                 &
     kcta, mfs_ct )
 !
 ! PURPOSE:  To calculate the convective gravity wave drag
@@ -39,7 +39,9 @@ SUBROUTINE propdiss(  &
 !
 
   USE param_gwp
-  USE switch_dump,  ONLY: l_spec_o, l_spec_ctop_o
+  USE switch_dump,  ONLY: l_spec_o, l_spec_ctop_o,  &
+                          l_mflx_u_ctop_o, l_mflx_v_ctop_o,  &
+                          l_mflx_u_o, l_mflx_v_o
 
   implicit none
 
@@ -51,7 +53,7 @@ SUBROUTINE propdiss(  &
   integer, dimension(ncol), intent(in) ::  kcta
   real, dimension(ncol,nz), intent(in) ::  u_flev, v_flev, nbv_flev,     &
                                            rho_flev
-  real, dimension(ncol)   , intent(in) ::  lat
+  real, dimension(ncol)   , intent(in) ::  f_cor
   real, dimension(-nc:nc,ncol,nphi), intent(in) ::  mfs_ct
 
 ! LOCAL VARIABLES
@@ -69,7 +71,6 @@ SUBROUTINE propdiss(  &
 
   ! parameters and constants
 !  real, parameter ::  g = 9.80665
-  real, parameter ::  two_omega = 2.*7.292116E-5
   real, parameter ::  beta_eq = 2.3e-11
 
   include 'c_math.inc'
@@ -93,7 +94,7 @@ SUBROUTINE propdiss(  &
 
   call get_wm_hg2cgwp
 
-  f2(:) = (two_omega*two_omega)*sin(lat(:)*deg2rad)**2
+  f2(:) = f_cor(:)*f_cor(:)
 
   ! for calculating saturation spectrum
   tmp  = beta_wm/(sqrt(2.0)*pi)
@@ -181,6 +182,10 @@ SUBROUTINE propdiss(  &
   ENDDO  L_COL
   ENDDO  L_PHI
 
+  ! dump
+  if ( l_mflx_u_ctop_o .or. l_mflx_v_ctop_o )  call mflux_ewns_ct(kcta)
+  if ( l_mflx_u_o .or. l_mflx_v_o )  call mflux_ewns
+
   RETURN
 
 END SUBROUTINE propdiss
@@ -260,18 +265,18 @@ SUBROUTINE calc_drag(                                                    &
 
 END subroutine calc_drag
 
-SUBROUTINE mflux_ewns(ncol,nz)
+SUBROUTINE mflux_ewns
 
   USE param_gwp  ,  ONLY: nphi, cosphi, sinphi
   USE switch_dump,  ONLY: l_mflx_u_o, l_mflx_v_o
 
   implicit none
 
-  integer, intent(in) ::  ncol, nz
-
+  integer ::  ncol, nz
   integer ::  iphi
 
-  if (ncol < 1)  RETURN
+  ncol = size(mf_pos,1)
+  nz   = size(mf_pos,2)
 
   if ( l_mflx_u_o ) then
 
@@ -310,19 +315,19 @@ SUBROUTINE mflux_ewns(ncol,nz)
 
 END SUBROUTINE mflux_ewns
 
-SUBROUTINE mflux_ewns_ctop(ncol,nz,kcta)
+SUBROUTINE mflux_ewns_ct(kcta)
 
   USE param_gwp  ,  ONLY: nphi, cosphi, sinphi
   USE switch_dump,  ONLY: l_mflx_u_ctop_o, l_mflx_v_ctop_o
 
   implicit none
 
-  integer                 , intent(in) ::  ncol, nz
-  integer, dimension(ncol), intent(in) ::  kcta
+  integer, dimension(:), intent(in) ::  kcta
 
+  integer ::  ncol
   integer ::  k,l,iphi
 
-  if (ncol < 1)  RETURN
+  ncol = size(mf_pos,1)
 
   if ( l_mflx_u_ctop_o ) then
 
@@ -365,7 +370,7 @@ SUBROUTINE mflux_ewns_ctop(ncol,nz,kcta)
 
   RETURN
 
-END SUBROUTINE mflux_ewns_ctop
+END SUBROUTINE mflux_ewns_ct
 
 END module prop_diss
 
