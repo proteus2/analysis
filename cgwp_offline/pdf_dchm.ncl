@@ -10,15 +10,22 @@ begin
 ;--------------------------------------- parameters
  expname = "L60CGW"
  expcode = "uanuj"
- fmiddle = "dchm-midlev"
+; fmiddle = "dchm"
+; fmiddle = "dchm-midlev"
+ fmiddle = "dchm-nonmidlev"
  y1 = 1979
  y2 = 2006
  lata = 10
  vars = (/"zcta","zcba","rho_ct"/)
  varo = (/"z:B:ct:N: ,  z:B:cb:N: [km]","",":F33:r:F21: [kg m:S:-3:N:]"/)
+ xmin = 1.e-2  ; x(1)
  ymin0 = 1.e-4
- ymin = (/0 ,0 ,-999,-999/)
- ymax = (/10,10, 999, 999/)
+ ymax0 = 2
+ ymin = (/0 ,0 ,-999/)
+ ymax = (/10,10, 999/)
+ if (fmiddle .eq. "dchm-midlev") then
+   ymax = where(vars .eq. "zcta" .or. vars .eq. "zcba", 15, ymax)
+ end if
 
 ; ncol = (y2-y1+1)*12*(30*8)*(192*(toint(lata*2/1.25)+1))
  ncol = (y2-y1+1)*12*(30*8-1)*(192*(toint(lata*2/1.25)+1))  ; fail for 00 UTC 1
@@ -69,8 +76,6 @@ print("columns for CGWP : "+perc_cgw+" %")
  xf = 10 + (/0,0,0,0/)*(wi+5)
  yf = 10 + (/0,0,0,0/)*(he+5)
 
- xmin = 1.e-3  ; x(1)
-
  xpg = new(nx*2+2,float)
  ypg = new(nx*2+2,float)
  do i=0, nx-1
@@ -102,7 +107,7 @@ print("columns for CGWP : "+perc_cgw+" %")
  end setvalues
 
  set_size(plot0,xf(0),yf(0),wi,he)
- axis_range(plot0,xmin,999,ymin0,999,True,True)
+ axis_range(plot0,xmin,999,ymin0,ymax0,True,True)
  axis_str(plot0,mstr,xstr,ystr)
 
  dr_txt(wks,txtpdfsum,xf(0)+wi-7,yf(0)-2.5,21,4,0.) 

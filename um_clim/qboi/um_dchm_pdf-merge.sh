@@ -3,6 +3,9 @@
 
 expname=L60CGW
 expcode=uanuj
+#fmidname=dchm_pdf
+#fmidname=dchm-midlev_pdf
+fmidname=dchm-nonmidlev_pdf
 #== Parameter 1 - CASE ===========================
 P101=( s EXPNAME  $expcode )
 P102=( n YYYY2  1979  2006 )
@@ -10,8 +13,8 @@ P103=( n MM  1  12 )               # starting month and number of months per yea
 #== Parameter 2 ==================================
 #== Parameter 9 - I/O ============================
 P991=( s FILE_I_HEAD  "$DATD/$expname/dchm_pdf" )
-P992=( s FILE_I_FORM  XXXX/${P101[2]}.dchm_pdf.XXXX.XXXX.nc  -999 )
-P993=( s FILE_I_XXXX  YYYY                     YYYY  MM      -999 )
+P992=( s FILE_I_FORM  XXXX/${P101[2]}.$fmidname.XXXX.XXXX.nc  -999 )
+P993=( s FILE_I_XXXX  YYYY                      YYYY  MM      -999 )
 P994=( s VAR_I_NAME  N_pop  \
                      dchmax  zcba    zcta    rho_ct  n_q     n_ct    \
                      t_ct    cq_x    cq_y    u_ct    v_ct    u_sfc   \
@@ -34,7 +37,7 @@ F_LOG="log/log.$F_SOURCE-$$"
   [ $M2 -lt 10 ] && M2=0$M2  ;  [ $M3 -lt 10 ] && M3=0$M3
 
   ODIR=$DATD/$expname/dchm_pdf
-  P999[2]="$ODIR/${P101[2]}.dchm_pdf.${P102[2]}-${P102[3]}.${M2}-${M3}.nc"
+  P999[2]="$ODIR/${P101[2]}.$fmidname.${P102[2]}-${P102[3]}.${M2}-${M3}.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 
   # create namelist --------------------
