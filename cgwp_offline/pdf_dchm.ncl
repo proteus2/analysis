@@ -10,6 +10,7 @@ begin
 ;--------------------------------------- parameters
  expname = "L60CGW"
  expcode = "uanuj"
+ fmiddle = "dchm-midlev"
  y1 = 1979
  y2 = 2006
  lata = 10
@@ -22,13 +23,13 @@ begin
 ; ncol = (y2-y1+1)*12*(30*8)*(192*(toint(lata*2/1.25)+1))
  ncol = (y2-y1+1)*12*(30*8-1)*(192*(toint(lata*2/1.25)+1))  ; fail for 00 UTC 1
 
- wks = cr_wks("fig/pdf_dchm",600,0)
+ wks = cr_wks("fig/pdf_"+fmiddle,600,0)
  gsn_define_colormap(wks,"default")
  colind = NhlNewColor(wks,0.4,0.4,0.4)
 
 ;--------------------------------------- read data
  fdir = "$DATD/"+expname+"/dchm_pdf"
- fname = expcode+".dchm_pdf."+y1+"-"+y2+".01-12.nc"
+ fname = expcode+"."+fmiddle+"_pdf."+y1+"-"+y2+".01-12.nc"
  f0 = addfile(fdir+"/"+fname,"r")
 
  nv = dimsizes(vars)
