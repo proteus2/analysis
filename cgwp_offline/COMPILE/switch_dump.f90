@@ -17,11 +17,11 @@ SUBROUTINE switch_defaults
 
   l_drag_u_o = .True.  ;  l_drag_v_o = .True.
   l_mflx_u_o = .True.  ;  l_mflx_v_o = .True.
-  l_mflx_u_ctop_o = .true.  ;  l_mflx_v_ctop_o = .true.
-  l_spec_o = .true.  ;  l_spec_ctop_o = .true.
-  l_mflx_u_ctop_0_o = .true.  ;  l_mflx_v_ctop_0_o = .true.
-  l_spec_ctop_0_o = .true.
-  l_diag_znwcq_o = .true.
+  l_mflx_u_ctop_o = .True.  ;  l_mflx_v_ctop_o = .True.
+  l_spec_o = .True.  ;  l_spec_ctop_o = .True.
+  l_mflx_u_ctop_0_o = .True.  ;  l_mflx_v_ctop_0_o = .True.
+  l_spec_ctop_0_o = .True.
+  l_diag_znwcq_o = .True.
 
 END subroutine switch_defaults
 

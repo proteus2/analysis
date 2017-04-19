@@ -25,18 +25,19 @@ PROGRAM cgwp
   ! only for drag
   real, dimension(:,:), allocatable ::  rho_dlev
 
-  character(len=128) ::  file_o
-  integer ::  k,l,iv
+  character(len=128) ::  file_i, file_o
+  integer ::  k,l,iv, ncid, tmpi
 
   real, parameter ::  two_omega = 2.*7.292116e-5
 
   include 'c_math.inc'   ! deg2rad
 
-  nc = 30
+  nc = 40
   dc = 2.
   nphi = 2
   allocate( phi_deg(nphi) )
   phi_deg = (/45.,135./)
+!  phi_deg = (/0.,90./)
   cfactor = 125.
  
   call set_spec_param
@@ -47,10 +48,49 @@ PROGRAM cgwp
 
   call get_nv_output(nvo)
 
-  ncol = 4
+  ncol = 21
 
-  allocate( u_flev(ncol,nz), v_flev(ncol,nz), u_sfc(ncol), v_sfc(ncol) )
-  allocate( nbv_flev(ncol,nz), rho_flev(ncol,nz), z_flev(ncol,nz) )
+  allocate( heatmax(ncol) )
+  allocate( u_ct(ncol), v_ct(ncol), u_cb(ncol), v_cb(ncol), t_ct(ncol) )
+  allocate( u_sfc(ncol), v_sfc(ncol), cqx(ncol), cqy(ncol), rho_ct(ncol) )
+  allocate( n_q(ncol), n_ct(ncol), zcta(ncol), zcba(ncol) )
+  allocate( kcta(ncol) )
+
+  file_i = '/data18/kyh/dat/L60CGW/dchm_pdf/'//  &
+           'uanuj.dchm-nonmidlev_pdf.1979-2006.01-12.nc'
+
+  call opennc(file_i,ncid)
+  call geta2d(ncid,'dchmax',32,ncol,1,1,heatmax)
+  heatmax(:) = heatmax(:)/3600.
+  call geta2d(ncid,'u_ct'  ,32,ncol,1,1,u_ct   )
+  call geta2d(ncid,'v_ct'  ,32,ncol,1,1,v_ct   )
+  call geta2d(ncid,'u_cb'  ,32,ncol,1,1,u_cb   )
+  call geta2d(ncid,'v_cb'  ,32,ncol,1,1,v_cb   )
+  call geta2d(ncid,'t_ct'  ,32,ncol,1,1,t_ct   )
+  call geta2d(ncid,'u_sfc' ,32,ncol,1,1,u_sfc  )
+  call geta2d(ncid,'v_sfc' ,32,ncol,1,1,v_sfc  )
+  call geta2d(ncid,'cq_x'  ,32,ncol,1,1,cqx    )
+  call geta2d(ncid,'cq_y'  ,32,ncol,1,1,cqy    )
+  call geta2d(ncid,'rho_ct',32,ncol,1,1,rho_ct )
+  call geta2d(ncid,'n_q'   ,32,ncol,1,1,n_q    )
+  call geta2d(ncid,'n_ct'  ,32,ncol,1,1,n_ct   )
+  call geta2d(ncid,'zcta'  ,32,ncol,1,1,zcta   )
+  call geta2d(ncid,'zcba'  ,32,ncol,1,1,zcba   )
+  call closenc(ncid)
+
+  allocate( z_flev(ncol,nz) )
+
+  do k=1, nz
+    z_flev(:,k) = 500.*float(k)
+  enddo
+
+  do l=1, ncol
+    tmpi = minloc(abs(z_flev(l,:) - zcba(l)),1)
+    kcta(l) = tmpi + minloc(abs(z_flev(l,tmpi+1:) - zcta(l)),1)
+  enddo
+
+  allocate( u_flev(ncol,nz), v_flev(ncol,nz) )
+  allocate( nbv_flev(ncol,nz), rho_flev(ncol,nz) )
 
   ! for SC05
   allocate( heat_flev(ncol,nz), t_flev(ncol,nz), kcb(ncol), kct(ncol) )
@@ -60,40 +100,35 @@ PROGRAM cgwp
   allocate( rho_dlev(ncol,nz) )
 
   u_flev = 0.  ;  v_flev = 0.  ;  u_sfc = 0.  ; v_sfc = 0.
-  t_flev = 270.
-  nbv_flev(:,:) = 2.6e-2
+!  t_flev = 270.
+!  nbv_flev(:,:) = 2.6e-2
   do k=1, nz
-    z_flev(:,k) = 800.*float(k)
-    rho_flev(:,k) = exp(-z_flev(:,k)/7.e3)
-    rho_dlev(:,k) = exp(-(z_flev(:,k)-400.)/7.e3)
-    heat_flev(:,k) = (1./3600.)*( 1. - ((z_flev(:,k)-4.e3)/2.e3)**2 )
-u_flev(:,k) = 30.*sin(z_flev(:,k)/10.e3 * 2.*3.141592)
+  do l=1, ncol
+    u_flev(l,k) = u_ct(l)
+    v_flev(l,k) = v_ct(l)
+    nbv_flev(l,k) = n_ct(l)
+    rho_flev(l,k) = rho_ct(l)*exp(-(z_flev(l,k)-zcta(l))/7.e3)
+    rho_dlev(l,k) = rho_ct(l)*exp(-(z_flev(l,k)-250.-zcta(l))/7.e3)
+!    heat_flev(:,k) = (1./3600.)*( 1. - ((z_flev(:,k)-4.e3)/2.e3)**2 )
   enddo
-  kcb(:) = 1  ;  kct(:) = 20
-  f_cor = (/-10.,-10.,0.,0./)
+  enddo
+!  kcb(:) = 1  ;  kct(:) = 20
+  f_cor(:) = 3.
   f_cor(:) = two_omega*sin(f_cor(:)*deg2rad)
 
-file_o = '/Users/kyh/analy/cgwp_offline/zzz.nc'
+file_o = './zzz.nc'
 
   ! u_sfc, v_sfc: allocate and specify, if possible
 
 
-  allocate( kcta(ncol) )
-  kcta = (/6,9,12,9/)
- 
-  call args_sc05(ncol,nz,u_flev,v_flev,t_flev,nbv_flev,rho_flev,z_flev,  &
-                 heat_flev,kcb,kct)  ! opt: z_ref
-  ! kcta ; diag_znwcq
+!  call args_sc05(ncol,nz,u_flev,v_flev,t_flev,nbv_flev,rho_flev,z_flev,  &
+!                 heat_flev,kcb,kct)  ! opt: z_ref
+!  ! kcta ; diag_znwcq
 
   ! u_ct, v_ct, u_cb, v_cb, t_ct
   ! zcta, zcba, n_q, n_ct, rho_ct, cqx, cqy, heatmax
   ! kcta
 
-
-  allocate( mfs_ct(-nc:nc,ncol,nphi) )
-  mfs_ct(:,:,:) = 0.
-  mfs_ct(-nc:-1,:,:) = -1.
-  mfs_ct(1:nc,:,:) = 1.
 
   call calc_sc05(ncol,nz)  ! opt: shear_ct
   ! mfs_ct

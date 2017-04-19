@@ -142,42 +142,11 @@ SUBROUTINE args_sc05(ncol,nz,u,v,t,nbv,rho,z,heat,kcb,kct,z_ref)
   do l=1, ncol
     kcba(l) = minloc(abs(z(l,:) - zcba(l)),1)
   enddo
-! check consistency for deleting below
-!  do l=1, ncol
-!    if (zcba(l) <= z(l,1)) then
-!      kcba(l) = 1
-!    else
-!      do k=1, nz-1
-!        if ( zcba(l) > z(l,k) .and. zcba(l) <= z(l,k+1) ) then
-!          if ( (zcba(l)-z(l,k)) > (z(l,k+1)-zcba(l)) ) then
-!            kcba(l) = k+1
-!          else
-!            kcba(l) = k
-!          end if
-!          EXIT
-!        end if
-!      enddo
-!    end if
-!  enddo
 
   ! indices for cloud top
   do l=1, ncol
     kcta(l) = kcba(l) + minloc(abs(z(l,kcba(l)+1:) - zcta(l)),1)
   enddo
-! check consistency for deleting below
-!  kcta(:) = kcba(:)+1
-!  do l=1, ncol
-!  do k=kcba(l)+1, nz-1
-!    if ( zcta(l) > z(l,k) .and. zcta(l) <= z(l,k+1) ) then
-!      if ( (zcta(l)-z(l,k)) > (z(l,k+1)-zcta(l)) ) then
-!        kcta(l) = k+1
-!      else
-!        kcta(l) = k
-!      end if
-!      EXIT
-!    end if
-!  enddo
-!  enddo
 
 !
 ! Estimate moving velocity of convective cells (See Choi and Chun, 
