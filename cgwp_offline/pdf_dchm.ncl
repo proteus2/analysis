@@ -16,13 +16,13 @@ begin
  y1 = 1979
  y2 = 2006
  lata = 10
- vars = (/"zcta","zcba","rho_ct"/)
- varo = (/"z:B:ct:N: ,  z:B:cb:N: [km]","",":F33:r:F21: [kg m:S:-3:N:]"/)
  xmin = 1.e-2  ; x(1)
  ymin0 = 1.e-4
  ymax0 = 2
- ymin = (/0 ,0 ,-999/)
- ymax = (/10,10, 999/)
+ vars = (/"zcta","zcba","rho_ct","u_ct","u_sfc"/)
+ varo = (/"z:B:ct:N: ,  z:B:cb:N: [km]","",":F33:r:F21B:ct:N: [kg m:S:-3:N:]","u:B:sfc:N: ,  u:B:ct:N: [m s:S:-1:N:]",""/)
+ ymin = (/0 ,0 ,-999,-5  ,-5  /)
+ ymax = (/10,10, 999, 0  , 0  /)
  if (fmiddle .eq. "dchm-midlev") then
    ymax = where(vars .eq. "zcta" .or. vars .eq. "zcba", 15, ymax)
  end if
@@ -66,15 +66,15 @@ begin
 print("columns for CGWP : "+perc_cgw+" %")
 
 ;--------------------------------------- cn level
- lcol = (/1,1,2,3,6,4/)
- ldsh = (/0,1,0,0,0,0/)
+ lcol = (/1,1,2,3,3,4/)
+ ldsh = (/0,1,0,0,2,0/)
  ltck = 0.8
 
 ;--------------------------------------- plot
  wi = 50
  he = 40
- xf = 10 + (/0,0,0,0/)*(wi+5)
- yf = 10 + (/0,0,0,0/)*(he+5)
+ xf = 10 + (/0,0,0,0,0/)*(wi+5)
+ yf = 10 + (/0,0,0,0,0/)*(he+5)
 
  xpg = new(nx*2+2,float)
  ypg = new(nx*2+2,float)
@@ -133,7 +133,7 @@ do il=0, nv-1
 
  draw(plot1)
 
- if (vars(il) .eq. "zcba") then
+ if (vars(il) .eq. "zcba" .or. vars(il) .eq. "u_sfc") then
    continue
  end if
 

@@ -9,7 +9,7 @@ PROGRAM cgwp
 
   implicit none
 
-  integer ::  nx = 3, ny = 2, nz = 30
+  integer, parameter ::  nz = 60
   integer ::  ncol, nvo
 
   real, dimension(:,:), allocatable ::  u_flev, v_flev, nbv_flev,        &
@@ -25,6 +25,8 @@ PROGRAM cgwp
   ! only for drag
   real, dimension(:,:), allocatable ::  rho_dlev
 
+  real, dimension(nz) ::  z_dlev
+
   character(len=128) ::  file_i, file_o
   integer ::  k,l,iv, ncid, tmpi
 
@@ -32,8 +34,8 @@ PROGRAM cgwp
 
   include 'c_math.inc'   ! deg2rad
 
-  nc = 40
-  dc = 2.
+  nc = 160
+  dc = 0.5
   nphi = 2
   allocate( phi_deg(nphi) )
   phi_deg = (/45.,135./)
@@ -56,6 +58,8 @@ PROGRAM cgwp
   allocate( n_q(ncol), n_ct(ncol), zcta(ncol), zcba(ncol) )
   allocate( kcta(ncol) )
 
+!  file_i = '/data18/kyh/dat/L60CGW/dchm_pdf/'//  &
+!           'uanuj.dchm-midlev_pdf.1979-2006.01-12.nc'
   file_i = '/data18/kyh/dat/L60CGW/dchm_pdf/'//  &
            'uanuj.dchm-nonmidlev_pdf.1979-2006.01-12.nc'
 
@@ -80,9 +84,30 @@ PROGRAM cgwp
 
   allocate( z_flev(ncol,nz) )
 
-  do k=1, nz
-    z_flev(:,k) = 500.*float(k)
+!  do k=1, nz
+!    z_flev(:,k) = 500.*float(k)
+!  enddo
+  z_dlev = (/10.00335, 49.99991, 130.0014, 249.9995, 410.0026, 610.0023, &
+    849.9984, 1130, 1449.997, 1810, 2209.999, 2650.004, 3129.996, 3650.002, &
+    4210.004, 4810.003, 5449.999, 6129.999, 6849.996, 7609.998, 8409.996, &
+    9250, 10130, 11050, 12010, 13010, 14050, 15130, 16250, 17410, 18590, &
+    19770.05, 20950.33, 22131.32, 23313.88, 24499.48, 25690.25, 26889.18, &
+    28100.23, 29328.48, 30580.27, 31863.35, 33186.98, 34562.13, 36001.55, &
+    37520, 39134.29, 40863.49, 42729.05, 44754.91, 46967.73, 49396.89, &
+    52074.75, 55036.74, 58321.52, 61971.07, 66030.91, 70550.15, 75581.72, &
+    81182.44/)
+  do l=1, ncol
+    z_flev(l,:) = (/19.99828, 80.00153, 180.0014, 319.9977, 499.9991, 719.997, &
+    979.9999, 1279.999, 1620.004, 1999.996, 2420.002, 2879.996, 3380.004, &
+    3920, 4500, 5119.998, 5780, 6479.998, 7220.002, 8000.002, 8819.999, &
+    9680.001, 10580, 11520, 12500, 13520, 14580, 15680, 16820, 18000, &
+    19180.01, 20360.1, 21540.57, 22722.06, 23905.7, 25093.26, 26287.25, &
+    27491.12, 28709.35, 29947.62, 31212.93, 32513.76, 33860.2, 35264.05, &
+    36739.05, 38300.94, 39967.63, 41759.35, 43698.74, 45811.09, 48124.36, &
+    50669.41, 53480.09, 56593.4, 60049.64, 63892.5, 68169.3, 72930.99, &
+    78232.44, 84132.44/)
   enddo
+ 
 
   do l=1, ncol
     tmpi = minloc(abs(z_flev(l,:) - zcba(l)),1)
@@ -108,8 +133,8 @@ PROGRAM cgwp
     v_flev(l,k) = v_ct(l)
     nbv_flev(l,k) = n_ct(l)
     rho_flev(l,k) = rho_ct(l)*exp(-(z_flev(l,k)-zcta(l))/7.e3)
-    rho_dlev(l,k) = rho_ct(l)*exp(-(z_flev(l,k)-250.-zcta(l))/7.e3)
-!    heat_flev(:,k) = (1./3600.)*( 1. - ((z_flev(:,k)-4.e3)/2.e3)**2 )
+    rho_dlev(l,k) = rho_ct(l)*exp(-(z_dlev(k)-zcta(l))/7.e3)
+!    heat_flev(l,k) = (1./3600.)*( 1. - ((z_flev(l,k)-4.e3)/2.e3)**2 )
   enddo
   enddo
 !  kcb(:) = 1  ;  kct(:) = 20
@@ -168,6 +193,22 @@ file_o = './zzz.nc'
 
 CONTAINS
 
+
+SUBROUTINE input_prof
+
+  use netio
+
+  implicit none
+
+  character(len=128) ::  fdir
+
+  fdir = '/data11/data-arch/ERA-I-nr/2005/11'
+
+  call opennc(trim(fdir)//'/era-int_f.u.anal.00.ml.200511.nc',ncid)
+
+  call closenc(ncid)
+
+END subroutine input_prof
 
 SUBROUTINE put_vars_set
 
