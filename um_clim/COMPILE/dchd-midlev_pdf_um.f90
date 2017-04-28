@@ -12,7 +12,7 @@ PROGRAM DCHD_PDF
   character(len=128) ::  file_o2
 
   namelist /ANALCASE/ EXPNAME, YYYY, MM, HH, REFDATE, OPT_30D
-  namelist /PARAM/ PDF_RNG_LN10, LAT_RNG
+  namelist /PARAM/ PDF_RNG, LAT_RNG
   namelist /FILEIO/ DAY1, NDAY_I, MISSV, FID, FILE_I_HEAD, FILE_I_FORM,  &
                     FILE_I_XXXX, VAR_I_NAME, FILE_ALT, VAR_ALT, FILE_O,  &
                     FILE_O2
