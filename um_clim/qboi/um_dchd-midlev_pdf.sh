@@ -15,7 +15,7 @@ P104=( n HH  00  8 ) # should be 0 # starting time [UTC] and frequency [/day]
 P105=( n REFDATE  1941  12  1 )
 P106=( n OPT_30D  1 )
 #== Parameter 2 ==================================
-P201=( n PDF_RNG  0.0  22.e3  89 )
+P201=( n PDF_RNG  0.0  20.e3  81 )
 P202=( n LAT_RNG  -10.0  10.0 )
 #== Parameter 9 - I/O ============================
 P901=( n DAY1  1 )                 # the earlist date-of-file among input files

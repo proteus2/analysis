@@ -3,16 +3,16 @@
 
 expname=L60CGW
 expcode=uanuj
-#fmidname=dchm_pdf
-#fmidname=dchm-midlev_pdf
-fmidname=dchm-nonmidlev_pdf
+#fmidname=dchd_pdf
+#fmidname=dchd-midlev_pdf
+fmidname=dchd-nonmidlev_pdf
 #== Parameter 1 - CASE ===========================
 P101=( s EXPNAME  $expcode )
 P102=( n YYYY2  1979  2006 )
 P103=( n MM  1  12 )               # starting month and number of months per year
 #== Parameter 2 ==================================
 #== Parameter 9 - I/O ============================
-P991=( s FILE_I_HEAD  "$DATD/$expname/dchm_pdf" )
+P991=( s FILE_I_HEAD  "$DATD/$expname/dchd_pdf" )
 P992=( s FILE_I_FORM  XXXX/${P101[2]}.$fmidname.XXXX.XXXX.nc  -999 )
 P993=( s FILE_I_XXXX  YYYY                      YYYY  MM      -999 )
 P994=( s VAR_I_NAME  N_pop  \
@@ -36,7 +36,7 @@ F_LOG="log/log.$F_SOURCE-$$"
   M3=$(( M2 + P103[3] - 1 ))  ;  [ $M3 -gt 12 ] && M3=$(( M3 - 12 ))
   [ $M2 -lt 10 ] && M2=0$M2  ;  [ $M3 -lt 10 ] && M3=0$M3
 
-  ODIR=$DATD/$expname/dchm_pdf
+  ODIR=$DATD/$expname/dchd_pdf
   P999[2]="$ODIR/${P101[2]}.$fmidname.${P102[2]}-${P102[3]}.${M2}-${M3}.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 

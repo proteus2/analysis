@@ -188,7 +188,7 @@ PROGRAM DCHM_PDF
   if (opt_30d == 0)  ndate = get_ndate()
   day_from_ref = get_dayfromref(year,mon,date,hour)
 
-  iv_i = 1  ! for get_ifilename
+  iv_i = 3  ! for get_ifilename
   file_i(iv_i) = get_ifilename()
   inquire(file=trim(file_i(iv_i)), exist=ex1)
   if ( .not. ex1 ) then
@@ -298,7 +298,7 @@ PROGRAM DCHM_PDF
   allocate( set(iv,ii)%axis3(set(iv,ii)%nd(3)) )
   allocate( set(iv,ii)%axis4(set(iv,ii)%nd(4)) )
   set(iv,ii)%axis1 = pdfx(:)
-  set(iv,ii)%axis2 = (/1.,2.,3/)
+  set(iv,ii)%axis2 = (/1.,2.,3./)
   set(iv,ii)%axis3 = -999.
   set(iv,ii)%axis4 = -999.
     

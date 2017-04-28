@@ -1,4 +1,4 @@
-PROGRAM DCHM_PDF_MERGE
+PROGRAM PDF_MERGE
 
   use hadgem
   use netio
@@ -188,7 +188,7 @@ PROGRAM DCHM_PDF_MERGE
   allocate( set(iv)%axis3(set(iv)%nd(3)) )
   allocate( set(iv)%axis4(set(iv)%nd(4)) )
   set(iv)%axis1 = pdfx(:)
-  set(iv)%axis2 = (/1.,2.,3/)
+  set(iv)%axis2 = (/1.,2.,3./)
   set(iv)%axis3 = -999.
   set(iv)%axis4 = -999.
     
@@ -223,5 +223,5 @@ PROGRAM DCHM_PDF_MERGE
   END subroutine finalize
 
 
-END program DCHM_PDF_MERGE
+END program PDF_MERGE
 
