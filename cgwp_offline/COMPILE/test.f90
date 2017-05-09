@@ -9,33 +9,49 @@ PROGRAM cgwp
 
   implicit none
 
+  logical, parameter ::  l_sc05var_specified = .True.
   integer, parameter ::  nz = 60
+  integer, parameter ::  nz_src = 30
+  integer, parameter ::  nx_ei = 360
+  integer, parameter ::  nx = 192, nk_fc = nx_ei/4
+ 
   integer ::  ncol, nvo
 
-  real, dimension(:,:), allocatable ::  u_flev, v_flev, nbv_flev,        &
-                                        rho_flev, z_flev
+  real, dimension(nz) ::  p_dlev_ref, zp_dlev_ref, zp_flev_ref,          &
+                          lnp_flev_ref
 
-  ! only for SC05
-  real   , dimension(:,:), allocatable ::  heat_flev, t_flev
-  integer, dimension(:)  , allocatable ::  kcb, kct
+  real, dimension(nx,nz) ::  u_grd_dl, v_grd_dl, t_grd_dl
+  real, dimension(nx,nz) ::  heat_grd_dl
+ 
+  real, dimension(:,:), allocatable ::  u_fl_b, v_fl_b, nbv_fl_b,        &
+                                        rho_fl_b, t_fl_b
+  real, dimension(:,:), allocatable ::  heat_fl
+
+  ! only for args_sc05
+  real, dimension(:,:) , allocatable ::  z_fl_s, u_fl_s, v_fl_s, t_fl_s, &
+                                         nbv_fl_s, rho_fl_s, heat_fl_s
+  integer, dimension(:), allocatable ::  kcb, kct
 
   ! only for propdiss
-  real, dimension(:)  , allocatable ::  f_cor
+  real, dimension(:), allocatable ::  f_cor
 
-  ! only for drag
-  real, dimension(:,:), allocatable ::  rho_dlev
-
-  real, dimension(nz) ::  z_dlev
+  ! only for calc_drag
+  real, dimension(:,:), allocatable ::  p_dlev, lnp_flev
 
   character(len=128) ::  file_i, file_o
-  integer ::  k,l,iv, ncid, tmpi
+  integer            ::  i,k,l,iv, tmpi
+  real               ::  tmp
 
   real, parameter ::  two_omega = 2.*7.292116e-5
+  real, parameter ::  g = 9.80665
+  real, parameter ::  rd = 287.05
+  real, parameter ::  kappa = rd/1005.0
+  real, parameter ::  n2bv_min = 1.e-6
 
   include 'c_math.inc'   ! deg2rad
 
-  nc = 160
-  dc = 0.5
+  nc = 160  ! 30
+  dc = 0.5  ! 2.
   nphi = 2
   allocate( phi_deg(nphi) )
   phi_deg = (/45.,135./)
@@ -52,15 +68,212 @@ PROGRAM cgwp
 
   ncol = 21
 
-  allocate( heatmax(ncol) )
-  allocate( u_ct(ncol), v_ct(ncol), u_cb(ncol), v_cb(ncol), t_ct(ncol) )
-  allocate( u_sfc(ncol), v_sfc(ncol), cqx(ncol), cqy(ncol), rho_ct(ncol) )
-  allocate( n_q(ncol), n_ct(ncol), zcta(ncol), zcba(ncol) )
+!-----------------------------------------------------------------------
+!  READ BACKGROUND VARIABLES AND CONVECTIVE HEATING
+!-----------------------------------------------------------------------
+
+  call read_erai
+
+  ! define vertical coordinates
+  zp_flev_ref(1:nz-1) = 0.5*(zp_dlev_ref(1:nz-1) + zp_dlev_ref(2:nz))
+  zp_flev_ref(nz) = 2.*zp_dlev_ref(nz) - zp_flev_ref(nz-1)
+  lnp_flev_ref(:) = (-zp_flev_ref(:)/7.e3) + log(1.e5)
+
+  allocate( u_fl_b(ncol,nz), v_fl_b(ncol,nz), nbv_fl_b(ncol,nz),         &
+            rho_fl_b(ncol,nz), t_fl_b(ncol,nz) )
+
+  do l=1, ncol
+!    i = (l) ??
+i=180
+    u_fl_b(l,1:nz-1) = 0.5*(u_grd_dl(i,1:nz-1) + u_grd_dl(i,2:nz))
+    v_fl_b(l,1:nz-1) = 0.5*(v_grd_dl(i,1:nz-1) + v_grd_dl(i,2:nz))
+    t_fl_b(l,1:nz-1) = 0.5*(t_grd_dl(i,1:nz-1) + t_grd_dl(i,2:nz))
+    u_fl_b(l,nz) = u_grd_dl(i,nz)
+    v_fl_b(l,nz) = v_grd_dl(i,nz)
+    t_fl_b(l,nz) = t_grd_dl(i,nz)
+!p_coord+
+    nbv_fl_b(l,1:nz-1) = 7.e3*(g*g)/(rd*t_fl_b(l,1:nz-1))*               &
+        log( (t_grd_dl(i,2:nz)/t_grd_dl(i,1:nz-1))*                      &
+             (p_dlev_ref(1:nz-1)/p_dlev_ref(2:nz))**kappa )/             &
+        (zp_dlev_ref(2:nz) - zp_dlev_ref(1:nz-1))
+!p_coord-
+  enddo
+  nbv_fl_b(:,nz) = nbv_fl_b(:,nz-1)
+  do k=1, nz
+  do l=1, ncol
+    nbv_fl_b(l,k) = sqrt( max(n2bv_min,nbv_fl_b(l,k)) )
+  enddo
+  enddo
+
+  do k=1, nz
+    rho_fl_b(:,k) = exp(lnp_flev_ref(k))/(rd*t_fl_b(:,k))
+  enddo
+
+  ! u_sfc, v_sfc: allocate and specify, if possible
+
+  allocate( heat_fl(ncol,nz) )
+  heat_fl(:,:) = 0.
+!  do l=1, ncol
+!!    i = (l) ??
+!i=180
+!    heat_fl(l,1:nz-1) = 0.5*(q_grd_dl(i,1:nz-1) + q_grd_dl(i,2:nz))
+!    heat_fl(l,nz) = q_grd_dl(i,nz)
+!  enddo
+
+!-----------------------------------------------------------------------
+!  EXTRACT THE VARIABLES USED FOR CALCULATION OF SC05
+!-----------------------------------------------------------------------
+
+  SPEC_SC05:  IF ( .not. l_sc05var_specified ) then
+
+  allocate( kcb(ncol), kct(ncol) )
+  kcb = 1  ;  kct = nz_src
+
+  allocate( z_fl_s(ncol,nz_src) )
+  allocate( u_fl_s   (ncol,nz_src), v_fl_s   (ncol,nz_src),              &
+            t_fl_s   (ncol,nz_src), nbv_fl_s (ncol,nz_src),              &
+            rho_fl_s (ncol,nz_src), heat_fl_s(ncol,nz_src) )
+
+!  z_fl_s   (:,:) = zp_flev_ref(1:nz_src)  ! z-coord
+!  z_fl_s   (:,:) = z_fl_b   (:,1:nz_src)  ! p-coord
+  u_fl_s   (:,:) = u_fl_b   (:,1:nz_src)
+  v_fl_s   (:,:) = v_fl_b   (:,1:nz_src)
+  t_fl_s   (:,:) = t_fl_b   (:,1:nz_src)
+  nbv_fl_s (:,:) = nbv_fl_b (:,1:nz_src)
+  rho_fl_s (:,:) = rho_fl_b (:,1:nz_src)
+  heat_fl_s(:,:) = heat_fl  (:,1:nz_src)
+
+  call args_sc05( ncol, nz_src, z_fl_s, u_fl_s, v_fl_s, t_fl_s,          &
+                  nbv_fl_s, rho_fl_s, heat_fl_s, kcb, kct )  ! opt: z_ref
+  ! OUT |  u_ct ; v_ct ; u_cb ; v_cb ; t_ct ; n_q ; n_ct ; rho_ct ;
+  !     |  zcta ; zcba ; cqx ; cqy ; heatmax ; kcta
+  !     |  (u_sfc ; v_sfc, if not allocated before)
+  ! OUT |  diag_znwcq
+
+  deallocate( z_fl_s )
+  deallocate( u_fl_s, v_fl_s, t_fl_s, nbv_fl_s, rho_fl_s, heat_fl_s )
+  deallocate( kcb, kct )
+
+  ELSE
+
+  call sc05vars
+
+  if ( allocated(kcta) )  deallocate( kcta )
   allocate( kcta(ncol) )
 
-!  file_i = '/data18/kyh/dat/L60CGW/dchm_pdf/'//  &
+  do l=1, ncol
+!z_coord+
+!    kcta(l) = minloc(abs(z_flev_ref(:) - zcta(l)),1)
+!!UM    tmpi = minloc(abs(z_flev_ref(:) - zcba(l)),1)
+!!UM    kcta(l) = tmpi + minloc(abs(z_flev_ref(tmpi+1:) - zcta(l)),1)
+!z_coord-
+!p_coord+
+    tmp = 7.e3*log(1.e5/(rho_ct(l)*rd*t_ct(l)))
+!p_coord-
+    kcta(l) = minloc(abs(zp_flev_ref(:) - tmp),1)
+    kcta(l) = max(3,kcta(l))
+  enddo
+
+  END IF  SPEC_SC05
+
+  deallocate( heat_fl )
+
+!-----------------------------------------------------------------------
+!  SC05 CALCULATION
+!-----------------------------------------------------------------------
+
+  call calc_sc05(ncol)  ! opt: shear_ct
+  ! IN  |  output variables from args_sc05:
+  !     |  u_ct ; v_ct ; u_cb ; v_cb ; t_ct ; n_q ; n_ct ; rho_ct ;
+  !     |  zcta ; zcba ; cqx ; cqy ; heatmax ;
+  !     |  u_sfc ; v_sfc
+  ! OUT |  mfs_ct
+
+  ! u_sfc and v_sfc must be deallocated here to reset their values, if
+  ! in a loop
+  deallocate( u_sfc, v_sfc )
+
+  deallocate( u_ct, v_ct, u_cb, v_cb, t_ct, n_q, n_ct, rho_ct,           &
+              zcta, zcba, cqx, cqy, heatmax )
+
+!-----------------------------------------------------------------------
+!  OBTAIN MOMENTUM FLUX PROFILE ABOVE THE LAUNCH LEVEL
+!-----------------------------------------------------------------------
+ 
+  allocate( f_cor(ncol) )
+  f_cor(:) = 3.
+  f_cor(:) = two_omega*sin(f_cor(:)*deg2rad)
+
+  call propdiss( ncol, nz, u_fl_b, v_fl_b, nbv_fl_b, rho_fl_b, f_cor,    &
+                 kcta, mfs_ct )
+  ! OUT |  mflx_ct_XXXX ; mflx_XXXX ; mf_pos ; mf_neg
+  ! OUT |  diag_spec_ctop ; diag_spec
+ 
+  deallocate( f_cor )
+  deallocate( mfs_ct )
+  deallocate( u_fl_b, v_fl_b, nbv_fl_b, rho_fl_b, t_fl_b )
+
+!-----------------------------------------------------------------------
+!  CALCULATE GRAVITY WAVE DRAG
+!-----------------------------------------------------------------------
+ 
+  if ( l_drag_u_o .or. l_drag_v_o ) then
+
+    allocate( p_dlev(ncol,nz), lnp_flev(ncol,nz) )
+    p_dlev  (:,:) = spread(p_dlev_ref  ,1,ncol)
+    lnp_flev(:,:) = spread(lnp_flev_ref,1,ncol)
+
+    call calc_drag_lnp(ncol,nz,lnp_flev,p_dlev,0)
+    ! IN  |  mf_pos ; mf_neg
+    ! OUT |  drag_u ; drag_v
+ 
+!    deallocate( rho_dl_b )
+    deallocate( p_dlev, lnp_flev )
+
+  end if
+
+  deallocate( kcta )
+
+!-----------------------------------------------------------------------
+!  
+!-----------------------------------------------------------------------
+ 
+  call put_vars_set
+
+! DUMP
+
+  file_o = './zzz.nc'
+
+  write(6,*)  ;  write(6,*) trim(file_o)  ;  write(6,*)
+
+  call outnc(trim(file_o),nvo,set,'CGWP offline calculation')
+
+! END
+
+  call finalize
+
+  STOP
+
+
+CONTAINS
+
+
+SUBROUTINE sc05vars
+
+  integer ::  ncid
+
+  if ( allocated(u_ct) )  deallocate( u_ct, v_ct, u_cb, v_cb, t_ct,      &
+                                      n_q, n_ct, rho_ct, zcta, zcba,     &
+                                      cqx, cqy, heatmax )
+  allocate( u_ct(ncol), v_ct(ncol), u_cb(ncol), v_cb(ncol), t_ct(ncol),  &
+            n_q(ncol), n_ct(ncol), rho_ct(ncol), zcta(ncol), zcba(ncol), &
+            cqx(ncol), cqy(ncol), heatmax(ncol) )
+
+  allocate( u_sfc(ncol), v_sfc(ncol) )
+
+!  file_i = '../../../dat/L60CGW/dchm_pdf/'//  &
 !           'uanuj.dchm-midlev_pdf.1979-2006.01-12.nc'
-  file_i = '/data18/kyh/dat/L60CGW/dchm_pdf/'//  &
+  file_i = '../../../dat/L60CGW/dchm_pdf/'//  &
            'uanuj.dchm-nonmidlev_pdf.1979-2006.01-12.nc'
 
   call opennc(file_i,ncid)
@@ -82,133 +295,84 @@ PROGRAM cgwp
   call geta2d(ncid,'zcba'  ,32,ncol,1,1,zcba   )
   call closenc(ncid)
 
-  allocate( z_flev(ncol,nz) )
+END subroutine sc05vars
 
-!  do k=1, nz
-!    z_flev(:,k) = 500.*float(k)
-!  enddo
-  z_dlev = (/10.00335, 49.99991, 130.0014, 249.9995, 410.0026, 610.0023, &
-    849.9984, 1130, 1449.997, 1810, 2209.999, 2650.004, 3129.996, 3650.002, &
-    4210.004, 4810.003, 5449.999, 6129.999, 6849.996, 7609.998, 8409.996, &
-    9250, 10130, 11050, 12010, 13010, 14050, 15130, 16250, 17410, 18590, &
-    19770.05, 20950.33, 22131.32, 23313.88, 24499.48, 25690.25, 26889.18, &
-    28100.23, 29328.48, 30580.27, 31863.35, 33186.98, 34562.13, 36001.55, &
-    37520, 39134.29, 40863.49, 42729.05, 44754.91, 46967.73, 49396.89, &
-    52074.75, 55036.74, 58321.52, 61971.07, 66030.91, 70550.15, 75581.72, &
-    81182.44/)
-  do l=1, ncol
-    z_flev(l,:) = (/19.99828, 80.00153, 180.0014, 319.9977, 499.9991, 719.997, &
-    979.9999, 1279.999, 1620.004, 1999.996, 2420.002, 2879.996, 3380.004, &
-    3920, 4500, 5119.998, 5780, 6479.998, 7220.002, 8000.002, 8819.999, &
-    9680.001, 10580, 11520, 12500, 13520, 14580, 15680, 16820, 18000, &
-    19180.01, 20360.1, 21540.57, 22722.06, 23905.7, 25093.26, 26287.25, &
-    27491.12, 28709.35, 29947.62, 31212.93, 32513.76, 33860.2, 35264.05, &
-    36739.05, 38300.94, 39967.63, 41759.35, 43698.74, 45811.09, 48124.36, &
-    50669.41, 53480.09, 56593.4, 60049.64, 63892.5, 68169.3, 72930.99, &
-    78232.44, 84132.44/)
-  enddo
- 
-
-  do l=1, ncol
-    tmpi = minloc(abs(z_flev(l,:) - zcba(l)),1)
-    kcta(l) = tmpi + minloc(abs(z_flev(l,tmpi+1:) - zcta(l)),1)
-  enddo
-
-  allocate( u_flev(ncol,nz), v_flev(ncol,nz) )
-  allocate( nbv_flev(ncol,nz), rho_flev(ncol,nz) )
-
-  ! for SC05
-  allocate( heat_flev(ncol,nz), t_flev(ncol,nz), kcb(ncol), kct(ncol) )
-  ! for propdiss
-  allocate( f_cor(ncol) )
-  ! for drag
-  allocate( rho_dlev(ncol,nz) )
-
-  u_flev = 0.  ;  v_flev = 0.  ;  u_sfc = 0.  ; v_sfc = 0.
-!  t_flev = 270.
-!  nbv_flev(:,:) = 2.6e-2
-  do k=1, nz
-  do l=1, ncol
-    u_flev(l,k) = u_ct(l)
-    v_flev(l,k) = v_ct(l)
-    nbv_flev(l,k) = n_ct(l)
-    rho_flev(l,k) = rho_ct(l)*exp(-(z_flev(l,k)-zcta(l))/7.e3)
-    rho_dlev(l,k) = rho_ct(l)*exp(-(z_dlev(k)-zcta(l))/7.e3)
-!    heat_flev(l,k) = (1./3600.)*( 1. - ((z_flev(l,k)-4.e3)/2.e3)**2 )
-  enddo
-  enddo
-!  kcb(:) = 1  ;  kct(:) = 20
-  f_cor(:) = 3.
-  f_cor(:) = two_omega*sin(f_cor(:)*deg2rad)
-
-file_o = './zzz.nc'
-
-  ! u_sfc, v_sfc: allocate and specify, if possible
-
-
-!  call args_sc05(ncol,nz,u_flev,v_flev,t_flev,nbv_flev,rho_flev,z_flev,  &
-!                 heat_flev,kcb,kct)  ! opt: z_ref
-!  ! kcta ; diag_znwcq
-
-  ! u_ct, v_ct, u_cb, v_cb, t_ct
-  ! zcta, zcba, n_q, n_ct, rho_ct, cqx, cqy, heatmax
-  ! kcta
-
-
-  call calc_sc05(ncol,nz)  ! opt: shear_ct
-  ! mfs_ct
-
-  deallocate( u_sfc, v_sfc, t_flev, kcb, kct )
-
-
-  call propdiss(ncol,nz,     &
-    u_flev, v_flev, nbv_flev, rho_flev, f_cor,                 &
-    kcta, mfs_ct )
-  ! mf_pos  ;  mf_neg
-  ! diag_spec_ctop  ;  diag_spec
-  ! mflx_ct_XXXX  ;  mflx_XXXX
- 
-  deallocate( f_cor )
-
-
-  ! drag
-  if ( l_drag_u_o .or. l_drag_v_o )                                      &
-     call calc_drag(ncol,nz,z_flev,rho_dlev,0)
-
-
-  call put_vars_set
-
-! DUMP
-
-  write(6,*)  ;  write(6,*) trim(file_o)  ;  write(6,*)
-
-  call outnc(trim(file_o),nvo,set,'CGWP offline calculation')
-
-! END
-
-  call finalize
-
-  STOP
-
-
-CONTAINS
-
-
-SUBROUTINE input_prof
-
-  use netio
+SUBROUTINE read_erai
 
   implicit none
 
-  character(len=128) ::  fdir
+  character(len=128) ::  fdir, fname_ei(3)
 
-  fdir = '/data11/data-arch/ERA-I-nr/2005/11'
+  real, dimension(nx,nz,3)    ::  var_grd
+  real, dimension(nx)         ::  ix_grd
+  real, dimension(nx_ei,nz,3) ::  var_ei
+  real, dimension(nx_ei)      ::  ix_ei, lon_ei
+  real, dimension(nx_ei,nz)   ::  tmp_ei
+  real, dimension(0:nk_fc)    ::  cc, cs, ifc
 
-  call opennc(trim(fdir)//'/era-int_f.u.anal.00.ml.200511.nc',ncid)
+  integer ::  ii, ik, ivi
 
-  call closenc(ncid)
+  real, parameter ::  twopi = 6.283185 !3
 
-END subroutine input_prof
+  fdir = '../ERA-I_eq'
+
+  fname_ei(1) = trim(fdir)//'/era-interim_eq_2005-11-01_u.dat'
+  fname_ei(2) = trim(fdir)//'/era-interim_eq_2005-11-01_v.dat'
+  fname_ei(3) = trim(fdir)//'/era-interim_eq_2005-11-01_t.dat'
+  do ivi=1, 3
+    call read_erai_lon_data(10,fname_ei(ivi),lon_ei,zp_dlev_ref,         &
+                            var_ei(:,:,ivi),nx_ei,nz)
+  enddo
+  if (lon_ei(1) /= 0.) then
+    if (lon_ei(1) == -180.) then
+      do ivi=1, 3
+        tmp_ei(:,:) = var_ei(:,:,ivi)
+        var_ei(1:nx_ei/2,:,ivi) = tmp_ei(nx_ei/2+1:,:)
+        var_ei(nx_ei/2+1:,:,ivi) = tmp_ei(1:nx_ei/2,:)
+      enddo
+      tmp_ei(:,1) = lon_ei(:)
+      lon_ei(1:nx_ei/2) = tmp_ei(nx_ei/2+1:,1)
+      lon_ei(nx_ei/2+1:) = tmp_ei(1:nx_ei/2,1)
+    else
+      print*, 'Check longitudes in ERA-I.'  ;  STOP
+    end if
+  end if
+
+  do ii=1, nx_ei
+    ix_ei(ii) = float(ii-1)
+  enddo
+  do ii=1, nx
+    ix_grd(ii) = float(ii-1)
+  enddo
+  do ik=0, nk_fc
+    ifc(ik) = float(ik)
+  enddo
+
+  do ivi=1, 3
+  do k=1, nz
+    do ik=0, nk_fc
+      cc(ik) = sum(var_ei(:,k,ivi)*cos(ix_ei(:)*ifc(ik)/float(nx_ei)*twopi))
+      cs(ik) = sum(var_ei(:,k,ivi)*sin(ix_ei(:)*ifc(ik)/float(nx_ei)*twopi))
+    enddo
+    cc(:) = cc(:)/float(nx_ei)
+    cs(:) = cs(:)/float(nx_ei)
+    do ii=1, nx
+      var_grd(ii,k,ivi) = cc(0) + 2.*(                                   &
+          sum(cc(1:)*cos(ix_grd(ii)*ifc(1:)/float(nx)*twopi)) +          &
+          sum(cs(1:)*sin(ix_grd(ii)*ifc(1:)/float(nx)*twopi)) )
+    enddo
+  enddo
+  enddo
+ 
+  u_grd_dl(:,:) = var_grd(:,:,1)
+  v_grd_dl(:,:) = var_grd(:,:,2)
+  t_grd_dl(:,:) = var_grd(:,:,3)
+
+  zp_dlev_ref(:) = zp_dlev_ref(:)*1.e3  ! [m]
+
+  p_dlev_ref(:) = 1.e5*exp(-zp_dlev_ref(:)/7.e3)
+
+END subroutine read_erai
 
 SUBROUTINE put_vars_set
 
@@ -221,7 +385,7 @@ SUBROUTINE put_vars_set
   do l=1, ncol
     coln(l) = float(l)
   enddo
-  z(:) = z_flev(1,:)
+  z(:) = zp_dlev_ref(:)
 
   allocate( set(nvo) )
 
@@ -262,6 +426,7 @@ SUBROUTINE put_vars_set
                 c_phase,phi_deg2,coln)
   end if
  
+  z(:) = zp_flev_ref(:)
   axis = (/'c_ph','dir ','z   ','case'/)
   ndim = (/nc*2+1,nphi*2,nz,ncol/)
   if ( l_spec_o ) then
@@ -273,8 +438,6 @@ END subroutine put_vars_set
 
 SUBROUTINE finalize
 
-  deallocate( u_flev, v_flev, nbv_flev, rho_flev, z_flev )
-  deallocate( rho_dlev )
   do iv=1, nvo
     deallocate( set(iv)%axis1, set(iv)%axis2, set(iv)%axis3,             &
                 set(iv)%axis4 )
@@ -286,4 +449,40 @@ END subroutine finalize
 
 
 END program cgwp
+
+
+      subroutine read_erai_lon_data (nf,fname,lon,zkm,data,nlon,nlev) 
+      character*80 fname,label1,label2,label3
+      real lon(nlon),zkm(nlev),data(nlon,nlev)  
+      if (nlon.ne.360) then 
+         write(6,*) 'nlon must be 360' 
+         stop
+      endif 
+      if (nlev.ne.60) then 
+         write(6,*) 'nlev must be 60' 
+         stop
+      endif 
+      open (nf,file=fname,status='old')
+      read (nf,5000) label1
+      read (nf,5010) lon
+      read (nf,5000) label2
+      read (nf,5020) zkm
+      read (nf,5000) label3
+      do l=1,nlev 
+         read (nf,5020) (data(i,l),i=1,nlon)
+      enddo
+      close (nf)         
+!      write(6,*) label1
+!      write(6,*) lon
+!      write(6,*) label2
+!      write(6,*) zkm
+!      write(6,*) label3
+!      do l=1,nlev 
+!         write(6,*) (data(i,l),i=1,nlon)
+!      enddo
+ 5000 format(a80)
+ 5010 format(360f8.2)
+ 5020 format(360f13.8)
+      return
+      end subroutine
 

@@ -125,6 +125,16 @@ SUBROUTINE propdiss(  &
   ineg = tmpi - 1
   ipos = tmpi + 1
 
+  ! in case when the background wind used in this subroutine is different
+  ! from that used for the calculation of cloud-top momentum flux spectrum.
+  ! If it is not the case, this will not affect the result.
+  do ic=ipos, nc
+    mfsp(ic) = max(0., mfsp(ic))
+  enddo
+  do ic=-nc, ineg
+    mfsp(ic) = min(0., mfsp(ic))
+  enddo
+ 
   do k=kcta(l), nz
 
     ! calculate the saturation spectrum using Warner and
@@ -205,9 +215,9 @@ SUBROUTINE calc_drag(                                                    &
   !            |     practical sense (not physical but inducing only
   !            |     little change in wind tendency)
 
-  integer                      , intent(in) ::  ncol, nz
-  real, dimension(ncol,nz)     , intent(in) ::  z_flev, rho
-  integer                      , intent(in) ::  i_conserve
+  integer                 , intent(in) ::  ncol, nz
+  real, dimension(ncol,nz), intent(in) ::  z_flev, rho
+  integer                 , intent(in) ::  i_conserve
 
   integer, dimension(ncol), intent(in), optional ::  kcta
 
@@ -255,7 +265,7 @@ SUBROUTINE calc_drag(                                                    &
   if (i_conserve == 2) then
     do l=1, ncol
       k = kcta(l)
-      tmp(l,1) = 1.0/rho(l,k)/(z_flev(l,k) - z_flev(l,k-1))
+      tmp(l,1) = 1.0/(rho(l,k)*(z_flev(l,k) - z_flev(l,k-1)))
       drag_u(l,k) = (mf_x(l,nz) - mf_x(l,k))*tmp(l,1)
       drag_v(l,k) = (mf_y(l,nz) - mf_y(l,k))*tmp(l,1)
     enddo
@@ -264,6 +274,83 @@ SUBROUTINE calc_drag(                                                    &
   RETURN
 
 END subroutine calc_drag
+
+SUBROUTINE calc_drag_lnp(                                                &
+    ncol, nz, lnp_flev, p, i_conserve,                                   &
+    kcta )
+
+  USE param_gwp  ,  ONLY: nphi, cosphi, sinphi
+  USE switch_dump,  ONLY: l_drag_u_o, l_drag_v_o
+
+  ! i_conserve |  option for the column momentum conservation
+  !            |  0: not conserved (e.g., offline calculation)
+  !            |  1: conserved by vanishing the flux at the lid
+  !            |  2: conserved by reducing the parameterized
+  !            |     counteractive drag below the cloud top in a
+  !            |     practical sense (not physical but inducing only
+  !            |     little change in wind tendency)
+
+  integer                 , intent(in) ::  ncol, nz
+  real, dimension(ncol,nz), intent(in) ::  lnp_flev, p
+  integer                 , intent(in) ::  i_conserve
+
+  integer, dimension(ncol), intent(in), optional ::  kcta
+
+  real, dimension(ncol,nz) ::  tmp, mf_x, mf_y
+  integer                  ::  k,l,iphi
+
+  real, parameter ::  g = 9.80665
+
+  include 'c_math.inc'
+
+  if ( allocated(drag_u) )  deallocate( drag_u, drag_v )
+  allocate( drag_u(ncol,nz), drag_v(ncol,nz) )
+  drag_u(:,:) = 0.  ;  drag_v(:,:) = 0.
+
+  mf_x(:,:) = 0.  ;  mf_y(:,:) = 0.
+
+  do iphi=1, nphi
+    tmp(:,:) = mf_pos(:,:,iphi) + mf_neg(:,:,iphi)
+    mf_x(:,:) = mf_x(:,:) + tmp(:,:)*cosphi(iphi)
+    mf_y(:,:) = mf_y(:,:) + tmp(:,:)*sinphi(iphi)
+  enddo
+
+  if (i_conserve == 1) then
+    mf_x(:,nz) = 0.  ;  mf_y(:,nz) = 0.
+  else
+    if ( i_conserve == 2 .and. ( .not. present(kcta) ) ) then
+      write(6,*) 'ERROR: calc_drag'
+      write(6,*) '  kcta not provided when i_conserve = 2.'
+      STOP
+    end if
+  end if
+
+  drag_u(:,1) = 0.  ;  drag_v(:,1) = 0.
+
+  do k=2, nz
+    tmp(:,k) = g/(p(:,k)*(lnp_flev(:,k-1) - lnp_flev(:,k)))
+    drag_u(:,k) = (mf_x(:,k-1) - mf_x(:,k))*tmp(:,k)
+    drag_v(:,k) = (mf_y(:,k-1) - mf_y(:,k))*tmp(:,k)
+  enddo
+
+  if (i_conserve < 2)  RETURN
+
+  ! If the outward flux of momentum at the model lid is allowed,
+  ! drags below the cloud top must be reduced somehow in order to
+  ! conserve the momentum budget of the model
+ 
+  if (i_conserve == 2) then
+    do l=1, ncol
+      k = kcta(l)
+      tmp(l,1) = g/(p(l,k)*(lnp_flev(l,k-1) - lnp_flev(l,k)))
+      drag_u(l,k) = (mf_x(l,nz) - mf_x(l,k))*tmp(l,1)
+      drag_v(l,k) = (mf_y(l,nz) - mf_y(l,k))*tmp(l,1)
+    enddo
+  end if
+
+  RETURN
+
+END subroutine calc_drag_lnp
 
 SUBROUTINE mflux_ewns
 

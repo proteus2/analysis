@@ -21,7 +21,7 @@ MODULE mflx_ctop_sc05
 CONTAINS
 
 
-SUBROUTINE args_sc05(ncol,nz,u,v,t,nbv,rho,z,heat,kcb,kct,z_ref)
+SUBROUTINE args_sc05(ncol,nz,z,u,v,t,nbv,rho,heat,kcb,kct,z_ref)
 ! The all input here are at flux levels.
 
 !
@@ -47,7 +47,7 @@ SUBROUTINE args_sc05(ncol,nz,u,v,t,nbv,rho,z,heat,kcb,kct,z_ref)
   integer, intent(in) ::  ncol, nz
 
   ! data arrays
-  real, dimension(ncol,nz), intent(in) ::  u, v, t, nbv, rho, z, heat
+  real, dimension(ncol,nz), intent(in) ::  z, u, v, t, nbv, rho, heat
   integer, dimension(ncol), intent(in) ::  kcb, kct
   real, dimension(nz)     , intent(in), optional ::  z_ref
 
@@ -67,14 +67,12 @@ SUBROUTINE args_sc05(ncol,nz,u,v,t,nbv,rho,z,heat,kcb,kct,z_ref)
   ! parameters and constants
   real, parameter ::  zt_eta = 100.e3  ! 100 km
 
-  if ( allocated(kcta) )  deallocate( kcta )
-  allocate( kcta(ncol) )
   if ( allocated(u_ct) )  deallocate( u_ct, v_ct, u_cb, v_cb, t_ct,      &
-                                      zcta, zcba, n_q, n_ct, rho_ct,     &
-                                      cqx, cqy, heatmax )
-  allocate( u_ct(ncol), v_ct(ncol), u_cb(ncol), v_cb(ncol),              &
-            t_ct(ncol), zcta(ncol), zcba(ncol), n_q(ncol), n_ct(ncol),   &
-            rho_ct(ncol), cqx(ncol), cqy(ncol), heatmax(ncol) )
+                                      n_q, n_ct, rho_ct, zcta, zcba,     &
+                                      cqx, cqy, heatmax, kcta )
+  allocate( u_ct(ncol), v_ct(ncol), u_cb(ncol), v_cb(ncol), t_ct(ncol),  &
+            n_q(ncol), n_ct(ncol), rho_ct(ncol), zcta(ncol), zcba(ncol), &
+            cqx(ncol), cqy(ncol), heatmax(ncol), kcta(ncol) )
  
   if ( l_diag_znwcq_o ) then
     if ( allocated(diag_znwcq) )  deallocate( diag_znwcq )
@@ -231,7 +229,7 @@ SUBROUTINE args_sc05(ncol,nz,u,v,t,nbv,rho,z,heat,kcb,kct,z_ref)
 
 END SUBROUTINE args_sc05
 
-SUBROUTINE calc_sc05(ncol,nz,shear_ct)
+SUBROUTINE calc_sc05(ncol,shear_ct)
 
 !
 ! PURPOSE:  To calculate the cloud-top momentum flux spectrum in the 
@@ -247,13 +245,12 @@ SUBROUTINE calc_sc05(ncol,nz,shear_ct)
 !
 
   USE param_gwp
-  USE switch_dump,  ONLY: l_diag_znwcq_o
 
   implicit none
 
 ! SUBROUTINE ARGUMENTS
 
-  integer                , intent(in) ::  ncol, nz
+  integer                , intent(in) ::  ncol
   real, dimension(ncol,2), intent(in), optional ::  shear_ct
 
 ! LOCAL VARIABLES
