@@ -8,12 +8,11 @@ RA_NHOUR=4  ;  RA_NX=240
 NT_F4=( 1  30  1  1 )      # number of time series in one input file
 MISSV=( 1.0 )              # if no missing points, set 1.0
 P_PREDEF="-999."
-FILE_I_HEAD=( '/data11/data-arch/ERA-I' )
+FILE_I_HEAD=( ~/portal/ERA-I )
 FILE_I_FORM=( XXXX  XXXX  era-int.XXXX.anal.XXXX.pl.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM            VAR_I     HH      YYYY MM      -999 )
-VAR_I=(      u  v  ome  t  gp )  # Do not change this order.
-VAR_I_NAME=( U_GDS0_ISBL  V_GDS0_ISBL  W_GDS0_ISBL  T_GDS0_ISBL  Z_GDS0_ISBL )
-UNIT_H="m2s-2"
+VAR_I=(      u  v  ome  t )  # Do not change this order.
+VAR_I_NAME=( U_GDS0_ISBL  V_GDS0_ISBL  W_GDS0_ISBL  T_GDS0_ISBL )
 ;;
 #-----------------------------------------------------------------------
 'merra')  RA_CODENAME="MERRA"
@@ -22,12 +21,11 @@ RA_NHOUR=8  ;  RA_NX=288
 NT_F4=( 8  1  1  1 )       # number of time series in one input file
 MISSV=( 1.e15 )            # if no missing points, set 1.0
 P_PREDEF="-999."
-FILE_I_HEAD=( '/data11/data-arch/MERRA' )
+FILE_I_HEAD=( ~/portal/MERRA )
 FILE_I_FORM=( XXXX  XXXX  merra.XXXX.assm.pl.XXXXXXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM          VAR_I        YYYY MM  DD      -999 )
-VAR_I=(      u  v  omega  t  h )  # Do not change this order.
-VAR_I_NAME=( u  v  omega  t  h )
-UNIT_H="m"
+VAR_I=(      u  v  omega  t )  # Do not change this order.
+VAR_I_NAME=( u  v  omega  t )
 ;;
 #-----------------------------------------------------------------------
 'merra2')  RA_CODENAME="MERRA2"
@@ -36,12 +34,11 @@ RA_NHOUR=8  ;  RA_NX=576
 NT_F4=( 8  1  1  1 )       # number of time series in one input file
 MISSV=( 1.e15 )            # if no missing points, set 1.0
 P_PREDEF="-999."
-FILE_I_HEAD=( '/data11/data-arch/MERRA2' )
+FILE_I_HEAD=( ~/portal/MERRA2 )
 FILE_I_FORM=( XXXX  XXXX  merra2.XXXX.assm.pl.XXXXXXXXXXXX.nc4  -999 )
 FILE_I_XXXX=( YYYY  MM          VAR_I        YYYY MM  DD       -999 )
-VAR_I=(      u  v  omega  t  h )  # Do not change this order.
-VAR_I_NAME=( U  V  OMEGA  T  H )
-UNIT_H="m"
+VAR_I=(      u  v  omega  t )  # Do not change this order.
+VAR_I_NAME=( U  V  OMEGA  T )
 ;;
 #-----------------------------------------------------------------------
 'jra55')  RA_CODENAME="JRA55"
@@ -50,13 +47,11 @@ RA_NHOUR=4  ;  RA_NX=288
 NT_F4=( 4  30  1  1 )      # number of time series in one input file
 MISSV=( 1.0 )              # if no missing points, set 1.0
 P_PREDEF="-999."
-FILE_I_HEAD=( '/data11/data-arch/JRA55' )
+FILE_I_HEAD=( ~/portal/JRA55 )
 FILE_I_FORM=( XXXX  XXXX  jra55.XXXX.anal.pl.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM          VAR_I        YYYY MM      -999 )
-VAR_I=(      ugrd  vgrd  vvel  tmp  hgt )  # Do not change this order.
-VAR_I_NAME=( U_GRD_GDS0_ISBL  V_GRD_GDS0_ISBL  V_VEL_GDS0_ISBL  TMP_GDS0_ISBL  \
-             HGT_GDS0_ISBL )
-UNIT_H="m"
+VAR_I=(      ugrd  vgrd  vvel  tmp )  # Do not change this order.
+VAR_I_NAME=( U_GRD_GDS0_ISBL  V_GRD_GDS0_ISBL  V_VEL_GDS0_ISBL  TMP_GDS0_ISBL )
 ;;
 #-----------------------------------------------------------------------
 'cfsr')  RA_CODENAME="CFSR"
@@ -65,27 +60,25 @@ RA_NHOUR=4  ;  RA_NX=360
 NT_F4=( 4  1  1  1 )       # number of time series in one input file
 MISSV=( 9.999e20 )         # if no missing points, set 1.0
 P_PREDEF="-999."
-FILE_I_HEAD=( '/data11/data-arch/CFSR/anal' )
+FILE_I_HEAD=( ~/portal/CFSR/anal )
 FILE_I_FORM=( XXXX  XXXX  cfsr.XXXX.anal.gdas.XXXXXXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM         VAR_I          YYYY MM  DD      -999 )
-VAR_I=(      u  v  omega  t  h )  # Do not change this order.
-VAR_I_NAME=( UGRD  VGRD  VVEL  TMP  HGT )
-UNIT_H="m"
+VAR_I=(      u  v  omega  t )  # Do not change this order.
+VAR_I_NAME=( UGRD  VGRD  VVEL  TMP )
 ;;
 #-----------------------------------------------------------------------
 'era-int_f')  RA_CODENAME="ERA-I-nr"
 RA_NHOUR=4  ;  RA_NX=480
-p_all=( $( cat /data11/data-arch/ERA-I-nr/plev/plev_ps1000_ERA-I ) )
+p_all=( $( cat ~/portal/ERA-I-nr/plev/plev_ps1000_ERA-I ) )
 #       H   D  M  Y
 NT_F4=( 1  30  1  1 )      # number of time series in one input file
 MISSV=( 1.0 )              # if no missing points, set 1.0
 P_PREDEF=( ${p_all[@]}  -999. )
-FILE_I_HEAD=( '/data11/data-arch/ERA-I-nr' )
+FILE_I_HEAD=( ~/portal/ERA-I-nr )
 FILE_I_FORM=( XXXX  XXXX  era-int_f.XXXX.anal.XXXX.ml.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM              VAR_I     HH      YYYY MM      -999 )
-VAR_I=(      u  v  ome  t  gp )  # Do not change this order.
-VAR_I_NAME=( u  v  w    t  z  )
-UNIT_H="m2s-2"
+VAR_I=(      u  v  ome  t )  # Do not change this order.
+VAR_I_NAME=( u  v  w    t )
 ;;
 #-----------------------------------------------------------------------
 'merra_f')  RA_CODENAME="MERRA-nr"
@@ -94,43 +87,39 @@ RA_NHOUR=4  ;  RA_NX=540
 NT_F4=( 4  1  1  1 )       # number of time series in one input file
 MISSV=( 1.0 )              # if no missing points, set 1.0
 P_PREDEF=( -999. )
-FILE_I_HEAD=( '/data11/data-arch/MERRA-nr' )
+FILE_I_HEAD=( ~/portal/MERRA-nr )
 FILE_I_FORM=( XXXX  XXXX  merra_f.XXXX.anal.ml.XXXXXXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM            VAR_I        YYYY MM  DD      -999 )
-VAR_I=(      u0  v0  omega-ch  t0 h0 )  # Do not change this order.
-VAR_I_NAME=( u   v   omega     t  h  )
-UNIT_H="m"
+VAR_I=(      u0  v0  omega-ch  t0 )  # Do not change this order.
+VAR_I_NAME=( u   v   omega     t  )
 ;;
 #-----------------------------------------------------------------------
 'merra2_f')  RA_CODENAME="MERRA2-nr"
 RA_NHOUR=8  ;  RA_NX=576
-p_all=( $( cat /data11/data-arch/MERRA2-nr/plev/plev_MERRA2 ) )
+p_all=( $( cat ~/portal/MERRA2-nr/plev/plev_MERRA2 ) )
 #       H  D  M  Y
 NT_F4=( 8  1  1  1 )       # number of time series in one input file
 MISSV=( 1.e15 )            # if no missing points, set 1.0
 P_PREDEF=( ${p_all[@]}  -999. )
-FILE_I_HEAD=( '/data11/data-arch/MERRA2-nr' )
+FILE_I_HEAD=( ~/portal/MERRA2-nr )
 FILE_I_FORM=( XXXX  XXXX  merra2.XXXX.assm.ml.XXXXXXXXXXXX.nc4  -999 )
 FILE_I_XXXX=( YYYY  MM          VAR_I        YYYY MM  DD       -999 )
-VAR_I=(      u0  v0  omega0  t0  h0 )  # Do not change this order.
-VAR_I_NAME=( U   V   OMEGA   T   H  )
-UNIT_H="m"
+VAR_I=(      u0  v0  omega0  t0 )  # Do not change this order.
+VAR_I_NAME=( U   V   OMEGA   T )
 ;;
 #-----------------------------------------------------------------------
 'jra55_f')  RA_CODENAME="JRA55-nr"
 RA_NHOUR=4  ;  RA_NX=640
-p_all=( $( cat /data11/data-arch/JRA55-nr/plev/plev_ps1000_JRA55 ) )
+p_all=( $( cat ~/portal/JRA55-nr/plev/plev_ps1000_JRA55 ) )
 #       H   D  M  Y
 NT_F4=( 4  30  1  1 )      # number of time series in one input file
 MISSV=( 1.0 )              # if no missing points, set 1.0
 P_PREDEF=( ${p_all[@]}  -999. )
-FILE_I_HEAD=( '/data11/data-arch/JRA55-nr' )
+FILE_I_HEAD=( ~/portal/JRA55-nr )
 FILE_I_FORM=( XXXX  XXXX  jra55_f.XXXX.anal.ml.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM            VAR_I        YYYY MM      -999 )
-VAR_I=(      ugrd  vgrd  vvel  tmp  hgt )  # Do not change this order.
-VAR_I_NAME=( U_GRD_GDS4_HYBL  V_GRD_GDS4_HYBL  V_VEL_GDS4_HYBL  TMP_GDS4_HYBL  \
-             HGT_GDS4_HYBL )
-UNIT_H="m"
+VAR_I=(      ugrd  vgrd  vvel  tmp )  # Do not change this order.
+VAR_I_NAME=( U_GRD_GDS4_HYBL  V_GRD_GDS4_HYBL  V_VEL_GDS4_HYBL  TMP_GDS4_HYBL )
 ;;
 #-----------------------------------------------------------------------
 'jra55c')  RA_CODENAME="JRA55C"
@@ -139,29 +128,25 @@ RA_NHOUR=4  ;  RA_NX=288
 NT_F4=( 4  30  1  1 )      # number of time series in one input file
 MISSV=( 1.0 )              # if no missing points, set 1.0
 P_PREDEF="-999."
-FILE_I_HEAD=( '/data11/data-arch/JRA55C' )
+FILE_I_HEAD=( ~/portal/JRA55C )
 FILE_I_FORM=( XXXX  XXXX  jra55c.XXXX.anal.pl.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM           VAR_I        YYYY MM      -999 )
-VAR_I=(      ugrd  vgrd  vvel  tmp  hgt )  # Do not change this order.
-VAR_I_NAME=( U_GRD_GDS0_ISBL  V_GRD_GDS0_ISBL  V_VEL_GDS0_ISBL  TMP_GDS0_ISBL  \
-             HGT_GDS0_ISBL )
-UNIT_H="m"
+VAR_I=(      ugrd  vgrd  vvel  tmp )  # Do not change this order.
+VAR_I_NAME=( U_GRD_GDS0_ISBL  V_GRD_GDS0_ISBL  V_VEL_GDS0_ISBL  TMP_GDS0_ISBL )
 ;;
 #-----------------------------------------------------------------------
 'jra55c_f')  RA_CODENAME="JRA55C-nr"
 RA_NHOUR=4  ;  RA_NX=640
-p_all=( $( cat /data11/data-arch/JRA55C-nr/plev/plev_ps1000_JRA55 ) )
+p_all=( $( cat ~/portal/JRA55C-nr/plev/plev_ps1000_JRA55 ) )
 #       H   D  M  Y
 NT_F4=( 4  30  1  1 )      # number of time series in one input file
 MISSV=( 1.0 )              # if no missing points, set 1.0
 P_PREDEF=( ${p_all[@]}  -999. )
-FILE_I_HEAD=( '/data11/data-arch/JRA55C-nr' )
+FILE_I_HEAD=( ~/portal/JRA55C-nr )
 FILE_I_FORM=( XXXX  XXXX  jra55c_f.XXXX.anal.ml.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM             VAR_I        YYYY MM      -999 )
-VAR_I=(      ugrd  vgrd  vvel  tmp  hgt )  # Do not change this order.
-VAR_I_NAME=( U_GRD_GDS4_HYBL  V_GRD_GDS4_HYBL  V_VEL_GDS4_HYBL  TMP_GDS4_HYBL  \
-             HGT_GDS4_HYBL )
-UNIT_H="m"
+VAR_I=(      ugrd  vgrd  vvel  tmp )  # Do not change this order.
+VAR_I_NAME=( U_GRD_GDS4_HYBL  V_GRD_GDS4_HYBL  V_VEL_GDS4_HYBL  TMP_GDS4_HYBL )
 ;;
 #-----------------------------------------------------------------------
 '*')  echo 'NO AVAILABLE CASES.'  ;  exit 1

@@ -67,7 +67,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   cat $F_NAMELIST
 
   # compile and run --------------------
-  comnrun $F_SOURCE $F_NAMELIST # &> $F_LOG
+  comnrun2 $F_SOURCE $F_NAMELIST # &> $F_LOG
   echo "pid : $$"
 
 M=$(( $M+1 ))
