@@ -45,10 +45,9 @@ $(EXEC_FULL):	$(EXEC_D)/%:	%.f90 $(LIB_D)/$(LIB_SUBS) $(INCL_F)
 
 $(LIB_D)/$(LIB_SUBS):	$(ALL_SUB_F) $(INCL_F_SUB)
 		mkdir -p $(LIB_D)
-		cp $? $(LIB_D)/
-		( cd $(LIB_D) ; $(FC) -c $(notdir $(ALL_SUB_F) ) $(NCINC) )
-		( cd $(LIB_D) ; ar -rv $(notdir $@ ) $(ALL_SUB_O) )
-		( cd $(LIB_D) ; rm -f $(notdir $(ALL_SUB_F) ) $(ALL_SUB_O) )
+		( cd $(LIB_D) && $(FC) -c $(patsubst %,$(CURDIR)/%,$(ALL_SUB_F) ) -I$(CURDIR) $(NCINC) )
+		( cd $(LIB_D) && ar -rv $(notdir $@ ) $(ALL_SUB_O) )
+		( cd $(LIB_D) && rm -f $(ALL_SUB_O) )
 
 # clean
 
