@@ -79,6 +79,9 @@ FILE_I_FORM=( XXXX  XXXX  era-int_f.XXXX.anal.XXXX.ml.XXXXXXXX.nc  -999 )
 FILE_I_XXXX=( YYYY  MM              VAR_I     HH      YYYY MM      -999 )
 VAR_I=(      u  v  ome  t )  # Do not change this order.
 VAR_I_NAME=( u  v  w    t )
+tmp_dir_ra="$( find $FILE_I_HEAD/ -name 2000 )/01"
+tmp_vn_ra=( $( $UTIL/shell/getvarname_ra $tmp_dir_ra u v omega t ) )
+[ ${#tmp_vn_ra[@]} -eq 4 ] && VAR_I_NAME=( ${tmp_vn_ra[@]} )
 ;;
 #-----------------------------------------------------------------------
 'merra_f')  RA_CODENAME="MERRA-nr"
