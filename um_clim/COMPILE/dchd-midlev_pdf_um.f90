@@ -276,7 +276,7 @@ PROGRAM DCHD_PDF
     vars(l2(ii),:11,ii) = vari(i,j,:)
     vars(l2(ii),12,ii) = var_u(i,j,1)  ! u_sfc
     vars(l2(ii),13,ii) = var_v(i,j,1)  ! v_sfc
-    k = minloc(abs(vari(i,j,2) - z_th(i,j,:)),1)-1  ! zcba: vari(:,:,2)
+    k = minloc(abs(vari(i,j,2) - z_th(i,j,1:)),1)  ! zcba: vari(:,:,2)
     vars(l2(ii),14,ii) = 0.5*(var_u(i,j,k) + var_u(i,j,k+1))  ! u_cb
     vars(l2(ii),15,ii) = 0.5*(var_v(i,j,k) + var_v(i,j,k+1))  ! v_cb
   enddo

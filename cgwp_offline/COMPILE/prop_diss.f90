@@ -92,8 +92,6 @@ SUBROUTINE propdiss(  &
     diag_spec_ctop(:,:,:) = 0.
   end if
 
-  call get_wm_hg2cgwp
-
   f2(:) = f_cor(:)*f_cor(:)
 
   ! for calculating saturation spectrum

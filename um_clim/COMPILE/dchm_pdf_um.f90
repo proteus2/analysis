@@ -245,7 +245,7 @@ PROGRAM DCHM_PDF
     vars(l,:11) = vari(i,j,:)
     vars(l,12) = var_u(i,j,1)  ! u_sfc
     vars(l,13) = var_v(i,j,1)  ! v_sfc
-    k = minloc(abs(vari(i,j,2) - z_th(i,j,:)),1)-1  ! zcba: vari(:,:,2)
+    k = minloc(abs(vari(i,j,2) - z_th(i,j,1:)),1)  ! zcba: vari(:,:,2)
     vars(l,14) = 0.5*(var_u(i,j,k) + var_u(i,j,k+1))  ! u_cb
     vars(l,15) = 0.5*(var_v(i,j,k) + var_v(i,j,k+1))  ! v_cb
   enddo

@@ -73,7 +73,7 @@ print*, year, mon, date, hour
   enddo
   enddo
 
-  t(i_time) = get_dayfromref(year,mon,date,hour)
+  t(i_time) = get_dayfromref_30d(year,mon,date,hour)
 
   hour = hour + 24/nhour
   !---------------------------------------------------------------------

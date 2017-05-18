@@ -137,16 +137,16 @@ FUNCTION get_ndate()
 END function get_ndate
 
 
-FUNCTION get_dayfromref(y,m,d,h)
+FUNCTION get_dayfromref_30d(y,m,d,h)
 
   integer, intent(in) ::  y, m, d, h
   
-  integer ::  get_dayfromref
+  integer ::  get_dayfromref_30d
   
-  get_dayfromref = (y-refdate(1))*360.+(m-refdate(2))*30.+ &
-                   (d-refdate(3))+h/24.
+  get_dayfromref_30d = (y-refdate(1))*360.+(m-refdate(2))*30.+ &
+                       (d-refdate(3))+h/24.
                    
-END function get_dayfromref
+END function get_dayfromref_30d
 
 
 FUNCTION get_ivar3d()

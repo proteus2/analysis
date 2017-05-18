@@ -78,7 +78,7 @@ print*, year, mon, date, hour
   ! get variable
   call get_var
 
-  t(i_time) = get_dayfromref(year,mon,date,hour)
+  t(i_time) = get_dayfromref_30d(year,mon,date,hour)
 
   hour = hour + 24/nhour
   !---------------------------------------------------------------------

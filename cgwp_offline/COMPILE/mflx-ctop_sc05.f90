@@ -407,9 +407,9 @@ SUBROUTINE calc_sc05(ncol,shear_ct)
           singular2 = ic == ic_u0(0) .or. ic == ic_u0(1)
           if ( singular1 .or. singular2 ) then
             x_sq(ic) = 0.0
-! pracitally may not happen
-!         else if (dble(c_phase(ic)) == ub_cb(l,iphi)) then
-!           x_sq(ic) = 0.0
+          else if (dble(c_phase(ic)) == ub_cb(l,iphi)) then
+            ! pracitally may not happen
+            x_sq(ic) = 0.0
           else
             zalph     = (dble(c_phase(ic))-ub_sfc(l,iphi))/shear
             zb_mzalph = dble(zcba(l)) - zalph

@@ -43,7 +43,7 @@ MODULE param_gwp
 
   ! See UMDP34.
   ! The code is written assuming (s,t) = (1,3).
-  real, public ::  mstar_wm, p_wm, beta_wm
+  real, public ::  mstar_wm, p_wm, beta_wm, beta_wm0
   real, public ::  s_wm, t_wm   ! not used
 
 !:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -80,7 +80,8 @@ SUBROUTINE get_wm_default
   p_wm = 5.0/3.0
   s_wm = 1.0
   t_wm = 3.0
-  beta_wm = 2.0   ! should be checked !
+
+  beta_wm0 = 2.0   ! should be checked !
 
 END subroutine get_wm_default
 
@@ -88,7 +89,7 @@ SUBROUTINE get_wm_hg2cgwp
 
   call get_wm_default
 
-  beta_wm = 0.8
+  beta_wm0 = 0.8
 
 END subroutine get_wm_hg2cgwp
 
