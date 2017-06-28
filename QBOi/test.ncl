@@ -27,7 +27,8 @@ begin
  nv = dimsizes(vnheads)
 
 
- wks = cr_wks("fig/div-v_xy-"+yrs+mmi+"-h"+sprinti("%2.2i",hfcst),600,0)
+; wks = cr_wks("fig/div-v_xy-"+yrs+mmi+"-h"+sprinti("%2.2i",hfcst),600,0)
+ wks = cr_wks("test",600,0)
  gsn_define_colormap(wks,"StepSeq25")
  colind = NhlNewColor(wks,0.6,0.6,0.6)
 
