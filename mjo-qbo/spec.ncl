@@ -70,6 +70,16 @@ u850Anom	= calcDayAnomTLL (u850, yyyyddd, u850ClmDay_sm)
 olrAnom		= calcDayAnomTLL (olr, yyyyddd, olrClmDay_sm)
 printVarSummary (olrAnom)
 ;------------------------------------------------------------------------------
+;ihp     = 2                             ; bpf=>band pass filter
+;nWgt    = 201
+;sigma   = 1.0                           ; Lanczos sigma
+;fca     = 1./100.
+;fcb     = 1./20.
+;wgt     = filwgts_lanczos (nWgt, ihp, fca, fcb, sigma )
+;tmpo    = wgt_runave_n_Wrap (olrAnom, wgt, 0, 0)
+;delete(olrAnom)
+;olrAnom = tmpo(101:ntim-101,:,:)
+;------------------------------------------------------------------------------
 ; take average over latS to latN
 ;------------------------------------------------------------------------------
 latS    = -10
