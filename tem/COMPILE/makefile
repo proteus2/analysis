@@ -3,13 +3,13 @@ FC = $(FC_DBG) # -mcmodel=medium -shared-intel
 EXEC_ALL := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp  \
             epf_fc2_ra sepa_epf epfsa0_fc2_ra epfsa1_fc2_ra  \
             sepa_epfsa sepa_epfsa-a sepa_epfsa1 sepa_epfsa2  \
-            warc3d_qg_ra warc3d_qg_gp_ra
+            tem3d_qg_st-p85_ra tem3d_qg_st-p85gp_ra
 MOD_DEP_N := m_reanal netio
-MOD_N := tem epf warc3d
+MOD_N := tem epf tem3d
 SUB_N := fdcoef
 INCL_c_phys := tem_ra tem_ra-lastmiss tem_qg tem_qg_betap_gp  \
                epf_fc2_ra epfsa0_fc2_ra epfsa1_fc2_ra  \
-               warc3d_qg_ra warc3d_qg_gp_ra
+               tem3d_qg_st-p85_ra tem3d_qg_st-p85gp_ra
 
 NCINC := $(filter-out -g,$(shell nc-config --fflags))
 NCLIB := $(shell nc-config --flibs)

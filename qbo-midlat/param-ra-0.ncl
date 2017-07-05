@@ -1,14 +1,14 @@
  param0_cexp    = (/"ERA-I"/)
  param0_expname = (/"era-int"/)
  param0_u0varname = "U_GDS0_ISBL"
- param0_p1 = 70
- param0_p2 = 30
+ param0_p1 = 70  ;50 ;70
+ param0_p2 = 30  ;20 ;30
  
- param0_cexp    = (/"ERA-I-nr"/)
- param0_expname = (/"era-int_f"/)
- param0_u0varname = "u"
- param0_p1 = 22 ;23  ; 22 (54)  ;  23 (66)
- param0_p2 = 17 ;20  ; 19 (29)  ;  20 (36)
+; param0_cexp    = (/"ERA-I-nr"/)
+; param0_expname = (/"era-int_f"/)
+; param0_u0varname = "u"
+; param0_p1 = 22 ;23  ; 22 (54)  ;  23 (66)
+; param0_p2 = 17 ;20  ; 19 (29)  ;  20 (36)
  param0_pp = (/19.,23.,29.,36.,44.,54.,66.,80.,96./)  ; 17 ~ 25
  param0_ppi0 = 17
 
@@ -22,6 +22,7 @@
  param0_varname_z = "Z_GDS0_ISBL"
  param0_varname_uv = (/"U","V"/)+"_GDS0_ISBL"
  param0_varname_pr = "TP_GDS0_SFC"
+ param0_varname_t2m = "t2"
  param0_p_v = 70
 
  param0_y0 = 1979

@@ -7,13 +7,15 @@ MODULE reanal
 ! variables in namelists
 
   integer ::  yyyy, mm(2), hh(2), refdate(3), opt_avrg, nt_f4(4), nres
-  real    ::  missv, lat_rng(2), p_rng(2)
+  real    ::  missv, p_predef(300), lat_rng(2), p_rng(2)
+  data  p_predef(1) /-999./
 
   character(len=32)  ::  expname, var_name(99)
-  character(len=32)  ::  var_i(99), var_i_name(99), file_i_xxxx(10)
-  character(len=32)  ::  var_i2(99), var_i_name2(99), file_i_xxxx2(10)
-  character(len=128) ::  file_i_head, file_i_form(10), file_o
-  character(len=128) ::  file_i_head2, file_i_form2(10)
+  character(len=32)  ::  var_i(99), var_i_name(99), file_i_xxxx(99)
+  character(len=32)  ::  var_i2(99), var_i_name2(99), file_i_xxxx2(99)
+  character(len=128) ::  file_i_head, file_i_form(99), file_o
+  character(len=128) ::  file_i_head2, file_i_form2(99)
+  character(len=32)  ::  nl_aux(99)
 
 ! parameters for namelists
 
@@ -24,13 +26,17 @@ MODULE reanal
   integer ::  year, mon, date, hour
   integer ::  nmon, ndate, nhour
   logical ::  l_rev(3), ex0, ex1, l_gpheight
-  character(len=256) ::  file_i(20), f_namelist
+  character(len=256) ::  file_i(99), f_namelist
 
   integer ::  nt, nx, ny, nz, nl, nd1a, nd2a, nd3a, nd4a, nx_neg
   integer ::  nx_i, ny_i, nz_i, nt_i
-  integer ::  iv_i, iv, it_i(20)
+  integer ::  iv_i, iv, it_i(99)
   integer, private ::  i,j,k,n
-  data  it_i /0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/
+  data  it_i /0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,         &
+              0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,         &
+              0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,         &
+              0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/
+  character(len=32) ::  unit_h = ''
 
   integer, dimension(12), parameter ::                                   &
      enddate = (/31,28,31,30,31,30,31,31,30,31,30,31/)
@@ -38,8 +44,8 @@ MODULE reanal
   real, dimension(:), allocatable ::  lon, lat, p, t2pt, dim4
   real, dimension(:), allocatable ::  t
 
-  character(len=32)  ::  var_i0(99), var_i_name0(99), file_i_xxxx0(10)
-  character(len=128) ::  file_i_head0, file_i_form0(10)
+  character(len=32)  ::  var_i0(99), var_i_name0(99), file_i_xxxx0(99)
+  character(len=128) ::  file_i_head0, file_i_form0(99)
 
 ! output variable type
 
@@ -66,7 +72,7 @@ FUNCTION get_ifilename()
   lblank = len_trim(xblank)
   write(get_ifilename,'(a)')  trim(file_i_head)
 
-  do i=1, 10
+  do i=1, 99
     if (file_i_form(i) == '-999')  nform = i - 1
   enddo
 
@@ -115,6 +121,8 @@ FUNCTION str2var(str)
     write(str2var,'(a)')  trim(var_i(iv_i))
   case ( 'VAR_I_N', 'var_i_n' )
     write(str2var,'(a)')  trim(var_i_name(iv_i))
+  case ( 'AUX', 'aux' )
+    write(str2var,'(a)')  trim(nl_aux(iv_i))
   case default
     print*, 'Check FILE_I_XXXX in the shell script and function '//    &
             'str2var !!!'
@@ -169,6 +177,7 @@ FUNCTION get_ivara3d(ix_i0,nx_i0,iy_i0,ny_i0,iz_i0,nz_i0)
   integer ::  st, ncid, ncvarid, ncdimid(4), ncvtype, ncvstart(4),       &
               ncvcount(4), ncdimvarid
   integer ::  it_i0
+  double precision  ::  scale_factor, add_offset
   character(len=32) ::  dimname
 
   real,             dimension(:,:,:), allocatable ::  ncvar_r
@@ -185,6 +194,7 @@ FUNCTION get_ivara3d(ix_i0,nx_i0,iy_i0,ny_i0,iz_i0,nz_i0)
   it_i0 = it_i0*nt_f4(1)
   if (nt_f4(1) /= 1)  it_i0 = it_i0 + hour/(24/nt_f4(1))
   it_i0 = it_i0 + 1
+  if ( all(nt_f4(:) == (/1,1,12,1/)) )  it_i0 = mon   ! monthly data
 
   ncvstart = (/ix_i0,iy_i0,iz_i0,it_i0/)
   ncvcount = (/nx_i0,ny_i0,nz_i0,1    /)
@@ -221,6 +231,16 @@ FUNCTION get_ivara3d(ix_i0,nx_i0,iy_i0,ny_i0,iz_i0,nz_i0)
     STOP
 
   END select
+
+  scale_factor = 1.d0  ;  add_offset = 0.d0
+  st = nf_get_att_double(ncid,ncvarid,'scale_factor',scale_factor)
+  if (st /= NF_NOERR)  scale_factor = 1.d0
+  st = nf_get_att_double(ncid,ncvarid,'add_offset',add_offset)
+  if (st /= NF_NOERR)  add_offset = 0.d0
+
+  if ( scale_factor /= 1.d0 .or. add_offset /= 0.d0 ) then
+    ncvar_r(:,:,:) = real(ncvar_r(:,:,:)*scale_factor + add_offset)
+  end if
 
   st = nf_close(ncid)
 
@@ -262,8 +282,9 @@ FUNCTION get_ivara4d(ix_i0,nx_i0,iy_i0,ny_i0,iz_i0,nz_i0,it_i0,nt_i0)
 
   include 'netcdf.inc'
 
-  integer ::  st, ncid, ncvarid, ncdimid(4), ncvtype, ncvstart(4),       &
-              ncvcount(4), ncdimvarid
+  integer ::  st, ncid, ncvarid, ncvtype, ncvstart(4), ncvcount(4),      &
+              ncdimvarid
+  double precision  ::  scale_factor, add_offset
   character(len=32) ::  dimname
 
   real,             dimension(:,:,:,:), allocatable ::  ncvar_r
@@ -306,6 +327,16 @@ FUNCTION get_ivara4d(ix_i0,nx_i0,iy_i0,ny_i0,iz_i0,nz_i0,it_i0,nt_i0)
     STOP
 
   END select
+
+  scale_factor = 1.d0  ;  add_offset = 0.d0
+  st = nf_get_att_double(ncid,ncvarid,'scale_factor',scale_factor)
+  if (st /= NF_NOERR)  scale_factor = 1.d0
+  st = nf_get_att_double(ncid,ncvarid,'add_offset',add_offset)
+  if (st /= NF_NOERR)  add_offset = 0.d0
+
+  if ( scale_factor /= 1.d0 .or. add_offset /= 0.d0 ) then
+    ncvar_r(:,:,:,:) = real(ncvar_r(:,:,:,:)*scale_factor + add_offset)
+  end if
 
   st = nf_close(ncid)
 
@@ -361,7 +392,8 @@ SUBROUTINE getdim(file_i0,var_i_name0)
 
   st = nf_inq_vardimid(ncid,ncvarid, ncdimid)
 
-  do idm=1, 4
+  dimlen(:) = 1
+  do idm=1, varndim
     st = nf_inq_dimlen(ncid,ncdimid(idm), dimlen(idm))
   enddo
   nx = dimlen(1)  ;  ny = dimlen(2)  ;  nz = dimlen(3)
@@ -377,9 +409,9 @@ SUBROUTINE getdim(file_i0,var_i_name0)
 
   allocate( lon(nx), lat(ny), p(nz), dim4(nl) )
 
-  allocate( axis_r(maxval(dimlen(1:4)),4) )
+  allocate( axis_r(maxval(dimlen(:)),4) )
 
-  do idm=1, 4
+  do idm=1, varndim
 
     st = nf_inq_dimname(ncid,ncdimid(idm), dimname)
 
@@ -416,6 +448,8 @@ SUBROUTINE getdim(file_i0,var_i_name0)
 
   st = nf_close(ncid)
 
+  if (p_predef(1) /= -999.)  axis_r(1:nz,3) = p_predef(int(axis_r(1:nz,3)))
+
   l_rev(:) = .False.
   if (axis_r(1,1) < 0.          )  l_rev(1) = .True.
   if (axis_r(1,2) > axis_r(ny,2))  l_rev(2) = .True.
@@ -446,7 +480,7 @@ SUBROUTINE getdim(file_i0,var_i_name0)
     enddo
   end if
 
-  dim4(:) = axis_r(1:nl,4)
+  if (varndim > 3)  dim4(:) = axis_r(1:nl,4)
 
   deallocate( axis_r )
 

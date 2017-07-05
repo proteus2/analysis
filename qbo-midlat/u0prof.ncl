@@ -188,7 +188,7 @@ begin
 ;--------------------------------------- contour
  nl = ne
 
- xstr = "U [m:S:-1:N:]"
+ xstr = "U [m s:S:-1:N:]"
  ystr = "p [hPa]"
 
  wi = 30

@@ -1,7 +1,7 @@
 PROGRAM TEM3d_REANALYSIS
 ! attributes (scale facter, add_offset, "_FillValue" or "missing_value") must be considered.
 
-  use warc3d
+  use tem3d
   use reanal
   use netio
 
@@ -9,14 +9,15 @@ PROGRAM TEM3d_REANALYSIS
 
   include 'c_phys.inc'
 
-  integer, parameter ::  nv = 9, nv2 = 2
+  integer, parameter ::  nv = 9, nv2 = 1
+  real   , parameter ::  h_s = 7.e3  ! 7 km scale height
 
-  namelist /ANALCASE/ EXPNAME, YYYY, MM, HH
-  namelist /PARAM/ OPT_AVRG, LAT_RNG, P_RNG
+  namelist /ANALCASE/ EXPNAME, YYYY, MM
+  namelist /PARAM/ LAT_RNG, P_RNG
   namelist /FILEIO/ NT_F4, MISSV, FILE_I_HEAD, FILE_I_FORM, FILE_I_XXXX, &
-                    VAR_I, VAR_I_NAME, UNIT_H, FILE_O
+                    VAR_I, VAR_I_NAME, FILE_O
 
-  integer ::  imon, ihour, i_time, i_time_last
+  integer ::  imon
   integer ::  iy2(2), iz2(2), ny2, nz2, iy3(2), iz3(2)
   integer ::  iy2b(2), iz2b(2), iy2o(2), iz2o(2), nbuf_y2(2), nbuf_z2(2)
   integer ::  i,j,k,n, kk
@@ -27,9 +28,9 @@ PROGRAM TEM3d_REANALYSIS
   real, dimension(:,:,:,:,:), allocatable ::  var5d
   real, dimension(:,:,:,:), allocatable ::  var4d, var4d2
   real, dimension(:,:,:),   allocatable ::  var3d2
-  real, dimension(:,:,:),   allocatable ::  u, v, pt, gp, w
+  real, dimension(:,:,:),   allocatable ::  u, v, te, gp, w
   real, dimension(:,:),     allocatable ::  wm
-  real, dimension(:),       allocatable ::  lat0, p0a, t2pt0
+  real, dimension(:),       allocatable ::  lat0, p0a
 
   type(vset), dimension(nv+nv2) ::  set
 
@@ -40,124 +41,32 @@ PROGRAM TEM3d_REANALYSIS
   read(10, ANALCASE)  ;  read(10, PARAM)  ;  read(10, FILEIO)
   close(10)
 
-  if ( nt_f4(4) /= 1 .or. ( nt_f4(3) /= 1 .and. nt_f4(3) /= 12 ) ) then
-    print*, 'NT_I(3:4) should be (/1,1/) or (/12,1/).'  ;  STOP
-  end if
-
   call initialize
 
   tag_exit = 0
 
-  i_time_last = 0
-  i_time      = 0
-
-  L_MON:  DO imon=1, nmon+1
+  L_MON:  DO imon=1, nmon
   !---------------------------------------------------------------------
-                                                if (tag_exit == 1)  EXIT
-
-  ndate = get_ndate()
-
-  L_DATE:  DO date=1, ndate
-  !---------------------------------------------------------------------
-                                                if (tag_exit == 1)  EXIT
-if (date == 3)  exit  !yh
-
-  if (opt_avrg /= 0)  i_time = i_time + 1
-
-  hour = hh(1)
-
-  L_HOUR:  DO ihour=1, nhour
-  !---------------------------------------------------------------------
-                                                if (tag_exit == 1)  EXIT
-
-  if (opt_avrg == 0)  i_time = i_time + 1
 
   ! get variable
   allocate( w(nx,ny2,nz2) )
   call get_4var
 
-  if (missv /= 1.0) then
-do j=1, ny2
-do i=1, nx
-do k=nz2, 1, -1
-  if (u(i,j,k) == missv) then  ! CAUTION, if pt or gp, of which
-                               ! the missing value is changed
-    u(i,j,1:k) = u(i,j,k+1)
-    v(i,j,1:k) = v(i,j,k+1)
-    w(i,j,1:k) = w(i,j,k+1)
-    do kk=k, 1, -1
-      pt(i,j,kk) = pt(i,j,kk+1)*exp( -log(pt(i,j,kk+2)/pt(i,j,kk+1))*  &
-                   log(p0a(kk)/p0a(kk+1))/log(p0a(kk+1)/p0a(kk+2)) )
-!      gp(i,j,kk) = gp(i,j,kk+1) ...
-    enddo
-    exit
-  endif
-enddo
-enddo
-enddo
-  end if
-
   wm(:,:) = sum(w, dim=1)/float(nx)
-  wm(:,:) = -wm(:,:)*spread(h_scale/(p0a(:)*100.),1,ny2)
+  wm(:,:) = -wm(:,:)*spread(h_s/(p0a(:)*100.),1,ny2)
 
   deallocate( w )
 
   ! calculate zonal mean
-  call warc_s_qg(                                                        &
-      nx,ny2,nz2,lat0,p0a*100.,u,v,pt,gp,dlon,h_scale,1.e32,             &
+  call tem3d_s_qg(                                                       &
+      nx,ny2,nz2,lat0,p0a*100.,u,v,te,gp,dlon,h_s,1.e32,                 &
       var4d(:,:,:,1),var4d(:,:,:,2),var4d(:,:,:,3),var4d(:,:,:,4),       &
       var4d(:,:,:,5),var4d(:,:,:,6),var4d(:,:,:,7),var3d2(:,:,1) )
 
-! if tadv_z exists among output from the above subroutine
-!  var4d(:,:,:,XX) = var4d(:,:,:,XX)*spread(spread((p0a(:)*100./p0)**kappa,1,nx),2,ny2)
-
-  ntavg = float(nhour)
-  if (opt_avrg == 0)  ntavg = 1.
-
-  if (i_time == i_time_last) then
-    var5d(:,:,:,i_time,:7) = var5d(:,:,:,i_time,:7) +                    &
-                             var4d(:,:,:,:7)/ntavg
-    var4d2(:,:,i_time,:1) = var4d2(:,:,i_time,:1) +                      &
-                            var3d2(:,:,:1)/ntavg
-  else
-    var4d(:,:,:,8) = u(:,:,:)
-    var4d(:,:,:,9) = pt(:,:,:)*spread(spread((p0a(:)*100./p0)**kappa,    &
-                     1,nx),2,ny2)
-    var3d2(:,:,2) = var3d2(:,:,1)
-    if (opt_avrg == 0)  var4d(:,:,:,8:9) = var4d(:,:,:,8:9)*float(nhour)
-    if (opt_avrg == 0)  var3d2(:,:,2) = var3d2(:,:,2)*float(nhour)
-
-    if (i_time /= 1) then
-      var5d(:,:,:,i_time_last,:7) = var5d(:,:,:,i_time_last,:7) +        &
-                                    var4d(:,:,:,:7)/(ntavg*2.)
-      var5d(:,:,:,i_time_last,8:9) = var5d(:,:,:,i_time_last,8:9) +      &
-                                     var4d(:,:,:,8:9)
-      var4d2(:,:,i_time_last,:1) = var4d2(:,:,i_time_last,:1) +          &
-                                   var3d2(:,:,:1)/(ntavg*2.)
-      var4d2(:,:,i_time_last,2) = var4d2(:,:,i_time_last,2) +            &
-                                  var3d2(:,:,2)
-    end if
-    if (imon /= nmon+1) then
-      var5d(:,:,:,i_time,:7) = var5d(:,:,:,i_time,:7) +                  &
-                               var4d(:,:,:,:7)/(ntavg*2.)
-      var5d(:,:,:,i_time,8:9) = var5d(:,:,:,i_time,8:9) -                &
-                                var4d(:,:,:,8:9)
-      var4d2(:,:,i_time,:1) = var4d2(:,:,i_time,:1) +                    &
-                              var3d2(:,:,:1)/(ntavg*2.)
-      var4d2(:,:,i_time,2) = var4d2(:,:,i_time,2) - var3d2(:,:,2)
-    end if
-  end if
-
-  hour = hour + 24/nhour
-
-  i_time_last = i_time
-
-  if (imon == nmon+1)  tag_exit = 1
-  !---------------------------------------------------------------------
-  ENDDO  L_HOUR
-
-  !---------------------------------------------------------------------
-  ENDDO  L_DATE
+  var5d(:,:,:,imon,:7) = var4d(:,:,:,:7)
+  var5d(:,:,:,imon,8) = u (:,:,:)
+  var5d(:,:,:,imon,9) = te(:,:,:)
+  var4d2(:,:,imon,:1) = var3d2(:,:,:1)
 
   mon = mon + 1
   if (mon == 13) then
@@ -168,17 +77,14 @@ enddo
   !---------------------------------------------------------------------
   ENDDO  L_MON
 
-  nt = i_time - 1
+  deallocate( u, v, te, gp, wm )
 
-  deallocate( u, v, pt, gp, wm )
-
-  ! pt2t
   ! missing
 
   nd1a = nx
   nd2a = ny2 - (nbuf_y2(1) + nbuf_y2(2))
   nd3a = nz2 - (nbuf_z2(1) + nbuf_z2(2))
-  nd4a = nt
+  nd4a = nmon
 
   do iv=1, nv
     call setdim
@@ -214,12 +120,14 @@ enddo
 
   SUBROUTINE initialize
 
+  if ( nt_f4(4) /= 1 .or. ( nt_f4(3) /= 1 .and. nt_f4(3) /= 12 ) ) then
+    print*, 'NT_I(3:4) should be (/1,1/) or (/12,1/).'  ;  STOP
+  end if
+
   year = yyyy
   mon  = mm(1)
 
-  nmon = mm(2)  ;  nhour = hh(2)
-
-  ndate = get_ndate()  ;  date = 1  ;  hour = hh(1)  ! for get_ifilename
+  nmon = mm(2)
 
   ex0 = .TRUE.
   do iv_i=1, 4
@@ -235,11 +143,10 @@ enddo
   call getdim(file_i(iv_i),var_i_name(iv_i))
   dlon = lon(2) - lon(1)
 
-  ovarname(1:7) = varname_warc_qg(1:7)
-  ovarname(8) = 'u_tend'
-  ovarname(9) = 't_tend'
-  ovarname(10) = varname_warc_qg(8)
-  ovarname(11) = 'U0_tend'
+  ovarname(1:7) = varname_tem3d_qg(1:7)
+  ovarname(8) = 'u'
+  ovarname(9) = 't'
+  ovarname(10) = varname_tem3d_qg(8)
 
   call get_iouter(lat,lat_rng, iy2o)
   iy2b(1) = max(1 ,iy2o(1)-3)
@@ -265,28 +172,24 @@ enddo
   iy3(1) = 1 + nbuf_y2(1)  ;  iy3(2) = ny2 - nbuf_y2(2)
   iz3(1) = 1 + nbuf_z2(1)  ;  iz3(2) = nz2 - nbuf_z2(2)
 
-  allocate( lat0(ny2), p0a(nz2), t2pt0(nz2) )
+  allocate( lat0(ny2), p0a(nz2) )
   lat0(:) = lat(iy2b(1):iy2b(2))  ;  p0a(:) = p(iz2b(1):iz2b(2))
-  t2pt0(:) = t2pt(iz2b(1):iz2b(2))
 
-  if (opt_avrg == 0) then
-    allocate( var5d(nx,ny2,nz2,nmon*31*nhour,nv) )
-    allocate( var4d2(ny2,nz2,nmon*31*nhour,nv2) )
-  else
-    allocate( var5d(nx,ny2,nz2,nmon*31,nv) )
-    allocate( var4d2(ny2,nz2,nmon*31,nv2) )
-  end if
+  allocate( var5d(nx,ny2,nz2,nmon,nv) )
+  allocate( var4d2(ny2,nz2,nmon,nv2) )
   var5d(:,:,:,:,:) = 0.
   var4d2(:,:,:,:) = 0.
   allocate( var4d(nx,ny2,nz2,nv) )
   allocate( var3d2(ny2,nz2,nv2) )
 
-  allocate( u(nx,ny2,nz2), v(nx,ny2,nz2), pt(nx,ny2,nz2), gp(nx,ny2,nz2) )
+  allocate( u(nx,ny2,nz2), v(nx,ny2,nz2), te(nx,ny2,nz2), gp(nx,ny2,nz2) )
   allocate( wm(ny2,nz2) )
  
   END subroutine initialize
 
   SUBROUTINE get_4var
+
+  real ::  ztmp1, ztmp2, tmp
 
   ex0 = .TRUE.
   do iv_i=1, 4
@@ -301,32 +204,64 @@ enddo
   ! read 4 var.s
   iv_i = 1  ;  u (:,:,:) = get_ivara3d(1,nx,iy2(1),ny2,iz2(1),nz2)
   iv_i = 2  ;  v (:,:,:) = get_ivara3d(1,nx,iy2(1),ny2,iz2(1),nz2)
-  iv_i = 3  ;  pt(:,:,:) = get_ivara3d(1,nx,iy2(1),ny2,iz2(1),nz2)
+  iv_i = 3  ;  te(:,:,:) = get_ivara3d(1,nx,iy2(1),ny2,iz2(1),nz2)
   iv_i = 4  ;  gp(:,:,:) = get_ivara3d(1,nx,iy2(1),ny2,iz2(1),nz2)
-  iv_i = 5  ;  w (:,:,:) = get_ivara3d(1,nx,iy2(1),ny2,iz2(1),nz2)
+!  iv_i = 5  ;  w (:,:,:) = get_ivara3d(1,nx,iy2(1),ny2,iz2(1),nz2)
 
-  ! t to pt  (The missing value changes, if it exists.)
-  do k=1, nz2
-    pt(:,:,k) = pt(:,:,k)*t2pt0(k)
-  enddo
+  ! check whether the input gp is geopotential or GPH
+  if ( trim(unit_h) == '' ) then
+    ztmp1 = h_s*log(1.e3/p0a(nz2))
+    Z_IDENT:  do k=nz2, 1, -1
+    do j=1, ny2
+    do i=1, nx
+      if (gp(i,j,k) /= missv) then
+        ztmp2 = gp(i,j,k)  ;  EXIT Z_IDENT
+      end if
+    enddo
+    enddo
+    enddo  Z_IDENT
+    if ( abs(ztmp2 - ztmp1) < abs(ztmp2/g - ztmp1) ) then
+      unit_h = 'm'
+    else
+      unit_h = 'm**2 s**-2'
+    end if
+  end if
 
-  ! gph to gp  (The missing value changes, if it exists.)
-  if ( unit_h == "m" .or. unit_h == "M" )  gp(:,:,:) = gp(:,:,:)*g
+  ! GPH to GP  (The missing value also changes, if it exists.)
+  if ( trim(unit_h) == 'm' )  gp(:,:,:) = gp(:,:,:)*g
+
+  if (missv /= 1.0) then
+    tmp = lapse_rate_sfc*rd/g
+    do j=1, ny2
+    do i=1, nx
+    do k=nz2, 1, -1
+      if (u(i,j,k) == missv) then  ! do not use gp whose missing value is changed
+        u(i,j,1:k) = u(i,j,k+1)
+        v(i,j,1:k) = v(i,j,k+1)
+        w(i,j,1:k) = w(i,j,k+1)
+        do kk=k, 1, -1
+          te(i,j,kk) = te(i,j,kk+1)*(p0a(kk)/p0a(kk+1))**tmp
+!          gp(i,j,kk) = gp(i,j,kk+1) ...
+        enddo
+        EXIT
+      endif
+    enddo
+    enddo
+    enddo
+  end if
 
   END subroutine get_4var
 
   SUBROUTINE setdim
 
   if ( .not. allocated(t) ) then
-    allocate( t(nt) )
-    do n=1, nt
-      t(n) = float(n-1)+0.5
-    enddo
-    if (opt_avrg == 0)  t(:) = t(:)/nhour
+    allocate( t(nmon) )
+    t(:) = (/ (n, n=1,nmon) /)
   end if
 
   set(iv)%vname = trim(ovarname(iv))
   set(iv)%axis = (/'lon  ','lat  ','p ','time'/) 
+  if (nmon == 1)  set(iv)%axis(4) = ' '
   set(iv)%nd(:) = (/nd1a,nd2a,nd3a,nd4a/)
   allocate( set(iv)%axis1(set(iv)%nd(1)) )
   allocate( set(iv)%axis2(set(iv)%nd(2)) )
@@ -343,6 +278,7 @@ enddo
 
   set(iv)%vname = trim(ovarname(iv))
   set(iv)%axis = (/'lat  ','p ','time',' '/) 
+  if (nmon == 1)  set(iv)%axis(3) = ' '
   set(iv)%nd(:) = (/nd2a,nd3a,nd4a,1/)
   allocate( set(iv)%axis1(set(iv)%nd(1)) )
   allocate( set(iv)%axis2(set(iv)%nd(2)) )
@@ -358,7 +294,7 @@ enddo
   SUBROUTINE finalize
 
   deallocate( var5d, var4d, var4d2, var3d2 )
-  deallocate( lon, lat, p, t, lat0, p0a, t2pt, t2pt0 )
+  deallocate( lon, lat, p, t, t2pt, lat0, p0a )
   do iv=1, nv
     deallocate( set(iv)%axis1, set(iv)%axis2, set(iv)%axis3,             &
                 set(iv)%axis4 )

@@ -270,7 +270,7 @@ begin
 ;--------------------------------------- contour
  cnlab = new(12,string)
  cnlab(:) = ""
- cnlab(nph-1) = "u [m:S:-1:N:]"
+ cnlab(nph-1) = "u [m s:S:-1:N:]"
 
  mstr = cexp
 

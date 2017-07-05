@@ -10,7 +10,7 @@ MODULE reanal
   real    ::  missv, p_predef(300), lat_rng(2), p_rng(2)
   data  p_predef(1) /-999./
 
-  character(len=32)  ::  expname, var_name(99), unit_h
+  character(len=32)  ::  expname, var_name(99)
   character(len=32)  ::  var_i(99), var_i_name(99), file_i_xxxx(99)
   character(len=32)  ::  var_i2(99), var_i_name2(99), file_i_xxxx2(99)
   character(len=128) ::  file_i_head, file_i_form(99), file_o
@@ -36,6 +36,7 @@ MODULE reanal
               0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,         &
               0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,         &
               0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/
+  character(len=32) ::  unit_h = ''
 
   integer, dimension(12), parameter ::                                   &
      enddate = (/31,28,31,30,31,30,31,31,30,31,30,31/)
@@ -193,6 +194,7 @@ FUNCTION get_ivara3d(ix_i0,nx_i0,iy_i0,ny_i0,iz_i0,nz_i0)
   it_i0 = it_i0*nt_f4(1)
   if (nt_f4(1) /= 1)  it_i0 = it_i0 + hour/(24/nt_f4(1))
   it_i0 = it_i0 + 1
+  if ( all(nt_f4(:) == (/1,1,12,1/)) )  it_i0 = mon   ! monthly data
 
   ncvstart = (/ix_i0,iy_i0,iz_i0,it_i0/)
   ncvcount = (/nx_i0,ny_i0,nz_i0,1    /)
@@ -390,7 +392,8 @@ SUBROUTINE getdim(file_i0,var_i_name0)
 
   st = nf_inq_vardimid(ncid,ncvarid, ncdimid)
 
-  do idm=1, 4
+  dimlen(:) = 1
+  do idm=1, varndim
     st = nf_inq_dimlen(ncid,ncdimid(idm), dimlen(idm))
   enddo
   nx = dimlen(1)  ;  ny = dimlen(2)  ;  nz = dimlen(3)
@@ -406,9 +409,9 @@ SUBROUTINE getdim(file_i0,var_i_name0)
 
   allocate( lon(nx), lat(ny), p(nz), dim4(nl) )
 
-  allocate( axis_r(maxval(dimlen(1:4)),4) )
+  allocate( axis_r(maxval(dimlen(:)),4) )
 
-  do idm=1, 4
+  do idm=1, varndim
 
     st = nf_inq_dimname(ncid,ncdimid(idm), dimname)
 
@@ -477,7 +480,7 @@ SUBROUTINE getdim(file_i0,var_i_name0)
     enddo
   end if
 
-  dim4(:) = axis_r(1:nl,4)
+  if (varndim > 3)  dim4(:) = axis_r(1:nl,4)
 
   deallocate( axis_r )
 
