@@ -2,6 +2,7 @@ PROGRAM TEM3d_REANALYSIS
 ! attributes (scale facter, add_offset, "_FillValue" or "missing_value") must be considered.
 
   use tem3d
+  use util,  only: lowpass_k
   use reanal
   use netio
 
@@ -9,11 +10,13 @@ PROGRAM TEM3d_REANALYSIS
 
   include 'c_phys.inc'
 
-  integer, parameter ::  nv = 9, nv2 = 1
+  integer, parameter ::  nv = 11, nv2 = 2
   real   , parameter ::  h_s = 7.e3  ! 7 km scale height
 
+  integer ::  k_max
+
   namelist /ANALCASE/ EXPNAME, YYYY, MM
-  namelist /PARAM/ LAT_RNG, P_RNG
+  namelist /PARAM/ LAT_RNG, P_RNG, K_MAX
   namelist /FILEIO/ NT_F4, MISSV, FILE_I_HEAD, FILE_I_FORM, FILE_I_XXXX, &
                     VAR_I, VAR_I_NAME, FILE_O
 
@@ -57,16 +60,21 @@ PROGRAM TEM3d_REANALYSIS
 
   deallocate( w )
 
+  ! filter out small-scale waves
+  call lowpass_k(gp,k_max)
+  call lowpass_k(te,k_max)
+
   ! calculate zonal mean
-  call tem3d_s_qg_gp(                                                    &
+  call waf3d_s_qg_gp(                                                    &
       nx,ny2,nz2,lat0,p0a*100.,gp,te,dlon,h_s,1.e32,                     &
       var4d(:,:,:,1),var4d(:,:,:,2),var4d(:,:,:,3),var4d(:,:,:,4),       &
-      var4d(:,:,:,5),var4d(:,:,:,6),var4d(:,:,:,7),var3d2(:,:,1) )
+      var4d(:,:,:,5),var4d(:,:,:,6),var4d(:,:,:,7),var4d(:,:,:,8),       &
+      var4d(:,:,:,9),var3d2(:,:,1),var3d2(:,:,2) )
 
-  var5d(:,:,:,imon,:7) = var4d(:,:,:,:7)
-  var5d(:,:,:,imon,8) = u (:,:,:)
-  var5d(:,:,:,imon,9) = te(:,:,:)
-  var4d2(:,:,imon,:1) = var3d2(:,:,:1)
+  var5d(:,:,:,imon,:9) = var4d(:,:,:,:9)
+  var5d(:,:,:,imon,10) = u(:,:,:)
+  var5d(:,:,:,imon,11) = v(:,:,:)
+  var4d2(:,:,imon,:2) = var3d2(:,:,:2)
 
   mon = mon + 1
   if (mon == 13) then
@@ -143,10 +151,10 @@ PROGRAM TEM3d_REANALYSIS
   call getdim(file_i(iv_i),var_i_name(iv_i))
   dlon = lon(2) - lon(1)
 
-  ovarname(1:7) = varname_tem3d_qg(1:7)
-  ovarname(8) = 'u'
-  ovarname(9) = 't'
-  ovarname(10) = varname_tem3d_qg(8)
+  ovarname(1:9) = varname_waf3d_qg(1:9)
+  ovarname(10) = 'u'
+  ovarname(11) = 'v'
+  ovarname(12:13) = varname_waf3d_qg(10:11)
 
   call get_iouter(lat,lat_rng, iy2o)
   iy2b(1) = max(1 ,iy2o(1)-3)

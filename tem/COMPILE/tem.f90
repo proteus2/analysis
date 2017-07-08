@@ -1,10 +1,12 @@
 MODULE tem
 
+  use util,  only: grady_2nd, gradz_2nd_irr, missing_bdy
+  use const_glob,  only:  g, rd, kappa, a_earth, ome_earth, pi, deg2rad
+
   implicit none
 
   private ::  set_gridvar_p, set_gridvar_betap, set_gridvar_z
-  private ::  grady_2nd, gradz_2nd_irr
-  private ::  missing_bdy
+  private ::  g, rd, kappa, a_earth, ome_earth, pi, deg2rad
 
   character(len=64), dimension(11) ::  varname_tem_p =                   &
       (/'v_res  ','w_res  ','cor    ','uadv_y ','uadv_z ',               &
@@ -28,13 +30,6 @@ MODULE tem
   real, dimension(:),   allocatable, private ::  lat_pre, ht_pre, zp
   real, dimension(:,:), allocatable, private ::  coslat, f, rho0, rbeta, &
                                                  r_earth, rcos, rrhocos
-
-  real, parameter, private ::  g = 9.80665, rd = 287.05, cp = 1005.
-  real, parameter, private ::  kappa = rd/cp
-  real, parameter, private ::  a_earth = 6371229.
-  real, parameter, private ::  pi = 3.14159265358979323846
-  real, parameter, private ::  ome_earth = 7.292116e-5
-  real, parameter, private ::  deg2rad = pi/180.
 
 
   CONTAINS
@@ -355,9 +350,9 @@ SUBROUTINE tem_qg_betap_gp(                                              &
 
   ! grad, pt0
   j0 = minloc(abs(lat(:)-lat0),1)
-  call gradz_2nd_irr(1,nz,gpm(j0,:),zp, grad1)
-  call gradz_2nd_irr(1,nz,grad1,zp, grad2)
-  call gradz_2nd_irr(1,nz,grad2,zp, grad3)
+  call gradz_2nd_irr(nz,gpm(j0,:),zp, grad1)
+  call gradz_2nd_irr(nz,grad1,zp, grad2)
+  call gradz_2nd_irr(nz,grad2,zp, grad3)
   dpt0dz(:,:) = spread( coefz(:)*(kappa/h_scale*grad1(:) + grad2(:)),    &
                         1,ny )
   call missing_bdy(ny,nz,dpt0dz,missv,0,0,2,1)
@@ -653,74 +648,6 @@ SUBROUTINE set_gridvar_z(ny,nz,lat,z)
   ht_pre (:) = z  (:)
 
 END subroutine set_gridvar_z
-
-SUBROUTINE grady_2nd(ny,nz,var,lat, grady)
-
-  integer,                intent(in)  ::  ny, nz
-  real, dimension(ny,nz), intent(in)  ::  var
-  real, dimension(ny)   , intent(in)  ::  lat
-  real, dimension(ny,nz), intent(out) ::  grady
-
-  integer ::  j,k
-  real    ::  inv_2dy(ny,nz)
-
-  do j=2, ny-1
-    inv_2dy(j,1) = 1./((lat(j+1)-lat(j-1))*deg2rad)
-  enddo
-  inv_2dy(:,2:nz) = spread(inv_2dy(:,1),2,nz-1)
-  inv_2dy(:,:) = inv_2dy(:,:)/r_earth(:,:)
-
-  do k=1, nz
-  do j=2, ny-1
-    grady(j,k) = (var(j+1,k)-var(j-1,k))*inv_2dy(j,k)
-  enddo
-  enddo
-  grady(1 ,:) = 0.
-  grady(ny,:) = 0.
-
-END subroutine grady_2nd
-
-SUBROUTINE gradz_2nd_irr(ny,nz,var,z, gradz)
-
-  integer,                intent(in)  ::  ny, nz
-  real, dimension(ny,nz), intent(in)  ::  var
-  real, dimension(nz),    intent(in)  ::  z
-  real, dimension(ny,nz), intent(out) ::  gradz
-
-  integer ::  j,k
-  real    ::  coef(3,nz), inv_dz_1, inv_dz_n
-
-  do k=2, nz-1
-!    call fdcoef(1,2,z(k),z(k-1:k+1), coef(:,k))
-    call fdcoef_1d2o(z(k-1:k+1), coef(:,k))
-  enddo
-  inv_dz_1 = 1./(z(2 ) - z(1   ))
-  inv_dz_n = 1./(z(nz) - z(nz-1))
-
-  do k=2, nz-1
-  do j=1, ny
-    gradz(j,k) = sum( coef(:,k)*var(j,k-1:k+1) )
-  enddo
-  enddo
-
-  gradz(:,1 ) = (var(:,2 ) - var(:,1   ))*inv_dz_1
-  gradz(:,nz) = (var(:,nz) - var(:,nz-1))*inv_dz_n
-
-END subroutine gradz_2nd_irr
-
-SUBROUTINE missing_bdy(ny,nz,var,missv,nm_y1,nm_y2,nm_z1,nm_z2)
-
-  integer, intent(in) ::  ny, nz, nm_y1, nm_y2, nm_z1, nm_z2
-  real,    intent(in) ::  missv
-
-  real, dimension(ny,nz), intent(inout) ::  var
-
-  if (nm_y1 > 0)  var(1         :nm_y1,          :     ) = missv
-  if (nm_y2 > 0)  var(ny+1-nm_y2:ny   ,          :     ) = missv
-  if (nm_z1 > 0)  var(          :     ,1         :nm_z1) = missv
-  if (nm_z2 > 0)  var(          :     ,nz+1-nm_z2:nz   ) = missv
-
-END subroutine missing_bdy
 
 END module tem
 

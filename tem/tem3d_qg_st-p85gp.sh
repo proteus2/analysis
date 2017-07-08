@@ -17,6 +17,7 @@ P101=( s EXPNAME  $RA_SNAME )
 #== Parameter 2 ==================================
 P201=( n LAT_RNG  -90.0  90.0 )
 P202=( n P_RNG  925  10 )
+P203=( n K_MAX  15 )
 #== Parameter 9 - I/O ============================
 P901=( n NT_F4     ${NT_F4_M[@]}    )
 P902=( n MISSV     ${MISSV[0]}    )
@@ -69,7 +70,7 @@ ODIR=/data11/kyh/analy/tem
   # create namelist --------------------
   cr_file $F_NAMELIST
   cr_nl $F_NAMELIST ANALCASE "${P101[*]}" "${P102[*]}" "${P103[*]}"
-  cr_nl $F_NAMELIST PARAM "${P201[*]}" "${P202[*]}"
+  cr_nl $F_NAMELIST PARAM "${P201[*]}" "${P202[*]}" "${P203[*]}"
   cr_nl $F_NAMELIST FILEIO "${P901[*]}" "${P902[*]}" "${P990[*]}" "${P991[*]}" "${P992[*]}" "${P993[*]}" "${P994[*]}" "${P999[*]}"
   cat $F_NAMELIST
 
