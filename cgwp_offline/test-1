@@ -17,13 +17,13 @@ P106=( n OPT_30D  1 )
 #== Parameter 2 - SOURCE =========================
 P201=( n NC_DC  60  1. )  # 120  0.5
 P202=( n PHI0_DPHI  45  90 )                       # integer
-P203=( n CFACTOR  125. )
-#P203=( n CFACTOR  1989.0 )   #  230.3 / 1989.  for 2005.11
-#P203=( n CFACTOR  1419.0 )   #  169.1 / 1419.  for 1993.05
+#P203=( n CFACTOR  125. )   #  in HadGEM2, 125.
+#P203=( n CFACTOR  939.3 )   #  140.2 / 230.3  /  939.3 / 1989.  for 2005.11
+P203=( n CFACTOR  662.9 )   #  104.7 / 169.1  /  662.9 / 1419.  for 1993.05
 P204=( n NZ_SRC  -999 )
 P205=( n LAT_RNG  -10.0  10.0 )
 #== Parameter 3 - BACKGROUND =====================
-P301=( n BETA_WM  0.8 )   # def: 2.0 ??  /  0.8 for hg2ac
+P301=( n BETA_WM  0.8 )   # ?? for HadGEM2-A  /  0.8 for HadGEM2-AC
 P302=( n NX_B0  360 )
 P303=( n NZ_B  60 )
 P304=( n NK_B  90 )
@@ -67,7 +67,7 @@ M=$M1        ;  while [ $M    -le $M2    ] ; do
   P103[2]=$MM
 #  ODIR=$DATD/$expname/dchm_pdf/$YYYY
   ODIR=/data11/kyh/analy/cgwp_offline
-  P999[2]="$ODIR/${P101[2]}_ra.cgwp_offline.$YYYY.${MM}_rescale_1.nc"
+  P999[2]="$ODIR/${P101[2]}_ra.cgwp_offline.$YYYY.${MM}_rescale_5.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 #  [ -e ${P999[2]} ] && mv ${P999[2]} $ODIR/old.${P101[2]}.dchm-midlev_pdf.$YYYY.${MM}.nc
 

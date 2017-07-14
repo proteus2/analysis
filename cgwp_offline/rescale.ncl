@@ -6,7 +6,7 @@ p1 = 100.
 klev = 35
 
 ;file_ref = "res/uanuj_ra.cgwp_offline."+yyyy+"."+mm+".nc"
-file_ref = "uanuj_ra.cgwp_offline."+yyyy+"."+mm+"_rescale_1.nc"
+file_ref = "uanuj_ra.cgwp_offline."+yyyy+"."+mm+"_rescale_5.nc"
 
 f1 = addfile(file_ref,"r")
 lat = f1->lat
