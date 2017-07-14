@@ -1,12 +1,12 @@
 #
 #FC = $(FC_DBG) # -mcmodel=medium -shared-intel
 
-EXEC_ALL := offline_hg2 offline_hg2_ra test test1
+EXEC_ALL := offline_hg2 offline_hg2_ra
 NR_N := nrtype nr nrutil spline splint tridag_ser locate svdcmp-sq svbksb pythag
 MOD_DEP_N := param_gwp switch_dump netio m_common m_hadgem
 MOD_N := mflx-ctop_sc05 prop_diss m_zonalavg
 SUB_N := read_erai_lon_dat
-INCL_c_math := prop_diss offline_hg2 offline_hg2_ra test test1
+INCL_c_math := prop_diss offline_hg2 offline_hg2_ra
 
 NCINC := $(filter-out -g,$(shell nc-config --fflags))
 NCLIB := $(shell nc-config --flibs)
