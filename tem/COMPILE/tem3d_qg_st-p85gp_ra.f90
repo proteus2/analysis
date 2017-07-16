@@ -5,13 +5,13 @@ PROGRAM TEM3d_REANALYSIS
   use util,  only: lowpass_k
   use reanal
   use netio
+  use const_glob,  only: g, rd
 
   implicit none
 
-  include 'c_phys.inc'
-
   integer, parameter ::  nv = 11, nv2 = 2
   real   , parameter ::  h_s = 7.e3  ! 7 km scale height
+  real   , parameter ::  lapse_rate_sfc = 6.5e-3  ! for missing data
 
   integer ::  k_max
 
@@ -24,7 +24,6 @@ PROGRAM TEM3d_REANALYSIS
   integer ::  iy2(2), iz2(2), ny2, nz2, iy3(2), iz3(2)
   integer ::  iy2b(2), iz2b(2), iy2o(2), iz2o(2), nbuf_y2(2), nbuf_z2(2)
   integer ::  i,j,k,n, kk
-  integer ::  tag_exit
   real    ::  ntavg, dlon
   character(len=32), dimension(nv+nv2) ::  ovarname
 
@@ -45,8 +44,6 @@ PROGRAM TEM3d_REANALYSIS
   close(10)
 
   call initialize
-
-  tag_exit = 0
 
   L_MON:  DO imon=1, nmon
   !---------------------------------------------------------------------
@@ -151,10 +148,10 @@ PROGRAM TEM3d_REANALYSIS
   call getdim(file_i(iv_i),var_i_name(iv_i))
   dlon = lon(2) - lon(1)
 
-  ovarname(1:9) = varname_waf3d_qg(1:9)
+  ovarname(1:9) = varname_waf3d_s_qg(1:9)
   ovarname(10) = 'u'
   ovarname(11) = 'v'
-  ovarname(12:13) = varname_waf3d_qg(10:11)
+  ovarname(12:13) = varname_waf3d_s_qg(10:11)
 
   call get_iouter(lat,lat_rng, iy2o)
   iy2b(1) = max(1 ,iy2o(1)-3)

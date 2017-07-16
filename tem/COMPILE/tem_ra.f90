@@ -56,8 +56,7 @@ PROGRAM TEM_REANALYSIS
   !---------------------------------------------------------------------
                                                 if (tag_exit == 1)  EXIT
 
-  ndate = enddate(mon)
-  if ( mon == 2 .and. mod(year,4) == 0 )  ndate = 29
+  ndate = get_ndate()
 
   L_DATE:  DO date=1, ndate
   !---------------------------------------------------------------------

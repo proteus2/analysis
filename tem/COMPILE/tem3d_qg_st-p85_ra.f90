@@ -5,18 +5,19 @@ PROGRAM TEM3d_REANALYSIS
   use util,  only: lowpass_k
   use reanal
   use netio
+  use const_glob,  only: g, rd
 
   implicit none
 
-  include 'c_phys.inc'
-
-  integer, parameter ::  nv = 11, nv2 = 2
+  integer, parameter ::  nv = 21, nv2 = 3
   real   , parameter ::  h_s = 7.e3  ! 7 km scale height
+  real   , parameter ::  lapse_rate_sfc = 6.5e-3  ! for missing data
 
   integer ::  k_max
+  logical ::  scaling
 
   namelist /ANALCASE/ EXPNAME, YYYY, MM
-  namelist /PARAM/ LAT_RNG, P_RNG, K_MAX
+  namelist /PARAM/ LAT_RNG, P_RNG, K_MAX, SCALING
   namelist /FILEIO/ NT_F4, MISSV, FILE_I_HEAD, FILE_I_FORM, FILE_I_XXXX, &
                     VAR_I, VAR_I_NAME, FILE_O
 
@@ -24,13 +25,12 @@ PROGRAM TEM3d_REANALYSIS
   integer ::  iy2(2), iz2(2), ny2, nz2, iy3(2), iz3(2)
   integer ::  iy2b(2), iz2b(2), iy2o(2), iz2o(2), nbuf_y2(2), nbuf_z2(2)
   integer ::  i,j,k,n, kk
-  integer ::  tag_exit
   real    ::  ntavg, dlon
   character(len=32), dimension(nv+nv2) ::  ovarname
 
   real, dimension(:,:,:,:,:), allocatable ::  var5d
   real, dimension(:,:,:,:), allocatable ::  var4d, var4d2
-  real, dimension(:,:,:),   allocatable ::  var3d2
+  real, dimension(:,:,:),   allocatable ::  var3d
   real, dimension(:,:,:),   allocatable ::  u, v, te, gp, w
   real, dimension(:,:),     allocatable ::  wm
   real, dimension(:),       allocatable ::  lat0, p0a
@@ -45,8 +45,6 @@ PROGRAM TEM3d_REANALYSIS
   close(10)
 
   call initialize
-
-  tag_exit = 0
 
   L_MON:  DO imon=1, nmon
   !---------------------------------------------------------------------
@@ -71,12 +69,17 @@ PROGRAM TEM3d_REANALYSIS
       nx,ny2,nz2,lat0,p0a*100.,u,v,te,gp,dlon,h_s,1.e32,                 &
       var4d(:,:,:,1),var4d(:,:,:,2),var4d(:,:,:,3),var4d(:,:,:,4),       &
       var4d(:,:,:,5),var4d(:,:,:,6),var4d(:,:,:,7),var4d(:,:,:,8),       &
-      var4d(:,:,:,9),var3d2(:,:,1),var3d2(:,:,2) )
+      var4d(:,:,:,9),var4d(:,:,:,10),var4d(:,:,:,11),var4d(:,:,:,12),    &
+      var4d(:,:,:,13),var4d(:,:,:,14),var4d(:,:,:,15),var4d(:,:,:,16),   &
+      var4d(:,:,:,17),                                                   &
+      var3d(:,:,1),var3d(:,:,2),var3d(:,:,3),scaling)
 
-  var5d(:,:,:,imon,:9) = var4d(:,:,:,:9)
-  var5d(:,:,:,imon,10) = u(:,:,:)
-  var5d(:,:,:,imon,11) = v(:,:,:)
-  var4d2(:,:,imon,:2) = var3d2(:,:,:2)
+  var5d(:,:,:,imon,:17) = var4d(:,:,:,:17)
+  var5d(:,:,:,imon,18) = u (:,:,:)
+  var5d(:,:,:,imon,19) = v (:,:,:)
+  var5d(:,:,:,imon,20) = te(:,:,:)
+  var5d(:,:,:,imon,21) = gp(:,:,:)
+  var4d2(:,:,imon,:3) = var3d(:,:,:3)
 
   mon = mon + 1
   if (mon == 13) then
@@ -153,10 +156,12 @@ PROGRAM TEM3d_REANALYSIS
   call getdim(file_i(iv_i),var_i_name(iv_i))
   dlon = lon(2) - lon(1)
 
-  ovarname(1:9) = varname_waf3d_qg(1:9)
-  ovarname(10) = 'u'
-  ovarname(11) = 'v'
-  ovarname(12:13) = varname_waf3d_qg(10:11)
+  ovarname(1:17) = varname_waf3d_s_qg(1:17)
+  ovarname(18) = 'u'
+  ovarname(19) = 'v'
+  ovarname(20) = 'T'
+  ovarname(21) = 'gp'
+  ovarname(22:24) = varname_waf3d_s_qg(18:20)
 
   call get_iouter(lat,lat_rng, iy2o)
   iy2b(1) = max(1 ,iy2o(1)-3)
@@ -190,7 +195,7 @@ PROGRAM TEM3d_REANALYSIS
   var5d(:,:,:,:,:) = 0.
   var4d2(:,:,:,:) = 0.
   allocate( var4d(nx,ny2,nz2,nv) )
-  allocate( var3d2(ny2,nz2,nv2) )
+  allocate( var3d(ny2,nz2,nv2) )
 
   allocate( u(nx,ny2,nz2), v(nx,ny2,nz2), te(nx,ny2,nz2), gp(nx,ny2,nz2) )
   allocate( wm(ny2,nz2) )
@@ -303,7 +308,7 @@ PROGRAM TEM3d_REANALYSIS
 
   SUBROUTINE finalize
 
-  deallocate( var5d, var4d, var4d2, var3d2 )
+  deallocate( var5d, var4d, var4d2, var3d )
   deallocate( lon, lat, p, t, t2pt, lat0, p0a )
   do iv=1, nv
     deallocate( set(iv)%axis1, set(iv)%axis2, set(iv)%axis3,             &

@@ -251,6 +251,7 @@ SUBROUTINE get_ind_bnd(nx,x,bnd, i1b,i2b)
 
   i1b = nx+1  ;  i2b = 0
 
+  minbnd = min(bnd(1),bnd(2))  ;  maxbnd = max(bnd(1),bnd(2))
   do i=1, nx
     if ( x(i) >= minbnd .and. x(i) <= maxbnd ) then
       i1b = i  ;  EXIT
