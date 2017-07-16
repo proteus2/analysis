@@ -29,7 +29,7 @@ PROGRAM TEM3d_REANALYSIS
   real, dimension(-nwgth:nwgth) ::  lanczos, lanczos_shift, ltmp
   character(len=32), dimension(nv+nv2) ::  ovarname
 
-  real, dimension(:,:,:,:), allocatable ::  var4d, var4ds, dum
+  real, dimension(:,:,:,:), allocatable ::  var4d, var4ds
 !nv2  real, dimension(:,:,:),   allocatable ::  var3d, var3ds
   real, dimension(:,:,:,:), allocatable ::  u, v, te, gp, w
   real, dimension(:,:,:),   allocatable ::  u1, v1, te1, gp1, w1
@@ -172,6 +172,7 @@ print*,'TEM'
 
   deallocate( u, v, te, gp, u1, v1, te1, gp1, te_prt, gp_prt )
   deallocate( us, vs, tes, gps )
+  deallocate( w, w1, ws )
 
   var4ds(:,:,:,:25) = var4ds(:,:,:,:25)/float(nt)
   var4ds(:,:,:,26) = (var4d(:,:,:,15) - var4ds(:,:,:,26))/float(nt-1)
@@ -224,7 +225,10 @@ print*,nt
 
   year = yyyy
   mon  = mm(1) - 1
-  if (mon == 0)  year = year - 1
+  if (mon == 0) then
+    year = yyyy - 1
+    mon  = 12
+  end if
 
   nmon = mm(2)  ;  nhour = hh(2)
 
@@ -290,7 +294,6 @@ print*,nt
   allocate( u(nx,ny2,nz2,-nwgth:nwgth), v(nx,ny2,nz2,-nwgth:nwgth),      &
             te(nx,ny2,nz2,-nwgth:nwgth), gp(nx,ny2,nz2,-nwgth:nwgth) )
   allocate( w(nx,ny2,nz2,-nwgth:nwgth) )
-  allocate( dum(nx,ny2,nz2,nwgth*2) )
   allocate( us(nx,ny2,nz2), vs(nx,ny2,nz2), tes(nx,ny2,nz2),             &
             gps(nx,ny2,nz2) )
   allocate( ws(nx,ny2,nz2) )
@@ -340,6 +343,11 @@ print*,nt
 
   ! GPH to GP  (The missing value also changes, if it exists.)
   if ( trim(unit_h) == 'm' )  gp1(:,:,:) = gp1(:,:,:)*g
+
+  ! omega to w(zp)
+  do k=1, nz2
+    w1(:,:,k) = -w1(:,:,k)/(p0a(k)*100.)*h_s
+  enddo
 
   if (missv /= 1.0) then
     tmp = lapse_rate_sfc*rd/g

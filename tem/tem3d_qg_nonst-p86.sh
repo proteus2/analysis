@@ -1,9 +1,9 @@
 #! /bin/bash
 
-EXTCTL1=12       ### CONTROLLED FOR SPLITTING - 1
+EXTCTL1=1        ### CONTROLLED FOR SPLITTING - 1
 EXTCTL2=12       ### CONTROLLED FOR SPLITTING - 2
-YYYY1=2009
-YYYY2=2009
+YYYY1=1979
+YYYY2=2012
 #M12=( 1  12 )
 M12=( $EXTCTL1  $EXTCTL2 )  # available only for NM=1
 NM=1             # No. of months to calculate for at once
