@@ -2,7 +2,7 @@ PROGRAM TEM3d_REANALYSIS
 ! attributes (scale facter, add_offset, "_FillValue" or "missing_value") must be considered.
 
   use tem3d
-  use util,  only: lowpass_k
+  use util,  only: lowpass_k, filter121_y
   use reanal
   use netio
   use const_glob,  only: g, rd
@@ -108,6 +108,11 @@ print*, 'filter'
   call lowpass_k(te(:,:,:,i_save),k_max)
   call lowpass_k(gp(:,:,:,i_save),k_max)
   call lowpass_k(w (:,:,:,i_save),k_max)
+  call filter121_y(u (:,:,:,i_save),'U')
+  call filter121_y(v (:,:,:,i_save),'V')
+  call filter121_y(te(:,:,:,i_save),'S')
+  call filter121_y(gp(:,:,:,i_save),'S')
+  call filter121_y(w (:,:,:,i_save),'S')
 
   if ( i_time == 0 .and. i_save < nwgth ) then
     i_save = i_save + 1

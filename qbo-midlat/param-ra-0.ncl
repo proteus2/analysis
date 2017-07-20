@@ -17,10 +17,12 @@
  param0_fname_t = "t"
  param0_fname_z = "gp"
  param0_fname_uv = (/"u","v"/)
+ param0_fname_w = "ome"
  param0_fname_pr = "precip"
  param0_varname_t = "T_GDS0_ISBL"
  param0_varname_z = "Z_GDS0_ISBL"
  param0_varname_uv = (/"U","V"/)+"_GDS0_ISBL"
+ param0_varname_w = "W_GDS0_ISBL"
  param0_varname_pr = "TP_GDS0_SFC"
  param0_varname_t2m = "t2"
  param0_p_v = 70

@@ -6,7 +6,7 @@ MODULE util
 
   public ::  gradx_2nd, grady_2nd, gradz_2nd_irr, gradxx_4nd, gradxx_2nd
   public ::  get_ind_bnd, missing_bdy
-  public ::  lowpass_k
+  public ::  lowpass_k, filter121_y
 
   private ::  a_earth, deg2rad
 
@@ -344,6 +344,63 @@ SUBROUTINE lowpass_k(var,k_high)
   var(:,:,:) = var(:,:,:) + spread(vm(:,:),1,nx)
 
 END subroutine lowpass_k
+
+SUBROUTINE filter121_y(var,vtype)
+
+  real, dimension(:,:,:), intent(inout) ::  var
+
+  character(len=*), intent(in), optional ::  vtype
+
+  real, dimension(size(var,1),size(var,2),size(var,3)) ::  tmp
+  real, dimension(size(var,1)) ::  cosx, sinx
+  real, dimension(size(var,3)) ::  ns90, sn90
+
+  real    ::  coef_c1, coef_s1, coef_c2, coef_s2
+  integer ::  nx, ny, nz
+  integer ::  i,k
+
+  double precision, parameter ::  twopi = 2.d0*3.14159265358979323846d0
+
+  nx = size(var,1)  ;  ny = size(var,2)  ;  nz = size(var,3)
+
+  tmp(:,:,:) = var(:,:,:)
+
+  var(:,2:ny-1,:) = 0.5*tmp(:,2:ny-1,:) +                                &
+                    0.25*( tmp(:,1:ny-2,:) + tmp(:,3:ny,:) )
+
+  if ( present(vtype) ) then
+
+    if ( trim(vtype) == 'u' .or. trim(vtype) == 'U' .or.                 &
+         trim(vtype) == 'v' .or. trim(vtype) == 'V' ) then
+      do i=1, nx
+        cosx(i) = real(cos(dble(i-1)/dble(nx)*twopi))
+        sinx(i) = real(sin(dble(i-1)/dble(nx)*twopi))
+      enddo
+      do k=1, nz
+        coef_c1 = sum(tmp(:,2   ,k)*cosx(:))*(2./float(nx))
+        coef_s1 = sum(tmp(:,2   ,k)*sinx(:))*(2./float(nx))
+        coef_c2 = sum(tmp(:,ny-1,k)*cosx(:))*(2./float(nx))
+        coef_s2 = sum(tmp(:,ny-1,k)*sinx(:))*(2./float(nx))
+        var(:,1 ,k) = 0.5*( tmp(:,1 ,k) +                                &
+                            (coef_c1*cosx(:) + coef_s1*sinx(:)) )
+        var(:,ny,k) = 0.5*( tmp(:,ny,k) +                                &
+                            (coef_c2*cosx(:) + coef_s2*sinx(:)) )
+      enddo
+    else
+      ns90(:) = 0.5*( tmp(1,1 ,:) + sum(tmp(:,2   ,:),dim=1)/float(nx) )
+      sn90(:) = 0.5*( tmp(1,ny,:) + sum(tmp(:,ny-1,:),dim=1)/float(nx) )
+      var(:,1 ,:) = spread(ns90(:),1,nx)
+      var(:,ny,:) = spread(sn90(:),1,nx)
+    end if
+
+  else
+
+    var(:,1 ,:) = 0.5*( tmp(:,1 ,:) + tmp(:,2   ,:) )
+    var(:,ny,:) = 0.5*( tmp(:,ny,:) + tmp(:,ny-1,:) )
+
+  end if
+
+END subroutine filter121_y
 
 END module util
 

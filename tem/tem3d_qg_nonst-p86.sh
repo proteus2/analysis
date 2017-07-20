@@ -63,7 +63,7 @@ M=${M12[0]}  ;  while [ $M    -le ${M12[1]} ] ; do
     [ $MMM -lt 10 ] && MMM="0$MMM"
     MMM="$MM-$MMM"
   fi
-  P999[2]="$ODIR/${P101[2]}.tem3d_qg_nonst-p86_xyp.$YYYY.$MMM.nc"
+  P999[2]="$ODIR/${P101[2]}.tem3d_qg_nonst-p86-1_xyp.$YYYY.$MMM.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 
   # create namelist --------------------

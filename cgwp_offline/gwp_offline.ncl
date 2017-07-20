@@ -10,10 +10,10 @@ axisfontratio = 1.0
 begin
 
 ;--------------------------------------- parameters
- yy = 2005
- mm = "11"
-; yy = 1993
-; mm = "05"
+; yy = 2005
+; mm = "11"
+ yy = 1993
+ mm = "05"
 
  load "res/data_from_Andrew"
  load "res/data_from_Andrew_HadGEM2-AC"
@@ -41,12 +41,12 @@ begin
    mfa = (/ EqZm_Eastward_flux_ss9305, EqZm_Eastward_flux_1mpa9305,  \
             EqZm_Eastward_flux_10mpa9305, -EqZm_Westward_flux_ss9305,  \
             -EqZm_Westward_flux_1mpa9305, -EqZm_Westward_flux_10mpa9305 /)
-   fda = 0.2*(/ EqZm_EW_accel_ss9305, EqZm_EW_accel_1mpa9305, EqZm_EW_accel_10mpa9305 /)
+   fda = (/ 0.2*EqZm_EW_accel_ss9305, 0.2*EqZm_EW_accel_1mpa9305, EqZm_EW_accel_10mpa9305 /)
  else if (yy+mm .eq. "200511") then
    mfa = (/ EqZm_Eastward_flux_ss0511, EqZm_Eastward_flux_1mpa0511,  \
             EqZm_Eastward_flux_10mpa0511, -EqZm_Westward_flux_ss0511,  \
             -EqZm_Westward_flux_1mpa0511, -EqZm_Westward_flux_10mpa0511 /)
-   fda = 0.2*(/ EqZm_EW_accel_ss0511, EqZm_EW_accel_1mpa0511, EqZm_EW_accel_10mpa0511 /)
+   fda = (/ 0.2*EqZm_EW_accel_ss0511, 0.2*EqZm_EW_accel_1mpa0511, EqZm_EW_accel_10mpa0511 /)
  end if
  end if
  mfa((/0,3/),:) = mfa((/0,3/),:)*0.6
@@ -75,7 +75,7 @@ begin
  end do
 
  mf((/2,5/),:) = mf((/2,5/),:)*0.1
- fd(2,:) = fd(2,:)*0.5
+ fd(2,:) = fd(2,:)*0.1
 
 ;--------------------------------------- cn level
  lcol = (/1,2,4,1,2,4/)
@@ -122,7 +122,7 @@ begin
  set_size_lg(lg,xf(0)+0.1,yf(0)-0.1,wi*0.20,12)
  draw(lg)
 
- lgtxt = (/"as in model","1 mPa","10 mPa (x 0.5)"/)
+ lgtxt = (/"as in model","1 mPa","10 mPa (x 0.1)"/)
  lg = lgplot(wks,lgtxt,"D",0,"T",0.5,"C",lcol(:2),2)
  set_size_lg(lg,xf(1)+0.1,yf(0)-0.1,wi*0.20,12)
  draw(lg)
