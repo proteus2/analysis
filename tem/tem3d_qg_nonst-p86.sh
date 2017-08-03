@@ -18,7 +18,7 @@ P104=( n HH  00  $RA_NHOUR )          # starting time [UTC] and frequency [/day]
 #== Parameter 2 ==================================
 P201=( n LAT_RNG  -90.0  90.0 )
 P202=( n P_RNG  925  10 )
-P203=( n K_MAX  15 )
+P203=( n K_MAX  10 )
 #== Parameter 9 - I/O ============================
 P901=( n NT_F4     ${NT_F4[@]}    )
 P902=( n MISSV     ${MISSV[0]}    )
@@ -63,7 +63,7 @@ M=${M12[0]}  ;  while [ $M    -le ${M12[1]} ] ; do
     [ $MMM -lt 10 ] && MMM="0$MMM"
     MMM="$MM-$MMM"
   fi
-  P999[2]="$ODIR/${P101[2]}.tem3d_qg_nonst-p86-1_xyp.$YYYY.$MMM.nc"
+  P999[2]="$ODIR/${P101[2]}.tem3d_qg_nonst-p86_xyp.$YYYY.$MMM.nc"
   if [ ! -d $ODIR ] ; then mkdir -p $ODIR ; fi
 
   # create namelist --------------------

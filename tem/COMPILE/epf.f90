@@ -604,7 +604,7 @@ SUBROUTINE set_gridvar_p(ny,nz,lat,p,h_scale)
   if (abs(lat(1 )) == 90.)  coslat(1 ,:) = 0.
   if (abs(lat(ny)) == 90.)  coslat(ny,:) = 0.
   f   (:,:) = spread(2.*ome_earth*sin(lat(:)*deg2rad),2,nz)
-  rho0(:,:) = spread(p(:)/g/h_scale                  ,1,ny)
+  rho0(:,:) = spread(p(:)/(g*h_scale)                ,1,ny)
 
   ny_pre = ny  ;  nz_pre = nz
   lat_pre(:) = lat(:)

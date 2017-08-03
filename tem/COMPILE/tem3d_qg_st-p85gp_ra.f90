@@ -9,7 +9,7 @@ PROGRAM TEM3d_REANALYSIS
 
   implicit none
 
-  integer, parameter ::  nv = 11, nv2 = 2
+  integer, parameter ::  nv = 9, nv2 = 2
   real   , parameter ::  h_s = 7.e3  ! 7 km scale height
   real   , parameter ::  lapse_rate_sfc = 6.5e-3  ! for missing data
 
@@ -65,12 +65,12 @@ PROGRAM TEM3d_REANALYSIS
   call waf3d_s_qg_gp(                                                    &
       nx,ny2,nz2,lat0,p0a*100.,gp,te,dlon,h_s,1.e32,                     &
       var4d(:,:,:,1),var4d(:,:,:,2),var4d(:,:,:,3),var4d(:,:,:,4),       &
-      var4d(:,:,:,5),var4d(:,:,:,6),var4d(:,:,:,7),var4d(:,:,:,8),       &
-      var4d(:,:,:,9),var3d2(:,:,1),var3d2(:,:,2) )
+      var4d(:,:,:,5),var4d(:,:,:,6),var4d(:,:,:,7),                      &
+      var3d2(:,:,1),var3d2(:,:,2) )
 
-  var5d(:,:,:,imon,:9) = var4d(:,:,:,:9)
-  var5d(:,:,:,imon,10) = u(:,:,:)
-  var5d(:,:,:,imon,11) = v(:,:,:)
+  var5d(:,:,:,imon,:7) = var4d(:,:,:,:7)
+  var5d(:,:,:,imon,8) = u(:,:,:)
+  var5d(:,:,:,imon,9) = v(:,:,:)
   var4d2(:,:,imon,:2) = var3d2(:,:,:2)
 
   mon = mon + 1
@@ -148,10 +148,10 @@ PROGRAM TEM3d_REANALYSIS
   call getdim(file_i(iv_i),var_i_name(iv_i))
   dlon = lon(2) - lon(1)
 
-  ovarname(1:9) = varname_waf3d_s_qg(1:9)
-  ovarname(10) = 'u'
-  ovarname(11) = 'v'
-  ovarname(12:13) = varname_waf3d_s_qg(10:11)
+  ovarname(1:7) = varname_waf3d_s_qg(1:7)
+  ovarname(8) = 'u'
+  ovarname(9) = 'v'
+  ovarname(10:11) = varname_waf3d_s_qg(18:19)
 
   call get_iouter(lat,lat_rng, iy2o)
   iy2b(1) = max(1 ,iy2o(1)-3)

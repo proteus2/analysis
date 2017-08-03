@@ -1,157 +1,137 @@
 load "$UTIL/ncl/header.ncl"
-
 xspace =  83  ; 83, 170  -  QJRMS
 yspace = 240  ; 240
 load "$UTIL/ncl/figsize.ncl"
 load "$UTIL/ncl/attribute.ncl"
-
 axisfontratio = 1.2
-
 begin
 
 ;--------------------------------------- parameters
- casecode = "ra"
-; casecode = "hg"
+ load "./param-qbodata-obs.ncl"
+ load "./param-1-ra.ncl"
+ load "./ftn_qbo_phase.ncl"
 
- if (casecode .eq. "ra") then
-   load "./param-ra-0.ncl"
- else
-   load "./param-hg-0.ncl"
+ season = par1_season
+ y1 = par1_y1
+ y2 = par1_y2
+
+ p1 = par0_p_q(0)
+ p2 = par0_p_q(1:)
+ if (par0_case_q .ne. "obs") then
+   lat0 = par0_latbnd_q
  end if
 
- cexp    = param0_cexp  ; (/"CGW","CTL"/)
- expname = param0_expname  ;(/"tc" ,"tk" /)
- fdir_u0 = param0_fdir_u0  ; "$DATD/AOL60"+cexp
- fname_u0 = param0_fname_u0  ; "$DATD/AOL60"+cexp
- u0varname = param0_u0varname  ;"u_p_uv"
+ y0 = par0_y0_q
 
- y0 = param0_y0
- y1 = param0_y1
- y2 = param0_y2
-
- lat0 = param0_lat0  ; 10.
- p1 = param0_p1  ; 70
- p2 = param0_p2  ; 30
-
- xmin = param0_umin_p1
- xmax = param0_umax_p1
- ymin = param0_umin_p2
- ymax = param0_umax_p2
-
- if (casecode .eq. "ra") then
-   y9 = param0_y9
-   pp = param0_pp
-   ppi0 = param0_ppi0
- end if
- 
- if (casecode .eq. "hg") then
-   wks = cr_wks("fig/phase_hg_p"+p1+"-"+p2+"_"+y1+"-"+y2,600,0)
- else
-   if (expname(0) .eq. "era-int_f") then
-     wks = cr_wks("fig/phase_"+cexp(0)+"_p"+pp(p1-ppi0)+"-"+pp(p2-ppi0)+"_"+y1+"-"+y2,600,0)
-   else
-     wks = cr_wks("fig/phase_"+cexp(0)+"_p"+p1+"-"+p2+"_"+y1+"-"+y2,600,0)
-   end if
- end if
- colind = NhlNewColor(wks,0.4,0.4,0.4)
+;-------------------------------------------------
+ nma = par1_nma
 
 ;--------------------------------------- read data
- ne = dimsizes(expname)
- nt = (y2-y1+1)*12
+ nt = (y2-y1+1)*nma
+
  it0 = (y1-y0)*12
  it9 = (y2+1-y0)*12 - 1
 
- u = new((/ne,nt/),float,1.e20)
- ush = new((/ne,nt/),float,1.e20)
- do ie=0, ne-1
-   f1 = addfile(fname_u0(ie),"r")
-   u(ie,:) = tofloat( dim_avg( f1->$u0varname$(it0:it9,{p1},{-lat0:lat0}) ) )
-   ush(ie,:) = tofloat( dim_avg( f1->$u0varname$(it0:it9,{p2(0)},{-lat0:lat0}) ) )
-   if (dimsizes(p2) .eq. 2) then
-     ush(ie,:) = dim_avg( f1->$u0varname$(it0:it9,{p2(0)},{-lat0:lat0}) ) -  \
-                 dim_avg( f1->$u0varname$(it0:it9,{p2(1)},{-lat0:lat0}) )
-   end if
+ its = new(nt,integer)
+ do n=0, nma-1
+   its(n::nma) = ispan(it0+par1_imon0(par1_iseason,n),it9,12)
  end do
 
- t = y1 + (fspan(1,nt,nt)-0.5)/12.
+ f1 = addfile(par0_fname_q,"r")
+ tmpi = dimsizes( f1->$par0_varname_q$ )
+ if (dimsizes(tmpi) .eq. 2) then
+   if (tmpi(0) .lt. tmpi(1)) then
+     u = f1->$par0_varname_q$(:,its)
+   else
+     u = transpose( f1->$par0_varname_q$(its,:) )
+   end if
+ else
+   u = transpose( dim_avg( f1->$par0_varname_q$(its,:,{-lat0:lat0}) ) )
+ end if
+ p = u&$u!0$
+ z = 7.*log(1.e3/p)
 
 ;--------------------------------------- process 0
- uc = new((/ne,12/),float,1.e20)
- ushc = new((/ne,12/),float,1.e20)
- if (casecode .eq. "hg") then
-   do im=0, 11
-     ; use only 50 yrs
-     uc(:,im) = dim_avg_n(u(:,im:50*12-1:12), 1)
-     ushc(:,im) = dim_avg_n(ush(:,im:50*12-1:12), 1)
-   end do
- else
-   do im=0, 11
-     uc(:,im) = dim_avg_n(u(:,im::12), 1)
-     ushc(:,im) = dim_avg_n(ush(:,im::12), 1)
-   end do
- end if
+ it_phs = qbo_phase_ind(season,par0_fname_q,par0_varname_q,  \
+                        p1,p2,10,par0_y0_q,y1,y2)
+;                        p1,p2,10,par0_y0_q,par0_y1_q,par0_y2_q)
+ nph = it_phs@n_phase
+ nt_phs = it_phs@nt_phase
+ phs = it_phs@phases
+ ua1 = it_phs@ua1
+ ua2 = it_phs@ua2
+print(nt_phs)
 
- ua = u
- usha = ush
- do n=0, nt-1, 12
- do im=0, 11
-   ua(:,n+im) = u(:,n+im) - uc(:,im)
-   usha(:,n+im) = ush(:,n+im) - ushc(:,im)
- end do
- end do
+;--------------------------------------- wks
+ wks = cr_wks("fig/phase_"+season+"_p"+p1+"-"+p2(0)+"_"+y1+"-"+y2,600,0)
+ colind = NhlNewColor(wks,0.5,0.5,0.5)
 
 ;--------------------------------------- cn level
- lcol = (/2,1,3/)
+ mcol = (/colind,2,3,4,6,7,8,13,5/)
 
-;--------------------------------------- contour
- nl = ne
+;--------------------------------------- plot
+ mstr = (/"",""/)
+ xstr = (/"",""/)
+ ystr = (/"",""/)
 
- mstr = cexp
+ wi = 30
+ he = 30
+ xf = 15 + ispan(0,1,1)*(wi+15)
+ yf = 10 + ispan(0,1,1)*(he+15)
 
- wi = 40
- he = 40
- xf = 15 + (/0,1/)*(wi+10)
- yf = 10
+ xmnmx = (/ toint(min(ua1))-2, toint(max(ua1))+2 /) + (/-4,3/)
+ ymnmx = (/ toint(min(ua2))-2, toint(max(ua2))+2 /) + (/-5,5/)
 
 
-do il=0, nl-1
-
- xstr = "U"+p1+" [m s:S:-1:N:]"
- ystr = (/"U"+p2(0)+" [m s:S:-1:N:]","",""/)
+ xstr(0) = "U"+p1+"a [m s:S:-1:N:]"
+ ystr(0) = "U"+p2(0)+"a [m s:S:-1:N:]"
  if (dimsizes(p2) .eq. 2) then
-   ystr = (/"U"+p2(0)+" - U"+p2(1)+" [m s:S:-1:N:]","",""/)
+   ystr(0) = "U"+p2(0)+" - U"+p2(1)+"a [m s:S:-1:N:]"
  end if
 
- if (casecode .eq. "ra") then
- if (expname(il) .eq. "era-int_f") then
-   xstr = "U"+pp(p1-ppi0)+" [m s:S:-1:N:]"
-   ystr = "U"+pp(p2(0)-ppi0)+" [m s:S:-1:N:]"
-   if (dimsizes(p2) .eq. 2) then
-     ystr = (/"U"+pp(p2(0)-ppi0)+" - U"+pp(p2(1)-ppi0)+" [m s:S:-1:N:]","",""/)
-   end if
- end if
- end if
-
- plot = xylineplot(wks,ua(il,:),usha(il,:),"D",0,"T",0.5,"C",-1)
-; do k=0, nz-1
-;   xyaddline(plot,t,u(0,k,:),"D",0,"T",1.0,"C",lcol(k))
-; end do
+ plot = xylineplot(wks,ua1,ua2,"D",0,"T",0.5,"C",-1)
  xyaddmarker(plot,16,"S",0.2,"T",1.0,"C",1)
 
- set_size(plot,xf(il),yf,wi,he)
- axis_range(plot,xmin,xmax,ymin,ymax,False,False)
- axis_str(plot,mstr(il),xstr,ystr(il))
- setvalues plot
-  "tmXBMode" : "Manual"
-  "tmXBTickSpacingF"  : 5
-  "tmXBMinorPerMajor" : 4
- end setvalues
+ dumm = new(nt,graphic)
+ plres = True
+ plres@gsMarkerIndex = 16
+ plres@gsMarkerSizeF = 0.001
+ do n=0, nt-1
+   plres@gsMarkerColor = mcol(phs(n))
+   dumm(n) = gsn_add_polymarker(wks,plot,ua1(n),ua2(n),plres)
+ end do
+
+ set_size(plot,xf(0),yf(0),wi,he)
+; axis_range(plot,-999,999,-999,999,False,False)
+ axis_range(plot,xmnmx(0),xmnmx(1),ymnmx(0),ymnmx(1),False,False)
+ axis_str(plot,mstr(0),xstr(0),ystr(0))
 
 ; dr_txt(wks,p(ip)+" hPa",xf(0)+8,yf(ip)+3,22,8,0.)
 
  draw(plot)
 
-end do
+
+ xstr(1) = "U [m s:S:-1:N:]"
+ ystr(1) = "p [hPa]"
+
+ plot2 = xylineplot(wks,0,z,"D",0,"T",0.5,"C",colind)
+ do il=0, nph-1
+   u_z = dim_avg(u(:,it_phs(il,:nt_phs(il)-1)))
+   xyaddline(plot2,u_z,z,"D",0,"T",1.0,"C",mcol(il+1))
+ end do
+
+ set_size(plot2,xf(1),yf(0),wi,he)
+; axis_range(plot2,-999,999,-999,999,False,False)
+ axis_range(plot2,-40,30,min(z),max(z),False,False)
+ axis_str(plot2,mstr(1),xstr(1),ystr(1))
+ setvalues plot2
+  "tmYLMode"   : "Explicit"
+  "tmYLValues" : z
+  "tmYLLabels" : p
+ end setvalues
+
+ draw(plot2)
+
 
  frame(wks)
 

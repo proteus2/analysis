@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/utils/!svn/ver/918/off_gw_ussp/trunk/src
+END
+gw_ussp_offline_mod.F90
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/utils/!svn/ver/918/off_gw_ussp/trunk/src/gw_ussp_offline_mod.F90
+END
+gw_ussp_core_mod.F90
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/utils/!svn/ver/918/off_gw_ussp/trunk/src/gw_ussp_core_mod.F90
+END
+runvnamelist_off_mod.F90
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/utils/!svn/ver/918/off_gw_ussp/trunk/src/runvnamelist_off_mod.F90
+END
+gw_ussp_core_offline.F90
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/utils/!svn/ver/918/off_gw_ussp/trunk/src/gw_ussp_core_offline.F90
+END

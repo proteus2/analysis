@@ -1,0 +1,18 @@
+ &RUNVARS
+  row_length = 360,
+  rows = 1,
+  model_levels = 60,
+  idir = 2,
+  launchlev = 20,
+  ussp_launch_factor = 1.3,
+  wavelstar = 4300.00,
+  L_add_cgw = .FALSE.,
+  cgw_scale_factor = 0.0,
+  base_phi = 0.0,
+  delta_phi = 1.25,
+  cosazim=
+  1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+  sinazim=
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+  IUNIT = 25,
+ /

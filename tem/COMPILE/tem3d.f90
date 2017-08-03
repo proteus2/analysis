@@ -1,7 +1,8 @@
 MODULE tem3d
 
-  use util,  only: gradx_2nd, grady_2nd, gradz_2nd_irr, gradxx_2nd,      &
-                   get_ind_bnd, missing_bdy, gradxx_4nd
+  use util,  only: gradx_2nd, grady_2nd, gradz_2nd_irr, grady_wgt_2nd,   &
+                   gradz_wgt_2nd_irr, gradxx_2nd, gradxx_4nd,            &
+                   get_ind_bnd, missing_bdy, lowpass_k, filter121_y
   use const_glob,  only:  g, rd, kappa, a_earth, ome_earth, deg2rad
 
   implicit none
@@ -78,7 +79,7 @@ SUBROUTINE waf3d_s_qg(                                                   &
   real, dimension(nx,ny,nz), intent(out) ::  divb, divb_x, divb_y, divb_z
   real, dimension(nx,ny,nz), intent(out) ::  wadf, wadb, qgpv
 
-  real, dimension(ny,nz)    ::  t0, gp0, v0, dvor0dy, dt0dy, s_t00, scl
+  real, dimension(ny,nz)    ::  t0, gp0, v0, dvor0dy, dt0dy, t00, scl
   real, dimension(nx,ny,nz) ::  prt, u_prt, v_prt, e_tot, tmp
 
   logical ::  l_scl
@@ -92,13 +93,12 @@ SUBROUTINE waf3d_s_qg(                                                   &
   gp0(:,:) = sum(gp, dim=1)/float(nx)
 
   ! S
-  call gradz_2nd_irr(ny,nz,t0,zp, s_t0)
-  s_t0(:,:) = s_t0(:,:) + t0(:,:)*(kappa/h_scale)
+  call get_reference_qg(t0, t00)
+  call gradz_2nd_irr(ny,nz,t00,zp, s_t0)
+  s_t0(:,:) = s_t0(:,:) + t00(:,:)*(kappa/h_scale)
 
-!  call get_reference_qg(s_t0, s_t00)
-  call smooth_y(s_t0,7, s_t00)
-
-  s_t0(:,:) = s_t00(:,:)
+!  ! T_e = T - T0(z)
+!  te(:,:,:) = ts(:,:,:) - spread(t00(:,:),1,nx)
 
   ! effective beta
   call grady_2nd(ny,nz,-u0*coslat,lat, dt0dy)   ! rent dt0dy
@@ -107,8 +107,11 @@ SUBROUTINE waf3d_s_qg(                                                   &
   call gradz_2nd_irr(ny,nz,rho0*dt0dy/s_t0,zp, dq0dy)
   dq0dy(:,:) = beta(:,:) + dvor0dy(:,:) + f(:,:)*dq0dy(:,:)/rho0(:,:)
 
-  call smooth_y(dq0dy(3:ny-2,:),7, s_t00(3:ny-2,:))
-  dq0dy(3:ny-2,:) = s_t00(3:ny-2,:)
+  do j=1, 3
+    call filter121_y(dq0dy(3:ny-2,:))
+  enddo
+!  call smooth_y(dq0dy(3:ny-2,:),7, s_t00(3:ny-2,:))
+!  dq0dy(3:ny-2,:) = s_t00(3:ny-2,:)
 
   l_scl = .False.
   if ( present(l_scaling) ) then
@@ -126,10 +129,9 @@ SUBROUTINE waf3d_s_qg(                                                   &
   e_tot(:,:,:) = u_prt(:,:,:)*u_prt(:,:,:) + v_prt(:,:,:)*v_prt(:,:,:)
 
   ! relative vortivity pert.
-  tmp(:,:,:) = spread(coslat(:,:),1,nx)
+  call grady_wgt_2nd(nx,ny,nz,-u_prt,lat,coslat(:,1), prt)
   call gradx_2nd(nx,ny,nz,v_prt,lat,dlon, qgpv)
-  call grady_2nd(nx,ny,nz,-u_prt*tmp,lat, prt)
-  qgpv(:,:,:) = qgpv(:,:,:) + prt(:,:,:)/tmp(:,:,:)
+  qgpv(:,:,:) = qgpv(:,:,:) + prt(:,:,:)
 
   prt(:,:,:) = gp(:,:,:) - spread(gp0(:,:),1,nx)
 
@@ -146,8 +148,8 @@ SUBROUTINE waf3d_s_qg(                                                   &
                            spread((rd/h_scale)/s_t0(:,:),1,nx) )
 
   ! QG PV pert.
-  call gradz_2nd_irr(nx,ny,nz,u_prt*spread(rho0/s_t0,1,nx),zp, tmp)
-  qgpv(:,:,:) = qgpv(:,:,:) + tmp(:,:,:)*spread(f(:,:)/rho0(:,:),1,nx)
+  call gradz_wgt_2nd_irr(nx,ny,nz,u_prt*spread(s_t0,1,nx),zp,rho0(1,:), tmp)
+  qgpv(:,:,:) = qgpv(:,:,:) + spread(f(:,:),1,nx)*tmp(:,:,:)
 
   ! wave activity density, not mass-weighted
   wadb(:,:,:) = 0.5*(qgpv(:,:,:)*qgpv(:,:,:))
@@ -375,128 +377,169 @@ SUBROUTINE waf3d_nons_qg(                                                &
   real, dimension(nx,ny,nz), intent(out) ::  wadm
   real, dimension(nx,ny,nz), intent(out) ::  u_ar, v_ar, w_ar
 
-  real, dimension(nx,ny,nz) ::  s_ts0, dqsdh
-  real, dimension(nx,ny,nz) ::  u_prt, v_prt, q_prt, us_g, vs_g
-  real, dimension(nx,ny,nz) ::  u2, v2, vu, ut, vt, e_tot, tmp, tmp2
-  real, dimension(ny,nz)    ::  tmp2d
+  integer, parameter ::  kb_max = 5
+
+  real, dimension(nx,ny,nz) ::  uf_prt, vf_prt, q_prt, us_g, vs_g
+  real, dimension(nx,ny,nz) ::  u2f2, v2f2, vuf2, fut, fvt, f2e_k, e_p
+  real, dimension(nx,ny,nz) ::  te, dqh, dqy_prt, dqx_prt, tmp
+  real, dimension(ny,nz)    ::  t00
 
   integer ::  j,k
 
   call set_gridvar_qg(ny,nz,lat,p,h_scale)
 
-  ! stationary (mean) geostrophic wind
-  call geostrophic_wind(nx,ny,nz,lat,dlon,gps, us_g,vs_g)
+  ! S
+  call get_reference_qg(sum(ts(:,:,:), dim=1)/float(nx), t00)
+  call gradz_2nd_irr(ny,nz,t00,zp, s_ts(1,:,:))
+  s_ts(1,:,:) = s_ts(1,:,:) + t00(:,:)*(kappa/h_scale)
+  s_ts(2:nx,:,:) = spread(s_ts(1,:,:),1,nx-1)
 
-  ! stationary (mean) ageostrophic wind
+  ! T_e = T - T0(z)
+  te(:,:,:) = ts(:,:,:) - spread(t00(:,:),1,nx)
+
+  ! stationary (mean) geostrophic wind * f
+  call grady_2nd(nx,ny,nz,-gps,lat, us_g)
+  call gradx_2nd(nx,ny,nz,gps,lat,dlon, vs_g)
+
+  ! mean Q and grad[Q] ; mean geostrophic wind
+  call grady_wgt_2nd(nx,ny,nz,-us_g,lat,coslat(:,1), qs)
+  call gradx_2nd(nx,ny,nz,vs_g,lat,dlon, tmp)
+  qs(:,:,:) = tmp(:,:,:) + qs(:,:,:)   ! rel. vorticity * f
+  u2f2(:,:,:) = spread(f(:,:),1,nx)   ! rent u2f2
+  call grady_2nd(nx,ny,nz,qs,lat, v2f2)   ! rent v2f2 : rel. vorticity grad. * f
+  call grady_2nd(nx,ny,nz,te,lat, tmp)
+  call gradz_wgt_2nd_irr(nx,ny,nz,tmp/s_ts,zp,rho0(1,:), dqy)
+  dqy(:,:,:) = spread(beta(:,:),1,nx) +                                  &
+               v2f2(:,:,:)/u2f2(:,:,:) + u2f2(:,:,:)*dqy(:,:,:)
+  call gradx_2nd(nx,ny,nz,qs,lat,dlon, v2f2)
+  call gradx_2nd(nx,ny,nz,te,lat,dlon, tmp)
+  call gradz_wgt_2nd_irr(nx,ny,nz,tmp/s_ts,zp,rho0(1,:), dqx)
+  dqx(:,:,:) = v2f2(:,:,:)/u2f2(:,:,:) + u2f2(:,:,:)*dqx(:,:,:)
+  call gradz_wgt_2nd_irr(nx,ny,nz,te/s_ts,zp,rho0(1,:), tmp)
+  qs(:,:,:) = u2f2(:,:,:) + qs(:,:,:)/u2f2(:,:,:) +                      &
+              u2f2(:,:,:)*tmp(:,:,:)
+  us_g(:,:,:) = us_g(:,:,:)/u2f2(:,:,:)
+  vs_g(:,:,:) = vs_g(:,:,:)/u2f2(:,:,:)
+
+  ! smooth grad[Q]
+  call lowpass_k(dqy,kb_max)
+  call lowpass_k(dqx,kb_max)
+  call filter121_y(dqy)
+  call filter121_y(dqx)
+
+  ! transient (wave) geostrophic wind * f
+  gp_prt(:,:,:) = gp_prt(:,:,:) - spread(sum(gp_prt, dim=1)/float(nx),   &
+                                         1,nx)
+  call grady_2nd(nx,ny,nz,-gp_prt,lat, uf_prt)
+  call gradx_2nd(nx,ny,nz,gp_prt,lat,dlon, vf_prt)
+
+  t_prt(:,:,:) = t_prt(:,:,:) - spread(sum(t_prt, dim=1)/float(nx),1,nx)
+
+  ! QG PV pert.
+  call grady_wgt_2nd(nx,ny,nz,-uf_prt,lat,coslat(:,1), q_prt)
+  call gradx_2nd(nx,ny,nz,vf_prt,lat,dlon, tmp)
+  q_prt(:,:,:) = tmp(:,:,:) + q_prt(:,:,:)
+  u2f2(:,:,:) = spread(f(:,:),1,nx)   ! rent u2f2
+  call grady_2nd(nx,ny,nz,q_prt,lat, v2f2)   ! rent v2f2
+  call grady_2nd(nx,ny,nz,t_prt,lat, tmp)
+  call gradz_wgt_2nd_irr(nx,ny,nz,tmp/s_ts,zp,rho0(1,:), dqy_prt)
+  dqy_prt(:,:,:) = v2f2(:,:,:)/u2f2(:,:,:) + u2f2(:,:,:)*dqy_prt(:,:,:)
+  call gradx_2nd(nx,ny,nz,q_prt,lat,dlon, v2f2)
+  call gradx_2nd(nx,ny,nz,t_prt,lat,dlon, tmp)
+  call gradz_wgt_2nd_irr(nx,ny,nz,tmp/s_ts,zp,rho0(1,:), dqx_prt)
+  dqx_prt(:,:,:) = v2f2(:,:,:)/u2f2(:,:,:) + u2f2(:,:,:)*dqx_prt(:,:,:)
+ 
+  call gradz_wgt_2nd_irr(nx,ny,nz,t_prt/s_ts,zp,rho0(1,:), tmp)
+  q_prt(:,:,:) = q_prt(:,:,:)/u2f2(:,:,:) + u2f2(:,:,:)*tmp(:,:,:)
+
+  u2f2(:,:,:) = uf_prt(:,:,:)*uf_prt(:,:,:)
+  v2f2(:,:,:) = vf_prt(:,:,:)*vf_prt(:,:,:)
+  vuf2(:,:,:) = vf_prt(:,:,:)*uf_prt(:,:,:)
+
+  fut(:,:,:) = uf_prt(:,:,:)*t_prt(:,:,:)/s_ts(:,:,:)
+  fvt(:,:,:) = vf_prt(:,:,:)*t_prt(:,:,:)/s_ts(:,:,:)
+
+  ! kinetic E * f^2
+  f2e_k(:,:,:) = 0.5*(u2f2(:,:,:) + v2f2(:,:,:))
+
+  ! potential E
+  e_p(:,:,:) = 0.5*(rd/h_scale)*(t_prt(:,:,:)*t_prt(:,:,:)/s_ts(:,:,:))
+
+  ! ageostrophic residual-mean wind: stationary wind + wave effect
   u_ar(:,:,:) = us(:,:,:) - us_g(:,:,:)
   v_ar(:,:,:) = vs(:,:,:) - vs_g(:,:,:)
   w_ar(:,:,:) = ws(:,:,:)
+  te(:,:,:) = spread(f(:,:),1,nx)   ! rent te (discarded)
+  call gradx_2nd(nx,ny,nz,fut,lat,dlon, tmp)
+  w_ar(:,:,:) = w_ar(:,:,:) + tmp(:,:,:)/te(:,:,:)
+  call gradx_2nd(nx,ny,nz,e_p-f2e_k/(te*te),lat,dlon, tmp)
+  v_ar(:,:,:) = v_ar(:,:,:) + tmp(:,:,:)/te(:,:,:)
+  call grady_wgt_2nd(nx,ny,nz,fvt,lat,coslat(:,1), tmp)
+  w_ar(:,:,:) = w_ar(:,:,:) + tmp(:,:,:)/te(:,:,:)
+  call grady_wgt_2nd(nx,ny,nz,-e_p,lat,coslat(:,1), tmp)
+  call grady_wgt_2nd(nx,ny,nz,f2e_k,lat,coslat(:,1), wadm)   ! rent wadm
+  u_ar(:,:,:) = u_ar(:,:,:) +                                            &
+                ( wadm(:,:,:)/(te*te) + tmp(:,:,:) )/te(:,:,:)
+  call gradz_wgt_2nd_irr(nx,ny,nz,-fvt,zp,rho0(1,:), tmp)
+  v_ar(:,:,:) = v_ar(:,:,:) + tmp(:,:,:)/te(:,:,:)
+  call gradz_wgt_2nd_irr(nx,ny,nz,-fut,zp,rho0(1,:), tmp)
+  u_ar(:,:,:) = u_ar(:,:,:) + tmp(:,:,:)/te(:,:,:)
 
-  ! transient (wave) geostrophic wind
-  gp_prt(:,:,:) = gp_prt(:,:,:) - spread(sum(gp_prt, dim=1)/float(nx),   &
-                                         1,nx)
-  call geostrophic_wind(nx,ny,nz,lat,dlon,gp_prt, u_prt,v_prt)
- 
-  ! S
-  call gradz_2nd_irr(nx,ny,nz,ts,zp, s_ts)
-  s_ts(:,:,:) = s_ts(:,:,:) + ts(:,:,:)*(kappa/h_scale)
-
-  call get_reference_qg(sum(s_ts(:,:,:), dim=1)/float(nx), tmp2d)
-  s_ts0(:,:,:) = spread(tmp2d(:,:),1,nx)
-
-  s_ts(:,:,:) = s_ts0(:,:,:)
-
-  ! mean Q and del[Q]
-  tmp(:,:,:) = spread(coslat(:,:),1,nx)
-  call grady_2nd(nx,ny,nz,-us_g*tmp,lat, tmp2)
-  call gradx_2nd(nx,ny,nz,vs_g,lat,dlon, qs)
-  qs(:,:,:) = qs(:,:,:) + tmp2(:,:,:)/tmp(:,:,:)   ! rel. vorticity
-  tmp(:,:,:) = spread(rho0(:,:),1,nx)
-  u2 (:,:,:) = spread(f   (:,:),1,nx)   ! rent u2
-  call grady_2nd(nx,ny,nz,qs,lat, v2)   ! rent v2 : rel. vorticity gradient
-  call grady_2nd(nx,ny,nz,ts,lat, tmp2)
-  call gradz_2nd_irr(nx,ny,nz,tmp*tmp2/s_ts,zp, dqy)
-  dqy(:,:,:) = spread(beta(:,:),1,nx) +                                  &
-               v2(:,:,:) + u2(:,:,:)*dqy(:,:,:)/tmp(:,:,:)
-  call gradx_2nd(nx,ny,nz,qs,lat,dlon, v2)
-  call gradx_2nd(nx,ny,nz,ts,lat,dlon, tmp2)
-  call gradz_2nd_irr(nx,ny,nz,tmp*tmp2/s_ts,zp, dqx)
-  dqx(:,:,:) = v2(:,:,:) + u2(:,:,:)*dqx(:,:,:)/tmp(:,:,:)
-  call gradz_2nd_irr(nx,ny,nz,tmp*ts/s_ts,zp, tmp2)
-  qs(:,:,:) = u2(:,:,:) + qs(:,:,:) + u2(:,:,:)*tmp2(:,:,:)/tmp(:,:,:)
-!n  dqsdh(:,:,:) = sqrt( dqx(:,:,:)*dqx(:,:,:) + dqy(:,:,:)*dqy(:,:,:) )
-  dqsdh(:,:,:) = 1.  !n  ! for A and M not to be normalized by |del[Q]|
-  dqy(:,:,:) = dqy(:,:,:)/dqsdh(:,:,:)
-  dqx(:,:,:) = dqx(:,:,:)/dqsdh(:,:,:)
- 
-  t_prt(:,:,:) = t_prt(:,:,:) - spread(sum(t_prt, dim=1)/float(nx),1,nx)
-
-  u2(:,:,:) = u_prt(:,:,:)*u_prt(:,:,:)
-  v2(:,:,:) = v_prt(:,:,:)*v_prt(:,:,:)
-  vu(:,:,:) = v_prt(:,:,:)*u_prt(:,:,:)
-  ut(:,:,:) = u_prt(:,:,:)*t_prt(:,:,:)/s_ts(:,:,:)
-  vt(:,:,:) = v_prt(:,:,:)*t_prt(:,:,:)/s_ts(:,:,:)
-
-  ! total E
-  e_tot(:,:,:) = 0.5*( (u2(:,:,:) + v2(:,:,:)) +                         &
-                  (t_prt(:,:,:)*t_prt(:,:,:)/s_ts(:,:,:))*(rd/h_scale) )
-
-  ! QG PV pert.
-  tmp(:,:,:) = spread(coslat(:,:),1,nx)
-  call grady_2nd(nx,ny,nz,-u_prt*tmp,lat, q_prt)
-  q_prt(:,:,:) = q_prt(:,:,:)/tmp(:,:,:)
-  call gradx_2nd(nx,ny,nz,v_prt,lat,dlon, tmp)
-  q_prt(:,:,:) = tmp(:,:,:) + q_prt(:,:,:)
-  call gradz_2nd_irr(nx,ny,nz,t_prt/s_ts*spread(rho0,1,nx),zp, tmp)
-  q_prt(:,:,:) = q_prt(:,:,:) + tmp(:,:,:)*spread(f(:,:)/rho0(:,:),1,nx)
-
-  ! ageostrophic residual-mean wind: stationary wind + wave effect
-  wadm(:,:,:) = (u2(:,:,:) + v2(:,:,:) - e_tot(:,:,:))/                  &
-                spread(f(:,:),1,nx)   ! rent wadm
-  if (jeq /= -999)  wadm(:,jeq,:) = 0.5*( wadm(:,jeq-1,:) +              &
-                                          wadm(:,jeq+1,:) )
-  call gradx_2nd(nx,ny,nz,ut,lat,dlon, tmp)
-  w_ar(:,:,:) = w_ar(:,:,:) + tmp(:,:,:)
-  call gradx_2nd(nx,ny,nz,-wadm,lat,dlon, tmp)
-  v_ar(:,:,:) = v_ar(:,:,:) + tmp(:,:,:)
-  tmp2(:,:,:) = spread(coslat(:,:),1,nx)
-  call grady_2nd(nx,ny,nz,vt*tmp2,lat, tmp)
-  w_ar(:,:,:) = w_ar(:,:,:) + tmp(:,:,:)/tmp2(:,:,:)
-  call grady_2nd(nx,ny,nz,wadm*tmp2,lat, tmp)
-  u_ar(:,:,:) = u_ar(:,:,:) + tmp(:,:,:)/tmp2(:,:,:)
-  tmp2(:,:,:) = spread(rho0(:,:),1,nx)
-  call gradz_2nd_irr(nx,ny,nz,-vt*tmp2,zp, tmp)
-  v_ar(:,:,:) = v_ar(:,:,:) + tmp(:,:,:)/tmp2(:,:,:)
-  call gradz_2nd_irr(nx,ny,nz,-ut*tmp2,zp, tmp)
-  u_ar(:,:,:) = u_ar(:,:,:) + tmp(:,:,:)/tmp2(:,:,:)
-
-  ! wave activity density, not mass-weighted
-  wadm(:,:,:) = 0.5*(q_prt(:,:,:)*q_prt(:,:,:))/dqsdh(:,:,:)
-
-  ! M, mass-weighted
+  ! B_2, B_1, mass-weighted
   tmp(:,:,:) = spread(rho0(:,:)*coslat(:,:),1,nx)
-  mx(:,:,:) = tmp(:,:,:)*(v2(:,:,:) - e_tot(:,:,:))
-  lx(:,:,:) = tmp(:,:,:)*vu(:,:,:)
-  my(:,:,:) = -lx(:,:,:)
-  ly(:,:,:) = tmp(:,:,:)*(e_tot(:,:,:) - u2(:,:,:))
+  te(:,:,:) = spread(f(:,:)*f(:,:),1,nx)   ! rent te (discarded)
+  mx(:,:,:) = tmp(:,:,:)*( (v2f2(:,:,:) - f2e_k(:,:,:))/te(:,:,:) -      &
+                           e_p(:,:,:) )
+  lx(:,:,:) = tmp(:,:,:)*vuf2(:,:,:)/te(:,:,:)
+  mz(:,:,:) = tmp(:,:,:)*fvt(:,:,:)
+  lz(:,:,:) = tmp(:,:,:)*fut(:,:,:)
+  my(:,:,:) = 0.
+  ly(:,:,:) = tmp(:,:,:)*e_p(:,:,:)
 
-  tmp(:,:,:) = spread(tmp(1,:,:)*f(:,:),1,nx)
-  mz(:,:,:) = vt(:,:,:)*tmp(:,:,:)
-  lz(:,:,:) = ut(:,:,:)*tmp(:,:,:)
-
-  ! div = div[M]  [kg m^-3 m/s/day]
+  ! div[B_2], div[B_1]  [m/s/day * kg/m3]
   call div_flx(nx,ny,nz,lat,dlon,missv,mx,my,mz,                         &
                divm_x,divm_y,divm_z,divm)
   call div_flx(nx,ny,nz,lat,dlon,missv,lx,ly,lz,                         &
                divf_x,divf_y,divf_z,divf)
 
-  ! correction
-  tmp(:,:,:) = spread(rho0(:,:)*spread(sin(lat(:)*deg2rad)/a_earth,2,nz) &
-                      ,1,nx)*                                            &
-      ( (t_prt(:,:,:)*t_prt(:,:,:)/s_ts(:,:,:))*(rd/h_scale) ) * 86400.
-  divf_y(:,:,:) = divf_y(:,:,:) + tmp(:,:,:)
-  divf  (:,:,:) = divf  (:,:,:) + tmp(:,:,:)
+  ! correction of B_2_y, B_1_y and their div.
+  wadm(:,:,:) = -tmp(:,:,:)*vuf2(:,:,:)   ! rent wadm
+  call grady_wgt_2nd(nx,ny,nz,wadm,lat,coslat(:,1), dqh)   ! rent dqh
+  dqh(:,:,:) = dqh(:,:,:)/te(:,:,:) * 86400.   ! te : f^2
+  divm_y(:,:,:) = divm_y(:,:,:) + dqh(:,:,:)
+  divm  (:,:,:) = divm  (:,:,:) + dqh(:,:,:)
+  my(:,:,:) = my(:,:,:) + wadm(:,:,:)/te(:,:,:)
+  wadm(:,:,:) = tmp(:,:,:)*(f2e_k(:,:,:) - u2f2(:,:,:))
+  call grady_wgt_2nd(nx,ny,nz,wadm,lat,coslat(:,1), dqh)
+  dqh(:,:,:) = dqh(:,:,:)/te(:,:,:) * 86400.
+  divf_y(:,:,:) = divf_y(:,:,:) + dqh(:,:,:)
+  divf  (:,:,:) = divf  (:,:,:) + dqh(:,:,:)
+  ly(:,:,:) = ly(:,:,:) + wadm(:,:,:)/te(:,:,:)
 
+  ! background wind : smooth (us_g, vs_g)
+  call lowpass_k(us_g,kb_max)
+  call lowpass_k(vs_g,kb_max)
+  call filter121_y(us_g)
+  call filter121_y(vs_g)
+
+  ! |grad[Q]|
+  dqh(:,:,:) = sqrt( dqx(:,:,:)*dqx(:,:,:) + dqy(:,:,:)*dqy(:,:,:) )
+
+!!!
+!tmp=sqrt(us_g*us_g + vs_g*vs_g)
+!dqy=abs(us_g)/tmp
+!dqx=-vs_g/tmp * (us_g/abs(us_g))
+!dqy=dqy*dqh
+!dqx=dqx*dqh
+!!!
+
+  ! |grad[Q]| (normalized or not)
+  dqh(:,:,:) = 1.  !n  ! for A and M not to be normalized by |grad[Q]|
+
+  dqy(:,:,:) = dqy(:,:,:)/dqh(:,:,:)
+  dqx(:,:,:) = dqx(:,:,:)/dqh(:,:,:)
+
+  ! M_R and div[M_R]  [m/s/day * kg/m3]
   divm_x(:,:,:) = dqy(:,:,:)*divm_x(:,:,:) + dqx(:,:,:)*divf_x(:,:,:)
   divm_y(:,:,:) = dqy(:,:,:)*divm_y(:,:,:) + dqx(:,:,:)*divf_y(:,:,:)
   divm_z(:,:,:) = dqy(:,:,:)*divm_z(:,:,:) + dqx(:,:,:)*divf_z(:,:,:)
@@ -505,20 +548,26 @@ SUBROUTINE waf3d_nons_qg(                                                &
   my    (:,:,:) = dqy(:,:,:)*my    (:,:,:) + dqx(:,:,:)*ly    (:,:,:)
   mz    (:,:,:) = dqy(:,:,:)*mz    (:,:,:) + dqx(:,:,:)*lz    (:,:,:)
 
-  ! include advection and mass-weight A
-  call gradx_2nd(nx,ny,nz,wadm,lat,dlon, lx)
-  call grady_2nd(nx,ny,nz,wadm,lat, ly)
+  ! A : wave activity density (referred to M in P86)
   tmp(:,:,:) = spread(rho0(:,:)*coslat(:,:),1,nx)
-  divm_x(:,:,:) = divm_x(:,:,:) + tmp(:,:,:)*(us_g(:,:,:)*lx(:,:,:))
-  divm_y(:,:,:) = divm_y(:,:,:) + tmp(:,:,:)*(vs_g(:,:,:)*ly(:,:,:))
-  divm  (:,:,:) = divm_x(:,:,:) + divm_y(:,:,:) + divm_z(:,:,:)
-  wadm(:,:,:) = wadm(:,:,:)*tmp(:,:,:)
+  wadm(:,:,:) = 0.5*(q_prt(:,:,:)*q_prt(:,:,:))/dqh(:,:,:)*tmp(:,:,:)
+
+  ! M_T ( = M_R + U_g * A )
   mx(:,:,:) = mx(:,:,:) + us_g(:,:,:)*wadm(:,:,:)
   my(:,:,:) = my(:,:,:) + vs_g(:,:,:)*wadm(:,:,:)
 
+  ! div[M_T] ( = div[M_R] + A advection )
+  tmp(:,:,:) = spread(rho0(:,:)*coslat(:,:),1,nx)*                       &
+               (q_prt(:,:,:)/dqh(:,:,:))
+  divm_x(:,:,:) = divm_x(:,:,:) + us_g(:,:,:)*dqx_prt(:,:,:)*tmp(:,:,:)* &
+                                  86400.
+  divm_y(:,:,:) = divm_y(:,:,:) + vs_g(:,:,:)*dqy_prt(:,:,:)*tmp(:,:,:)* &
+                                  86400.
+  divm(:,:,:) = divm_x(:,:,:) + divm_y(:,:,:) + divm_z(:,:,:)
+
 !+test :  normalized as in Plumb 86
-  dqsdh(:,:,:) = sqrt( dqx(:,:,:)*dqx(:,:,:) + dqy(:,:,:)*dqy(:,:,:) )
-  lx = mx/dqsdh  ;  ly = my/dqsdh  ;  lz = mz/dqsdh
+  dqh(:,:,:) = sqrt( dqx(:,:,:)*dqx(:,:,:) + dqy(:,:,:)*dqy(:,:,:) )
+  lx = mx/dqh  ;  ly = my/dqh  ;  lz = mz/dqh
   call div_flx(nx,ny,nz,lat,dlon,missv,lx,ly,lz,                         &
                divf_x,divf_y,divf_z,divf)
 !-test
@@ -663,7 +712,7 @@ SUBROUTINE set_gridvar_qg(ny,nz,lat,p,h_scale)
 END subroutine set_gridvar_qg
 
 SUBROUTINE div_flx(nx,ny,nz,lat,dlon,missv,fx,fy,fz,                     &
-                   div_x,div_y,div_z,div)
+                   div_x,div_y,div_z,div)   ! [m/s/day * kg/m3] (rho*cos)
 
   integer               , intent(in) ::  nx, ny, nz
   real                  , intent(in) ::  dlon, missv
@@ -674,10 +723,7 @@ SUBROUTINE div_flx(nx,ny,nz,lat,dlon,missv,fx,fy,fz,                     &
 
   call gradx_2nd(nx,ny,nz,fx,lat,dlon, div_x)
 
-  div(:,:,:) = spread(coslat(:,:),1,nx)   ! rent div
-
-  call grady_2nd(nx,ny,nz,fy*div,lat, div_y)
-  div_y(:,:,:) = div_y(:,:,:)/div(:,:,:)
+  call grady_wgt_2nd(nx,ny,nz,fy,lat,coslat(:,1), div_y)
   call missing_bdy(nx,ny,nz,div_y,missv,1,1,0,0)
 
   call gradz_2nd_irr(nx,ny,nz,fz,zp, div_z)
@@ -693,7 +739,7 @@ SUBROUTINE div_flx(nx,ny,nz,lat,dlon,missv,fx,fy,fz,                     &
 END subroutine div_flx
 
 SUBROUTINE div_norm_flx0(nx,ny,nz,lat,dlon,missv,fx,fy,fz,               &
-                         div_x,div_y,div_z,div)
+                         div_x,div_y,div_z,div)   ! [m/s/day]
 
   integer               , intent(in) ::  nx, ny, nz
   real                  , intent(in) ::  dlon, missv
@@ -706,14 +752,11 @@ SUBROUTINE div_norm_flx0(nx,ny,nz,lat,dlon,missv,fx,fy,fz,               &
 
   div(:,:,:) = spread(coslat(:,:),1,nx)   ! rent div
 
-  call grady_2nd(nx,ny,nz,(fy*div)*div,lat, div_y)
-  div_y(:,:,:) = div_y(:,:,:)/(div(:,:,:)*div(:,:,:))
+  call grady_wgt_2nd(nx,ny,nz,fy*div,lat,coslat(:,1), div_y)
+  div_y(:,:,:) = div_y(:,:,:)/div(:,:,:)
   call missing_bdy(nx,ny,nz,div_y,missv,1,1,0,0)
 
-  div(:,:,:) = spread(rho0(:,:),1,nx)   ! rent div
-
-  call gradz_2nd_irr(nx,ny,nz,fz*div,zp, div_z)
-  div_z(:,:,:) = div_z(:,:,:)/div(:,:,:)
+  call gradz_wgt_2nd_irr(nx,ny,nz,fz*div,zp,rho0(1,:), div_z)
   call missing_bdy(nx,ny,nz,div_z,missv,0,0,1,1)
 
   div_x(:,:,:) = div_x(:,:,:)*86400.
@@ -726,7 +769,7 @@ SUBROUTINE div_norm_flx0(nx,ny,nz,lat,dlon,missv,fx,fy,fz,               &
 END subroutine div_norm_flx0
 
 SUBROUTINE div_norm_flx0_wgt(nx,ny,nz,lat,dlon,missv,fx,fy,fz,           &
-                             div_x,div_y,div_z,div)
+                             div_x,div_y,div_z,div)   ! [m/s/day]
 
   integer           , intent(in) ::  nx, ny, nz
   real              , intent(in) ::  dlon, missv
@@ -744,8 +787,8 @@ SUBROUTINE div_norm_flx0_wgt(nx,ny,nz,lat,dlon,missv,fx,fy,fz,           &
 
   fy(:,:,:) = fy(:,:,:)*div(:,:,:)
 
-  call grady_2nd(nx,ny,nz,fy(:,:,:)*div,lat, div_y)
-  div_y(:,:,:) = div_y(:,:,:)/(div(:,:,:)*div(:,:,:))
+  call grady_wgt_2nd(nx,ny,nz,fy(:,:,:),lat,coslat(:,1), div_y)
+  div_y(:,:,:) = div_y(:,:,:)/div(:,:,:)
   call missing_bdy(nx,ny,nz,div_y,missv,1,1,0,0)
 
   div(:,:,:) = spread(rho0(:,:),1,nx)   ! rent div
@@ -837,6 +880,22 @@ SUBROUTINE geostrophic_wind(nx,ny,nz,lat,dlon,gp,ug,vg)
   end if
 
 END subroutine geostrophic_wind
+
+SUBROUTINE geostrophic_wind_f(nx,ny,nz,lat,dlon,gp,ug,vg)
+
+  integer                  , intent(in) ::  nx, ny, nz
+  real                     , intent(in) ::  dlon
+  real, dimension(ny)      , intent(in) ::  lat
+  real, dimension(nx,ny,nz), intent(in) ::  gp
+
+  real, dimension(nx,ny,nz), intent(out) ::  ug, vg
+
+  real, dimension(nx,ny,nz) ::  tmp
+
+  call gradx_2nd(nx,ny,nz,gp,lat,dlon, vg)
+  call grady_2nd(nx,ny,nz,-gp,lat, ug)
+
+END subroutine geostrophic_wind_f
 
 SUBROUTINE smooth_y(var,npt,ref)
 

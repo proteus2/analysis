@@ -133,7 +133,7 @@ SUBROUTINE tem_hydro_p(                                                  &
 
   ! epf, epd
   fy(:,:) = -a_earth*coslat(:,:)*(rvu(:,:) - phi(:,:)*dumdz(:,:))
-  fz(:,:) = -a_earth*coslat(:,:)*(rwu(:,:) + phi(:,:)*(divy_um(:,:)-f(:,:)))
+  fz(:,:) = -a_earth*coslat(:,:)*(rwu(:,:) + phi(:,:)*(divy_um(:,:) - f(:,:)))
   call missing_bdy(ny,nz,fy,missv,0,0,1,0)
 !mv  call missing_bdy(ny,nz,fz,missv,1,1,1,0)
 
@@ -307,7 +307,7 @@ SUBROUTINE tem_qg_betap_gp(                                              &
   gpp(:,:,:) = gp(:,:,:) - spread(gpm(:,:),1,nx)
 
   twodx0 = 2.*a_earth*cos(lat0*deg2rad)*(2.*pi/float(nx))
-  twody0(2:ny-1) = a_earth*((lat(3:ny)-lat(1:ny-2))*deg2rad)
+  twody0(2:ny-1) = a_earth*((lat(3:ny) - lat(1:ny-2))*deg2rad)
 
   ! v'
   v_prt(2:nx-1,:,:) = (gp(3:nx,:,:) - gp(1:nx-2,:,:))/twodx0
@@ -349,7 +349,7 @@ SUBROUTINE tem_qg_betap_gp(                                              &
   call missing_bdy(ny,nz,rvpt,missv,0,0,1,0)
 
   ! grad, pt0
-  j0 = minloc(abs(lat(:)-lat0),1)
+  j0 = minloc(abs(lat(:) - lat0),1)
   call gradz_2nd_irr(nz,gpm(j0,:),zp, grad1)
   call gradz_2nd_irr(nz,grad1,zp, grad2)
   call gradz_2nd_irr(nz,grad2,zp, grad3)
@@ -459,7 +459,7 @@ SUBROUTINE tem_z(                                                        &
   rvu(:,:) = sum(rv_prt*prt, dim=1)/float(nx)
   rwu(:,:) = sum(rw_prt*prt, dim=1)/float(nx)
 
-  prt(:,:,:) = prt(:,:,:)*(rho(:,:,:)-spread(rhom(:,:),1,nx))
+  prt(:,:,:) = prt(:,:,:)*(rho(:,:,:) - spread(rhom(:,:),1,nx))
 
   ! -(rho'u')_bar / rho_bar
   rueddy(:,:) = (-1.)*sum(prt, dim=1)/float(nx)/rhom(:,:)
@@ -520,8 +520,8 @@ SUBROUTINE tem_z(                                                        &
   call missing_bdy(ny,nz,cor,missv,2,2,2,1)
 
   ! epf, epd
-  fy(:,:) = -rcos(:,:)*(rvu(:,:) - phi(:,:)*(dumdz  (:,:)+rbeta(:,:)))
-  fz(:,:) = -rcos(:,:)*(rwu(:,:) + phi(:,:)*(divy_um(:,:)-f    (:,:)))
+  fy(:,:) = -rcos(:,:)*(rvu(:,:) - phi(:,:)*(dumdz  (:,:) + rbeta(:,:)))
+  fz(:,:) = -rcos(:,:)*(rwu(:,:) + phi(:,:)*(divy_um(:,:) - f    (:,:)))
   call missing_bdy(ny,nz,fy,missv,1,1,1,0)
   call missing_bdy(ny,nz,fz,missv,1,1,1,0)
 
@@ -579,7 +579,7 @@ SUBROUTINE set_gridvar_p(ny,nz,lat,p,h_scale)
   if (abs(lat(1 )) == 90.)  coslat(1 ,:) = 0.
   if (abs(lat(ny)) == 90.)  coslat(ny,:) = 0.
   f   (:,:) = spread(2.*ome_earth*sin(lat(:)*deg2rad),2,nz)
-  rho0(:,:) = spread(p(:)/g/h_scale                  ,1,ny)
+  rho0(:,:) = spread(p(:)/(g*h_scale)                ,1,ny)
 
   ny_pre = ny  ;  nz_pre = nz
   lat_pre(:) = lat(:)
@@ -608,7 +608,7 @@ SUBROUTINE set_gridvar_betap(ny,nz,lat,p,lat0,h_scale)
   r_earth(:,:) = a_earth
   zp(:) = -h_scale*(log(p(:)/1.e5))
 
-  rho0(:,:) = spread(p(:)/g/h_scale,1,ny)
+  rho0(:,:) = spread(p(:)/(g*h_scale),1,ny)
 
   nz_pre = nz
   ht_pre(:) = p(:)
