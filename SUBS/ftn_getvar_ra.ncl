@@ -200,7 +200,8 @@ function getvar_erai(vname:string, vfname:string, year_i:integer,  \
 local vout, vname, vfname, year_i, mon_i, hour_i, p_rng, lat_rng, lon_rng,  \
       opt_havg, opt_tavg,  \
       nmon, nhr, mm, hh, wgt, fname, iyr, yyyy, imn, mm2, ff, yyyymmdd00,  \
-      nt,dim,nz,ny,nx,var00,var,varhh,dd00,itl,var0100n,var24,ndim0, n
+      nt,dim,nz,ny,nx,var00,var,varhh,dd00,itl,var0100n,var24,ndim0,  \
+      tmp1,tmp2, n
 
 begin
 
@@ -273,14 +274,14 @@ begin
  var00 = read_xypt_havg(ff,vname,p_rng,lat_rng,lon_rng,opt_havg)
  if (opt_tavg .eq. 0) then
    var = new((/nt,nhr,nz,ny,nx/),float,1.e20)
-   var(:,0,:,:,:) = var00
+   var(:,0,:,:,:) = reshape( var00, (/nt,nz,ny,nx/) )
  else
    if (opt_tavg .eq. 1) then
      var = 0.5*wgt*var00
    else
      var = wgt*var00
    end if
-   copy_VarCoords(var00,var)
+   copy_VarMeta(var00,var)
    var@yyyymmdd = floor(yyyymmdd00 / 100)
  end if
  
@@ -291,11 +292,12 @@ begin
      ListSetType(ff, "cat")
      varhh = read_xypt_havg(ff,vname,p_rng,lat_rng,lon_rng,opt_havg)
      if (opt_tavg .eq. 0) then
-       var(:,n,:,:,:) = var00
+       var(:,n,:,:,:) = reshape( varhh, (/nt,nz,ny,nx/) )
      else
        var = var + wgt*varhh
      end if
    end do
+   delete(varhh)
  end if
 
  if (opt_tavg .eq. 1) then
@@ -324,9 +326,10 @@ begin
    end if
    end if
    var = var + 0.5*wgt*var24
+   delete([/var24,var0100n/])
  end if
 
- delete([/ff,var00,varhh,var24/])
+ delete(ff)
 
  ; ERA-I only: convert GP to GPH
  if (vname .eq. "Z_GDS0_ISBL") then
@@ -336,9 +339,26 @@ begin
  if (opt_tavg .eq. 0) then
    ndim0 = (/nt*nhr,nz,ny,nx/)
    vout = reshape( var, ndim0( ind(ndim0 .ne. 1) ) )
+   copy_VarAtts(var00,vout)
+   do n=1, dimsizes(dimsizes(var00))-1
+     vout!n = var00!n
+     vout&$vout!n$ = var00&$var00!n$
+   end do
+   tmp1 = conform_dims((/dimsizes(var00&$var00!0$),nhr/),var00&$var00!0$,0)
+   tmp2 = conform_dims((/dimsizes(yyyymmdd00),nhr/),yyyymmdd00,0)
+   do n=1, nhr-1
+     tmp1(:,n) = tmp1(:,0) + (hour_i(n) - hour_i(0))
+     tmp2(:,n) = tmp2(:,0) + (hour_i(n) - hour_i(0))
+   end do
+   vout!0 = var00!0
+   vout&$vout!0$ = ndtooned(tmp1)
+   vout@yyyymmddhh = ndtooned(tmp2)
+   delete([/tmp1,tmp2/])
  else
    vout = var
  end if
+ delete(var00)
+printVarSummary(vout)
 
  return(vout)
 
