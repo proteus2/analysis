@@ -358,7 +358,6 @@ begin
    vout = var
  end if
  delete(var00)
-printVarSummary(vout)
 
  return(vout)
 
